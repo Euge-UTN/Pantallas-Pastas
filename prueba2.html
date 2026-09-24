@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fábrica de Pastas - Sistema de Gestión Integrado</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .active-tab {
+            border-left: 4px solid #ef4444;
+            background-color: #fef2f2;
+            color: #dc2626;
+            font-weight: 600;
+        }
+        @media print {
+            body * { visibility: hidden; }
+            #area-impresion, #area-impresion *, #area-recibo, #area-recibo * { visibility: visible; }
+            #area-impresion, #area-recibo { position: absolute; left: 0; top: 0; width: 100%; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800">
+
+    <div class="flex h-screen overflow-hidden">
+        <!-- BARRA LATERAL DE NAVEGACIÓN -->
+        <aside class="w-64 bg-white border-r border-slate-200 flex flex-col justify-between no-print">
+            <div>
+                <!-- Brand / Logo -->
+                <div class="p-6 border-b border-slate-100 flex items-center space-x-3">
+                    <div class="p-2 bg-red-500 text-white rounded-lg">
+                        <i data-lucide="utensils-crossed"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-slate-900 leading-tight">Fábrica de Pastas</h1>
+                        <span class="text-xs text-slate-500">Gestión Integrada</span>
+                    </div>
+                </div>
+
+                <!-- Menú Principal -->
+                <nav class="mt-4 px-3 space-y-1">
+                    <a href="#" onclick="switchModulo('ventas'); return false;" id="tab-ventas" class="active-tab flex items-center space-x-3 px-4 py-3 text-sm rounded-lg transition-colors hover:bg-slate-100 text-slate-600">
+                        <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                        <span>Módulo Ventas</span>
+                    </a>
+                    <a href="#" onclick="switchModulo('cobranzas'); return false;" id="tab-cobranzas" class="flex items-center space-x-3 px-4 py-3 text-sm rounded-lg transition-colors hover:bg-slate-100 text-slate-600">
+                        <i data-lucide="wallet" class="w-5 h-5"></i>
+                        <span>Módulo Cobranzas</span>
+                    </a>
+                    <a href="#" onclick="switchModulo('compras'); return false;" id="tab-compras" class="flex items-center space-x-3 px-4 py-3 text-sm rounded-lg transition-colors hover:bg-slate-100 text-slate-600">
+                        <i data-lucide="truck" class="w-5 h-5"></i>
+                        <span>Módulo Compras</span>
+                    </a>
+                    <a href="#" onclick="switchModulo('produccion'); return false;" id="tab-produccion" class="flex items-center space-x-3 px-4 py-3 text-sm rounded-lg transition-colors hover:bg-slate-100 text-slate-600">
+                        <i data-lucide="factory" class="w-5 h-5"></i>
+                        <span>Producción & Stock</span>
+                    </a>
+                    <a href="#" onclick="switchModulo('clientes'); return false;" id="tab-clientes" class="flex items-center space-x-3 px-4 py-3 text-sm rounded-lg transition-colors hover:bg-slate-100 text-slate-600">
+                        <i data-lucide="users" class="w-5 h-5"></i>
+                        <span>Gestión Clientes</span>
+                    </a>
+                    <a href="#" onclick="switchModulo('proveedores'); return false;" id="tab-proveedores" class="flex items-center space-x-3 px-4 py-3 text-sm rounded-lg transition-colors hover:bg-slate-100 text-slate-600">
+                        <i data-lucide="building-2" class="w-5 h-5"></i>
+                        <span>Proveedores</span>
+                    </a>
+                    <a href="#" onclick="switchModulo('empleados'); return false;" id="tab-empleados" class="flex items-center space-x-3 px-4 py-3 text-sm rounded-lg transition-colors hover:bg-slate-100 text-slate-600">
+                        <i data-lucide="badge-check" class="w-5 h-5"></i>
+                        <span>Empleados</span>
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Footer Usuario -->
+            <div class="p-4 border-t border-slate-100 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-600">A</div>
+                    <div class="text-xs">
+                        <p class="font-semibold text-slate-800">Administrador</p>
+                        <p class="text-slate-400">admin@pastas.com</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ÁREA PRINCIPAL DE CONTENIDO -->
+        <main class="flex-1 overflow-y-auto bg-slate-50 p-8">
+
+            <!-- ================= 1. MÓDULO DE VENTAS ================= -->
+            <section id="sec-ventas" class="space-y-6">
+                <div id="vista-listado-ventas" class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900">Módulo de Ventas</h2>
+                            <p class="text-sm text-slate-500">Gestión de órdenes de pedido, presupuestos y clientes.</p>
+                        </div>
+                        <button onclick="mostrarSubvistaVentas('nuevo-pedido')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2 shadow-sm transition">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Nuevo Pedido de Cliente</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-slate-100 flex justify-between items-center">
+                            <h3 class="font-semibold text-slate-800">Órdenes de Pedido Recientes</h3>
+                        </div>
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-50 text-xs text-slate-500 border-b border-slate-200 uppercase">
+                                <tr>
+                                    <th class="px-6 py-3">N° Pedido</th>
+                                    <th class="px-6 py-3">Cliente</th>
+                                    <th class="px-6 py-3">Tipo</th>
+                                    <th class="px-6 py-3 text-right">Total</th>
+                                    <th class="px-6 py-3 text-center">Estado</th>
+                                    <th class="px-6 py-3 text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-pedidos-registrados" class="divide-y divide-slate-200">
+                                <tr class="hover:bg-slate-50">
+                                    <td class="px-6 py-4 font-semibold text-slate-900">PED-1042</td>
+                                    <td class="px-6 py-4">Restaurante Don Mosa</td>
+                                    <td class="px-6 py-4"><span class="text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded">Mayorista</span></td>
+                                    <td class="px-6 py-4 text-right font-medium">$ 42.500</td>
+                                    <td class="px-6 py-4 text-center"><span class="px-2.5 py-1 bg-amber-100 text-amber-800 text-xs font-semibold rounded-full">Pendiente</span></td>
+                                    <td class="px-6 py-4 text-center">
+                                        <button onclick="mostrarSubvistaVentas('presupuesto')" class="text-red-600 hover:text-red-800 text-xs font-semibold">Ver Presupuesto</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="vista-nuevo-pedido" class="space-y-6 hidden">
+                    <div class="flex items-center space-x-3">
+                        <button type="button" onclick="volverAlListadoVentas()" class="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition flex items-center justify-center">
+                            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                        </button>
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900">Registrar Nuevo Pedido</h2>
+                            <p class="text-sm text-slate-500">Seleccione un cliente registrado o ingrese uno nuevo, añada productos y calcule totales.</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Seleccionar Cliente *</label>
+                                    <select id="select-cliente-pedido" onchange="seleccionarClientePedido()" class="select-cliente-dinamico w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                                        <option value="">-- Seleccionar de la lista --</option>
+                                    </select>
+                                </div>
+
+                                <div id="contenedor-cliente-manual">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre / Razón Social</label>
+                                    <input type="text" id="input-nombre-cliente-pedido" placeholder="Nombre de cliente eventual" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo de Operación</label>
+                                    <select id="select-tipo-operacion" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                        <option value="Venta Directa Mostrador">Venta Directa Mostrador</option>
+                                        <option value="Pedido Especial (Evento)">Pedido Especial (Evento)</option>
+                                        <option value="Pedido Fijo Semanal">Pedido Fijo Semanal</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="border border-slate-200 bg-slate-50/50 rounded-xl p-4 space-y-4">
+                                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Añadir Productos al Pedido</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                                    <div class="md:col-span-6">
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Seleccionar Producto</label>
+                                        <select id="prod-select" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
+                                            <option value="Ravioles de Ricotta y Verdura|3500">Ravioles de Ricotta y Verdura ($ 3.500/kg)</option>
+                                            <option value="Sorrentinos de Jamón y Queso|4200">Sorrentinos de Jamón y Queso ($ 4.200/kg)</option>
+                                            <option value="Tallarines al Huevo|2800">Tallarines al Huevo ($ 2.800/kg)</option>
+                                            <option value="Ñoquis de Papa|3000">Ñoquis de Papa ($ 3.000/kg)</option>
+                                            <option value="Salsa Fileto en Pote|1200">Salsa Fileto en Pote ($ 1.200/un)</option>
+                                            <option value="Salsa Bolognesa en Pote|1800">Salsa Bolognesa en Pote ($ 1.800/un)</option>
+                                        </select>
+                                    </div>
+                                    <div class="md:col-span-3">
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Cantidad (Kg/Un)</label>
+                                        <input type="number" id="prod-cant" value="1" min="1" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
+                                    </div>
+                                    <div class="md:col-span-3 flex items-end">
+                                        <button type="button" onclick="agregarProductoPedido()" class="w-full bg-slate-800 text-white rounded-lg p-2 text-sm font-semibold hover:bg-slate-900 transition flex items-center justify-center space-x-1">
+                                            <i data-lucide="plus" class="w-4 h-4"></i>
+                                            <span>Agregar</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <table class="w-full text-sm text-left bg-white rounded-lg overflow-hidden border border-slate-200">
+                                    <thead class="bg-slate-100 text-xs text-slate-600 uppercase border-b border-slate-200">
+                                        <tr>
+                                            <th class="p-3">Producto</th>
+                                            <th class="p-3 text-center">Cant.</th>
+                                            <th class="p-3 text-right">P. Unitario</th>
+                                            <th class="p-3 text-right">Subtotal</th>
+                                            <th class="p-3 text-center">Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabla-items-pedido" class="divide-y divide-slate-100">
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="flex justify-between items-center pt-2 border-t border-slate-100">
+                                <span class="text-xs text-slate-400">Items en orden: <span id="cant-items-num">0</span></span>
+                                <div class="text-right">
+                                    <span class="text-xs text-slate-500 block">Total a Pagar</span>
+                                    <span id="total-pedido-monto" class="text-2xl font-bold text-slate-900">$ 0</span>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+                                <button type="button" onclick="confirmarPedido()" class="bg-red-600 text-white py-3 rounded-lg text-sm font-semibold hover:bg-red-700 transition flex items-center justify-center space-x-2">
+                                    <i data-lucide="check-circle" class="w-4 h-4"></i>
+                                    <span>Confirmar Pedido</span>
+                                </button>
+                                <button type="button" onclick="emitirPresupuestoDesdePedido()" class="bg-slate-100 border border-slate-300 text-slate-700 py-3 rounded-lg text-sm font-semibold hover:bg-slate-200 transition flex items-center justify-center space-x-2">
+                                    <i data-lucide="file-text" class="w-4 h-4 text-slate-500"></i>
+                                    <span>Emitir Presupuesto</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div id="alerta-morosidad" class="hidden bg-amber-50 border border-amber-200 rounded-xl p-4">
+                                <div class="flex items-start space-x-3">
+                                    <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-600 mt-0.5"></i>
+                                    <div>
+                                        <h4 class="text-sm font-semibold text-amber-800">Alerta de Cuenta Corriente</h4>
+                                        <p class="text-xs text-amber-700 mt-1">Este cliente posee facturas adeudadas en cuenta corriente.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="vista-presupuesto" class="space-y-6 hidden">
+                    <div class="flex items-center justify-between no-print">
+                        <div class="flex items-center space-x-3">
+                            <button type="button" onclick="volverAlListadoVentas()" class="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition flex items-center justify-center">
+                                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                            </button>
+                            <h2 class="text-2xl font-bold text-slate-900">Presupuesto de Venta</h2>
+                        </div>
+                        <div class="flex space-x-3">
+                            <button onclick="window.print()" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-800 flex items-center space-x-2">
+                                <i data-lucide="printer" class="w-4 h-4"></i>
+                                <span>Imprimir Presupuesto</span>
+                            </button>
+                            <button type="button" onclick="volverAlListadoVentas()" class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-700 transition">
+                                Volver al Listado
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="area-impresion" class="max-w-3xl mx-auto bg-white border border-slate-200 p-10 rounded-xl shadow-lg space-y-6">
+                        <div class="flex justify-between items-start border-b border-slate-200 pb-4">
+                            <div>
+                                <h1 class="text-2xl font-bold text-red-600">FÁBRICA DE PASTAS</h1>
+                                <p class="text-xs text-slate-500">Documento de Presupuesto Comercial</p>
+                                <p class="text-xs font-semibold text-slate-800 mt-2">Cliente: <span id="presupuesto-cliente-nombre">Consumidor Final</span></p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm font-bold text-slate-800">PRES-00094</p>
+                                <p class="text-xs text-slate-400">Fecha: 10/09/2026</p>
+                            </div>
+                        </div>
+                        <table class="w-full text-xs text-left">
+                            <thead class="border-b border-slate-300 uppercase text-slate-500">
+                                <tr>
+                                    <th class="py-2">Producto</th>
+                                    <th class="py-2 text-center">Cant.</th>
+                                    <th class="py-2 text-right">P. Unitario</th>
+                                    <th class="py-2 text-right">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody id="presupuesto-detalle-body" class="divide-y divide-slate-100">
+                            </tbody>
+                        </table>
+                        <div class="border-t border-slate-200 pt-4 text-right">
+                            <p id="presupuesto-total-monto" class="text-lg font-bold text-slate-900">Total: $ 0</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- ================= 2. MÓDULO DE COBRANZAS ================= -->
+            <section id="sec-cobranzas" class="space-y-6 hidden">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900">Módulo de Cobranzas</h2>
+                    <p class="text-sm text-slate-500">Emisión de recibos de pago y control de caja diaria.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="md:col-span-2 bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
+                        <h3 class="font-semibold text-lg text-slate-800 flex items-center space-x-2">
+                            <i data-lucide="credit-card" class="w-5 h-5 text-red-500"></i>
+                            <span>Registrar Cobro y Emitir Recibo</span>
+                        </h3>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Cliente / Comprobante</label>
+                                <select id="cobro-cliente" class="select-cliente-dinamico w-full border border-slate-300 rounded-lg p-2.5 text-sm">
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Medio de Pago</label>
+                                <select id="cobro-medio" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm">
+                                    <option value="Efectivo">Efectivo</option>
+                                    <option value="Tarjeta de Débito">Tarjeta de Débito</option>
+                                    <option value="Transferencia Bancaria">Transferencia Bancaria</option>
+                                    <option value="Mercado Pago">Mercado Pago</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Monto a Cobrar ($)</label>
+                            <input type="number" id="cobro-monto" value="15000" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm">
+                        </div>
+
+                        <div class="pt-2">
+                            <button onclick="procesarCobroYRecibo()" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2">
+                                <i data-lucide="receipt" class="w-4 h-4"></i>
+                                <span>Procesar Cobro y Emitir Recibo</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
+                        <h3 class="font-semibold text-slate-800 flex items-center justify-between">
+                            <span>Cierre de Caja Diario</span>
+                            <span id="estado-caja-tag" class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">Abierta</span>
+                        </h3>
+                        
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between py-1 border-b">
+                                <span class="text-slate-500">Cobros del Día:</span>
+                                <span id="caja-cobros-acumulados" class="font-medium">$ 0</span>
+                            </div>
+                            <div class="flex justify-between py-2 font-bold text-base text-slate-900">
+                                <span>Total en Caja:</span>
+                                <span id="caja-total-monto">$ 0</span>
+                            </div>
+                        </div>
+
+                        <button onclick="generarCierreDiario()" class="w-full bg-slate-900 text-white py-2 rounded-lg text-sm font-semibold hover:bg-slate-800 flex items-center justify-center space-x-2">
+                            <i data-lucide="lock" class="w-4 h-4"></i>
+                            <span>Generar Cierre Diario</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="vista-recibo-emitido" class="hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                    <div class="flex justify-between items-center border-b pb-3">
+                        <h3 class="font-bold text-slate-800 flex items-center space-x-2">
+                            <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600"></i>
+                            <span>Recibo de Pago Emitido exitosamente</span>
+                        </h3>
+                        <button onclick="window.print()" class="bg-slate-800 text-white text-xs px-3 py-1.5 rounded-lg">Imprimir Recibo</button>
+                    </div>
+                    <div id="area-recibo" class="p-4 bg-slate-50 rounded-lg text-sm space-y-2 border border-slate-200">
+                        <p><strong>N° Recibo:</strong> <span id="recibo-num">REC-001</span></p>
+                        <p><strong>Cliente:</strong> <span id="recibo-cliente">-</span></p>
+                        <p><strong>Medio de Pago:</strong> <span id="recibo-medio">-</span></p>
+                        <p><strong>Monto Recibido:</strong> <span id="recibo-monto" class="text-emerald-700 font-bold">$ 0</span></p>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- ================= 3. MÓDULO DE COMPRAS (MULTI-ITEM) ================= -->
+            <section id="sec-compras" class="space-y-6 hidden">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900">Módulo de Compras</h2>
+                    <p class="text-sm text-slate-500">Gestión de órdenes de compra con múltiples insumos por proveedor.</p>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
+                    <h3 class="font-semibold text-lg text-slate-800">Generar Nueva Orden de Compra</h3>
+
+                    <!-- Proveedor -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Seleccionar Proveedor *</label>
+                            <select id="compra-proveedor" class="select-proveedor-dinamico w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Agregar Productos al Detalle -->
+                    <div class="border border-slate-200 bg-slate-50/50 rounded-xl p-4 space-y-4">
+                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Añadir Insumos / Productos a la Orden</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                            <div class="md:col-span-5">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Materia Prima / Insumo</label>
+                                <select id="compra-insumo-select" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
+                                    <option value="Harina 0000 (Bolsa 50kg)|25000">Harina 0000 (Bolsa 50kg) - $25.000</option>
+                                    <option value="Huevos Frescos (Cajón 30 dzn)|18000">Huevos Frescos (Cajón 30 dzn) - $18.000</option>
+                                    <option value="Ricotta Fresca (Balde 10kg)|14000">Ricotta Fresca (Balde 10kg) - $14.000</option>
+                                    <option value="Queso Mozzarella (Bloque 5kg)|22000">Queso Mozzarella (Bloque 5kg) - $22.000</option>
+                                    <option value="Cajas para Ravioles (Pack x100)|8500">Cajas para Ravioles (Pack x100) - $8.500</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-3">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Cantidad Unidades</label>
+                                <input type="number" id="compra-insumo-cant" value="1" min="1" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
+                            </div>
+                            <div class="md:col-span-4 flex items-end">
+                                <button type="button" onclick="agregarInsumoCompra()" class="w-full bg-slate-800 text-white rounded-lg p-2 text-sm font-semibold hover:bg-slate-900 transition flex items-center justify-center space-x-1">
+                                    <i data-lucide="plus" class="w-4 h-4"></i>
+                                    <span>Agregar Insumo</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Tabla de Items Agregados -->
+                        <table class="w-full text-sm text-left bg-white rounded-lg overflow-hidden border border-slate-200">
+                            <thead class="bg-slate-100 text-xs text-slate-600 uppercase border-b border-slate-200">
+                                <tr>
+                                    <th class="p-3">Insumo / Descripción</th>
+                                    <th class="p-3 text-center">Cant.</th>
+                                    <th class="p-3 text-right">Precio Est.</th>
+                                    <th class="p-3 text-right">Subtotal</th>
+                                    <th class="p-3 text-center">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-items-compra" class="divide-y divide-slate-100">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Total Orden Compra -->
+                    <div class="flex justify-between items-center pt-2 border-t border-slate-100">
+                        <span class="text-xs text-slate-400">Total de Insumos: <span id="compra-cant-items">0</span></span>
+                        <div class="text-right">
+                            <span class="text-xs text-slate-500 block">Total Estimado Orden</span>
+                            <span id="compra-total-monto" class="text-2xl font-bold text-slate-900">$ 0</span>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end pt-2">
+                        <button onclick="generarOrdenCompra()" class="bg-red-600 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-red-700 flex items-center space-x-2">
+                            <i data-lucide="file-plus" class="w-4 h-4"></i>
+                            <span>Emitir Orden de Compra</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                    <h4 class="font-semibold text-slate-800 mb-3 text-sm">Historial de Ordenes de Compra Emitidas</h4>
+                    <table class="w-full text-xs text-left">
+                        <thead class="bg-slate-50 uppercase text-slate-500 border-b">
+                            <tr>
+                                <th class="p-3">N° Orden</th>
+                                <th class="p-3">Proveedor</th>
+                                <th class="p-3">Detalle Insumos</th>
+                                <th class="p-3 text-right">Total $</th>
+                                <th class="p-3 text-center">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-historial-compras" class="divide-y divide-slate-100">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+
+            <!-- ================= 4. MÓDULO DE PRODUCCIÓN & STOCK ================= -->
+            <section id="sec-produccion" class="space-y-6 hidden">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900">Planificación de Producción & Stock</h2>
+                    <p class="text-sm text-slate-500">Inicie órdenes de producción y controle el consumo de materia prima.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
+                        <h3 class="font-semibold text-lg text-slate-800">Orden de Producción</h3>
+                        
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Receta / Producto a Fabricar</label>
+                            <select id="prod-receta" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm">
+                                <option value="Ravioles Ricotta|Harina 0000|15">Ravioles de Ricotta (Insumo: Harina 0000)</option>
+                                <option value="Tallarines al Huevo|Huevos Frescos|10">Tallarines al Huevo (Insumo: Huevos Frescos)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Cantidad a Producir (Kg)</label>
+                            <input type="number" id="prod-cantidad-fabricar" value="20" min="1" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm">
+                        </div>
+
+                        <button onclick="iniciarOrdenYDescontarStock()" class="w-full bg-red-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-red-700 flex items-center justify-center space-x-2">
+                            <i data-lucide="play" class="w-4 h-4"></i>
+                            <span>Iniciar Orden & Descontar Materia Prima</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
+                        <h3 class="font-semibold text-slate-800">Stock Actual de Materia Prima</h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center text-sm p-3 bg-slate-50 rounded-lg">
+                                <span class="text-slate-700 font-medium">Harina 0000</span>
+                                <span id="stock-harina" class="font-bold text-slate-900">100 kg</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm p-3 bg-slate-50 rounded-lg">
+                                <span class="text-slate-700 font-medium">Huevos Frescos</span>
+                                <span id="stock-huevos" class="font-bold text-slate-900">80 dzn</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-3">
+                    <h4 class="font-semibold text-slate-800 text-sm">Ordenes de Producción en Curso</h4>
+                    <table class="w-full text-xs text-left">
+                        <thead class="bg-slate-50 uppercase text-slate-500 border-b">
+                            <tr>
+                                <th class="p-2">Lote</th>
+                                <th class="p-2">Producto</th>
+                                <th class="p-2">Cantidad</th>
+                                <th class="p-2 text-center">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-ordenes-produccion" class="divide-y divide-slate-100">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+
+            <!-- ================= 5. MÓDULO DE GESTIÓN DE CLIENTES ================= -->
+            <section id="sec-clientes" class="space-y-6 hidden">
+                <div id="vista-listado-clientes" class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900">Clientes Registrados</h2>
+                            <p class="text-sm text-slate-500">Listado general de clientes.</p>
+                        </div>
+                        <button onclick="mostrarSubvistaClientes('cargar-cliente')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2 shadow-sm transition">
+                            <i data-lucide="user-plus" class="w-4 h-4"></i>
+                            <span>Cargar Nuevo Cliente</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <table class="w-full text-xs text-left">
+                            <thead class="bg-slate-50 uppercase text-slate-500 border-b border-slate-200">
+                                <tr>
+                                    <th class="p-3">Nombre / Razón Social</th>
+                                    <th class="p-3">CUIT / DNI</th>
+                                    <th class="p-3">Tipo Cliente</th>
+                                    <th class="p-3">Dirección Completa</th>
+                                    <th class="p-3">Teléfono</th>
+                                    <th class="p-3">Email</th>
+                                    <th class="p-3">Condición IVA</th>
+                                    <th class="p-3 text-right">Límite Crédito</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-lista-clientes" class="divide-y divide-slate-100">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="vista-cargar-cliente" class="space-y-6 hidden">
+                    <div class="flex items-center space-x-3">
+                        <button type="button" onclick="mostrarSubvistaClientes('listado')" class="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition flex items-center justify-center">
+                            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                        </button>
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900">Cargar Nuevo Cliente</h2>
+                            <p class="text-sm text-slate-500">Complete los datos generales y la ubicación geográfica del cliente.</p>
+                        </div>
+                    </div>
+
+                    <div class="max-w-3xl bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre / Razón Social *</label>
+                                <input type="text" id="cli-nombre" placeholder="Ej: Trattoria Bella Italia" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">CUIT / DNI *</label>
+                                <input type="text" id="cli-cuit" placeholder="30-12345678-9" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Provincia</label>
+                                <select id="cli-provincia" onchange="cargarLocalidadesCascada('cli')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                    <option value="">-- Seleccione Provincia --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Localidad</label>
+                                <select id="cli-localidad" onchange="cargarCallesCascada('cli')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none" disabled>
+                                    <option value="">-- Seleccione Localidad --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Calle</label>
+                                <select id="cli-calle" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none" disabled>
+                                    <option value="">-- Seleccione Calle --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Altura / Número</label>
+                                <input type="text" id="cli-altura" placeholder="Ej: 450 o Piso 2 A" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Teléfono</label>
+                                <input type="text" id="cli-telefono" placeholder="(011) 4567-8900" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Correo Electrónico (Email)</label>
+                                <input type="email" id="cli-email" placeholder="contacto@cliente.com" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Condición Frente al IVA</label>
+                                <select id="cli-iva" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                    <option>Responsable Inscripto</option>
+                                    <option>Monotributo</option>
+                                    <option>Consumidor Final</option>
+                                    <option>Exento</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo de Cliente</label>
+                                <select id="cli-tipo" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                    <option value="Mayorista">Mayorista (Restaurante / Hotel)</option>
+                                    <option value="Mostrador">Consumidor Final (Mostrador)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Límite de Crédito Permitido ($)</label>
+                                <input type="number" id="cli-limite" placeholder="50000" value="50000" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                            <button type="button" onclick="mostrarSubvistaClientes('listado')" class="bg-slate-100 text-slate-600 px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-200">Cancelar</button>
+                            <button type="button" onclick="guardarNuevoCliente()" class="bg-red-600 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-red-700 flex items-center space-x-2">
+                                <i data-lucide="save" class="w-4 h-4"></i>
+                                <span>Guardar Cliente</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- ================= 6. MÓDULO DE PROVEEDORES ================= -->
+            <section id="sec-proveedores" class="space-y-6 hidden">
+                <div id="vista-listado-proveedores" class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900">Proveedores Registrados</h2>
+                            <p class="text-sm text-slate-500">Gestión de proveedores e insumos.</p>
+                        </div>
+                        <button onclick="mostrarSubvistaProveedores('cargar-proveedor')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2 shadow-sm transition">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Cargar Nuevo Proveedor</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <table class="w-full text-xs text-left">
+                            <thead class="bg-slate-50 uppercase text-slate-500 border-b border-slate-200">
+                                <tr>
+                                    <th class="p-3">Razón Social</th>
+                                    <th class="p-3">CUIT</th>
+                                    <th class="p-3">Rubro / Insumos</th>
+                                    <th class="p-3">Dirección Completa</th>
+                                    <th class="p-3">Teléfono</th>
+                                    <th class="p-3">Email</th>
+                                    <th class="p-3">Condición IVA</th>
+                                    <th class="p-3 text-center">Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-lista-proveedores" class="divide-y divide-slate-100">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="vista-cargar-proveedor" class="space-y-6 hidden">
+                    <div class="flex items-center space-x-3">
+                        <button type="button" onclick="mostrarSubvistaProveedores('listado')" class="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition flex items-center justify-center">
+                            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                        </button>
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900">Cargar Nuevo Proveedor</h2>
+                            <p class="text-sm text-slate-500">Ingrese los datos para dar de alta a un proveedor.</p>
+                        </div>
+                    </div>
+
+                    <div class="max-w-3xl bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Razón Social / Nombre Comercial *</label>
+                                <input type="text" id="prov-nombre" placeholder="Ej: Lácteos La Serenísima" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">CUIT *</label>
+                                <input type="text" id="prov-cuit" placeholder="30-11223344-5" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Provincia</label>
+                                <select id="prov-provincia" onchange="cargarLocalidadesCascada('prov')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                    <option value="">-- Seleccione Provincia --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Localidad</label>
+                                <select id="prov-localidad" onchange="cargarCallesCascada('prov')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none" disabled>
+                                    <option value="">-- Seleccione Localidad --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Calle</label>
+                                <select id="prov-calle" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none" disabled>
+                                    <option value="">-- Seleccione Calle --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Altura / Número</label>
+                                <input type="text" id="prov-altura" placeholder="Ej: 1234" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Teléfono</label>
+                                <input type="text" id="prov-telefono" placeholder="(011) 4000-0000" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Correo Electrónico</label>
+                                <input type="email" id="prov-email" placeholder="contacto@proveedor.com" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Condición Frente al IVA</label>
+                                <select id="prov-iva" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                    <option>Responsable Inscripto</option>
+                                    <option>Monotributo</option>
+                                    <option>Exento</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Rubro / Insumos Suministrados</label>
+                                <input type="text" id="prov-rubro" placeholder="Ej: Harinas, Quesos, Embalajes" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                            <button type="button" onclick="mostrarSubvistaProveedores('listado')" class="bg-slate-100 text-slate-600 px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-200">Cancelar</button>
+                            <button type="button" onclick="guardarNuevoProveedor()" class="bg-red-600 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-red-700 flex items-center space-x-2">
+                                <i data-lucide="save" class="w-4 h-4"></i>
+                                <span>Guardar Proveedor</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- ================= 7. MÓDULO DE EMPLEADOS ================= -->
+            <section id="sec-empleados" class="space-y-6 hidden">
+                <div id="vista-listado-empleados" class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900">Nómina de Empleados</h2>
+                            <p class="text-sm text-slate-500">Gestión del personal de la empresa.</p>
+                        </div>
+                        <button onclick="mostrarSubvistaEmpleados('cargar-empleado')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2 shadow-sm transition">
+                            <i data-lucide="user-plus" class="w-4 h-4"></i>
+                            <span>Registrar Nuevo Empleado</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <table class="w-full text-xs text-left">
+                            <thead class="bg-slate-50 uppercase text-slate-500 border-b border-slate-200">
+                                <tr>
+                                    <th class="p-3">Legajo</th>
+                                    <th class="p-3">Nombre y Apellido</th>
+                                    <th class="p-3">CUIL / DNI</th>
+                                    <th class="p-3">Cargo</th>
+                                    <th class="p-3">Dirección Completa</th>
+                                    <th class="p-3">Teléfono</th>
+                                    <th class="p-3">Email</th>
+                                    <th class="p-3">Fecha Nacimiento</th>
+                                    <th class="p-3">Fecha Ingreso</th>
+                                    <th class="p-3 text-right">Sueldo Básico</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-lista-empleados" class="divide-y divide-slate-100">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="vista-cargar-empleado" class="space-y-6 hidden">
+                    <div class="flex items-center space-x-3">
+                        <button type="button" onclick="mostrarSubvistaEmpleados('listado')" class="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition flex items-center justify-center">
+                            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                        </button>
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900">Alta de Empleado</h2>
+                            <p class="text-sm text-slate-500">Ingrese la información personal y laboral del empleado.</p>
+                        </div>
+                    </div>
+
+                    <div class="max-w-3xl bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre *</label>
+                                <input type="text" id="emp-nombre" placeholder="Ej: Mario" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Apellido *</label>
+                                <input type="text" id="emp-apellido" placeholder="Ej: Rossi" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">CUIL / DNI *</label>
+                                <input type="text" id="emp-cuil" placeholder="20-30123456-7" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha de Nacimiento *</label>
+                                <input type="date" id="emp-fecha-nacimiento" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Provincia</label>
+                                <select id="emp-provincia" onchange="cargarLocalidadesCascada('emp')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                    <option value="">-- Seleccione Provincia --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Localidad</label>
+                                <select id="emp-localidad" onchange="cargarCallesCascada('emp')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none" disabled>
+                                    <option value="">-- Seleccione Localidad --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Calle</label>
+                                <select id="emp-calle" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none" disabled>
+                                    <option value="">-- Seleccione Calle --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Altura / Número</label>
+                                <input type="text" id="emp-altura" placeholder="Ej: 1234" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Teléfono</label>
+                                <input type="text" id="emp-telefono" placeholder="(011) 15-0000-0000" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Correo Electrónico</label>
+                                <input type="email" id="emp-email" placeholder="empleado@pastas.com" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Cargo / Puesto de Trabajo</label>
+                                <select id="emp-cargo" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                    <option>Maestro Pastero (Producción)</option>
+                                    <option>Ayudante de Cocina</option>
+                                    <option>Atención al Cliente / Mostrador</option>
+                                    <option>Administrador / Contador</option>
+                                    <option>Repartidor / Logística</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha de Ingreso</label>
+                                <input type="date" id="emp-fecha" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Sueldo Básico ($)</label>
+                                <input type="number" id="emp-sueldo" placeholder="400000" value="400000" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                            <button type="button" onclick="mostrarSubvistaEmpleados('listado')" class="bg-slate-100 text-slate-600 px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-200">Cancelar</button>
+                            <button type="button" onclick="guardarNuevoEmpleado()" class="bg-red-600 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-red-700 flex items-center space-x-2">
+                                <i data-lucide="save" class="w-4 h-4"></i>
+                                <span>Registrar Empleado</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- SCRIPT DE HERENCIA Y LÓGICA DEL SISTEMA -->
+    <script>
+        lucide.createIcons();
+
+        // ==========================================
+        // 1. MODELO DE TABLAS GEOGRÁFICAS
+        // ==========================================
+        class Provincia {
+            constructor(id_provincia, nombre) {
+                this.id_provincia = id_provincia;
+                this.nombre = nombre;
+            }
+        }
+
+        class Localidad {
+            constructor(id_localidad, nombre, id_provincia) {
+                this.id_localidad = id_localidad;
+                this.nombre = nombre;
+                this.id_provincia = id_provincia;
+            }
+        }
+
+        class Calle {
+            constructor(id_calle, nombre, id_localidad) {
+                this.id_calle = id_calle;
+                this.nombre = nombre;
+                this.id_localidad = id_localidad;
+            }
+        }
+
+        const dbProvincias = [
+            new Provincia(1, 'Buenos Aires'),
+            new Provincia(2, 'Santa Fe'),
+            new Provincia(3, 'Córdoba')
+        ];
+
+        const dbLocalidades = [
+            new Localidad(101, 'Trenque Lauquen', 1),
+            new Localidad(102, 'La Plata', 1),
+            new Localidad(103, 'Rosario', 2),
+            new Localidad(104, 'Córdoba Capital', 3)
+        ];
+
+        const dbCalles = [
+            new Calle(1001, 'Av. Villegas', 101),
+            new Calle(1002, 'Calle 9 de Julio', 101),
+            new Calle(1003, 'Calle 7', 102),
+            new Calle(1004, 'Av. Pellegrini', 103),
+            new Calle(1005, 'Av. Colón', 104)
+        ];
+
+        // ==========================================
+        // 2. MODELO DE PERSONAS Y HERENCIA (OOP)
+        // ==========================================
+        class Persona {
+            constructor(cuit_cuil, nombre, calleObj, altura, telefono, email, condicion_iva) {
+                this.cuit_cuil = cuit_cuil;
+                this.nombre = nombre;
+                this.calleObj = calleObj;
+                this.altura = altura;
+                this.telefono = telefono;
+                this.email = email;
+                this.condicion_iva = condicion_iva || 'Consumidor Final';
+            }
+
+            get direccionCompleta() {
+                if (!this.calleObj) return this.altura || '-';
+                const loc = dbLocalidades.find(l => l.id_localidad === this.calleObj.id_localidad);
+                const prov = loc ? dbProvincias.find(p => p.id_provincia === loc.id_provincia) : null;
+                const nomLoc = loc ? loc.nombre : '';
+                const nomProv = prov ? prov.nombre : '';
+                return `${this.calleObj.nombre} ${this.altura || ''}, ${nomLoc} (${nomProv})`.trim();
+            }
+        }
+
+        class Cliente extends Persona {
+            constructor(cuit_cuil, nombre, calleObj, altura, telefono, email, condicion_iva, tipo_cliente, limite_credito) {
+                super(cuit_cuil, nombre, calleObj, altura, telefono, email, condicion_iva);
+                this.tipo_cliente = tipo_cliente;
+                this.limite_credito = limite_credito;
+            }
+        }
+
+        class Proveedor extends Persona {
+            constructor(cuit_cuil, nombre, calleObj, altura, telefono, email, condicion_iva, rubro) {
+                super(cuit_cuil, nombre, calleObj, altura, telefono, email, condicion_iva);
+                this.rubro = rubro;
+            }
+        }
+
+        class Empleado extends Persona {
+            constructor(cuit_cuil, nombre, apellido, fecha_nacimiento, calleObj, altura, telefono, email, legajo, cargo, fecha_ingreso, sueldo) {
+                super(cuit_cuil, nombre, calleObj, altura, telefono, email, 'Exento');
+                this.apellido = apellido;
+                this.fecha_nacimiento = fecha_nacimiento;
+                this.legajo = legajo;
+                this.cargo = cargo;
+                this.fecha_ingreso = fecha_ingreso;
+                this.sueldo = sueldo;
+            }
+
+            get nombreCompleto() {
+                return `${this.nombre} ${this.apellido}`;
+            }
+        }
+
+        // ==========================================
+        // 3. INSTANCIAS DE PRUEBA INICIALES
+        // ==========================================
+        const listaClientes = [
+            new Cliente('30-71234567-8', 'Hotel Plaza S.A.', dbCalles[0], '450', '(02392) 456789', 'compras@hotelplaza.com', 'Responsable Inscripto', 'Mayorista', 150000),
+            new Cliente('30-88991122-4', 'Restaurante Don Mosa', dbCalles[2], '890', '11-4567-1234', 'donmosa@gmail.com', 'Responsable Inscripto', 'Mayorista', 80000)
+        ];
+
+        const listaProveedores = [
+            new Proveedor('30-50123456-7', 'Molinos Cañuelas S.A.', dbCalles[3], '100', '(0341) 4321000', 'ventas@molinos.com', 'Responsable Inscripto', 'Harinas y Sémolas'),
+            new Proveedor('30-61239874-2', 'Distribuidora Avícola Sur', dbCalles[1], '1200', '(02392) 489112', 'pedidos@avicolasur.com', 'Responsable Inscripto', 'Huevos Frescos')
+        ];
+
+        const listaEmpleados = [
+            new Empleado('20-33445566-9', 'Carlos', 'Gómez', '1988-05-14', dbCalles[0], '1234', '(02392) 15-443322', 'cgomez@pastas.com', 'EMP-001', 'Maestro Pastero', '2021-03-15', 450000),
+            new Empleado('27-38990011-4', 'Laura', 'Rodríguez', '1995-11-20', dbCalles[1], '567', '(02392) 15-887766', 'lrodriguez@pastas.com', 'EMP-002', 'Cajera / Mostrador', '2022-08-01', 380000)
+        ];
+
+        // ESTADO GENERAL
+        let itemsPedidoActual = [];
+        let itemsCompraActual = []; // Para Ordenes de Compra Multi-Item
+        let totalCajaAcumulado = 0;
+        let numReciboContador = 1;
+        let numOrdenCompraContador = 101;
+        let numLoteContador = 1;
+        let numPedidoContador = 1043;
+        let numEmpleadoContador = 3;
+        let stockMateriaPrima = { harina: 100, huevos: 80 };
+
+        // ==========================================
+        // 4. INICIALIZACIÓN Y RENDERIZADO
+        // ==========================================
+        window.onload = function() {
+            inicializarCombosUbicacion();
+            renderizarClientesUI();
+            renderizarProveedoresUI();
+            renderizarEmpleadosUI();
+        };
+
+        function inicializarCombosUbicacion() {
+            const prefijos = ['cli', 'prov', 'emp'];
+            prefijos.forEach(prefijo => {
+                const selectProv = document.getElementById(`${prefijo}-provincia`);
+                if (selectProv) {
+                    selectProv.innerHTML = '<option value="">-- Seleccione Provincia --</option>';
+                    dbProvincias.forEach(p => {
+                        const opt = document.createElement('option');
+                        opt.value = p.id_provincia;
+                        opt.innerText = p.nombre;
+                        selectProv.appendChild(opt);
+                    });
+                }
+            });
+        }
+
+        function cargarLocalidadesCascada(prefijo) {
+            const idProv = parseInt(document.getElementById(`${prefijo}-provincia`).value);
+            const selectLoc = document.getElementById(`${prefijo}-localidad`);
+            const selectCalle = document.getElementById(`${prefijo}-calle`);
+
+            selectLoc.innerHTML = '<option value="">-- Seleccione Localidad --</option>';
+            selectCalle.innerHTML = '<option value="">-- Seleccione Calle --</option>';
+            selectCalle.disabled = true;
+
+            if (!idProv) {
+                selectLoc.disabled = true;
+                return;
+            }
+
+            const locsFiltradas = dbLocalidades.filter(l => l.id_provincia === idProv);
+            locsFiltradas.forEach(l => {
+                const opt = document.createElement('option');
+                opt.value = l.id_localidad;
+                opt.innerText = l.nombre;
+                selectLoc.appendChild(opt);
+            });
+            selectLoc.disabled = false;
+        }
+
+        function cargarCallesCascada(prefijo) {
+            const idLoc = parseInt(document.getElementById(`${prefijo}-localidad`).value);
+            const selectCalle = document.getElementById(`${prefijo}-calle`);
+
+            selectCalle.innerHTML = '<option value="">-- Seleccione Calle --</option>';
+
+            if (!idLoc) {
+                selectCalle.disabled = true;
+                return;
+            }
+
+            const callesFiltradas = dbCalles.filter(c => c.id_localidad === idLoc);
+            callesFiltradas.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id_calle;
+                opt.innerText = c.nombre;
+                selectCalle.appendChild(opt);
+            });
+            selectCalle.disabled = false;
+        }
+
+        function renderizarClientesUI() {
+            const tbody = document.getElementById('tabla-lista-clientes');
+            tbody.innerHTML = '';
+            listaClientes.forEach(cli => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50';
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-slate-800">${cli.nombre}</td>
+                    <td class="p-3 font-mono">${cli.cuit_cuil}</td>
+                    <td class="p-3"><span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-medium">${cli.tipo_cliente}</span></td>
+                    <td class="p-3">${cli.direccionCompleta}</td>
+                    <td class="p-3">${cli.telefono || '-'}</td>
+                    <td class="p-3 text-slate-600">${cli.email || '-'}</td>
+                    <td class="p-3">${cli.condicion_iva}</td>
+                    <td class="p-3 text-right font-medium text-slate-900">$ ${cli.limite_credito.toLocaleString()}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            const selectsCliente = document.querySelectorAll('.select-cliente-dinamico');
+            selectsCliente.forEach(select => {
+                select.innerHTML = '<option value="">-- Seleccionar de la lista --</option>';
+                listaClientes.forEach(cli => {
+                    const opt = document.createElement('option');
+                    opt.value = `${cli.nombre}|${cli.tipo_cliente}|${cli.nombre.toLowerCase().includes('hotel') ? 'hotel' : 'normal'}`;
+                    opt.innerText = `${cli.nombre} (${cli.tipo_cliente})`;
+                    select.appendChild(opt);
+                });
+                const optOtro = document.createElement('option');
+                optOtro.value = 'OTRO';
+                optOtro.innerText = '— Registrar o ingresar manualmente —';
+                select.appendChild(optOtro);
+            });
+        }
+
+        function renderizarProveedoresUI() {
+            const tbody = document.getElementById('tabla-lista-proveedores');
+            tbody.innerHTML = '';
+            listaProveedores.forEach(prov => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50';
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-slate-800">${prov.nombre}</td>
+                    <td class="p-3 font-mono">${prov.cuit_cuil}</td>
+                    <td class="p-3">${prov.rubro || '-'}</td>
+                    <td class="p-3">${prov.direccionCompleta}</td>
+                    <td class="p-3">${prov.telefono || '-'}</td>
+                    <td class="p-3 text-slate-600">${prov.email || '-'}</td>
+                    <td class="p-3">${prov.condicion_iva}</td>
+                    <td class="p-3 text-center"><span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-medium">Activo</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            const selectsProveedor = document.querySelectorAll('.select-proveedor-dinamico');
+            selectsProveedor.forEach(select => {
+                select.innerHTML = '';
+                listaProveedores.forEach(prov => {
+                    const opt = document.createElement('option');
+                    opt.value = prov.nombre;
+                    opt.innerText = prov.nombre;
+                    select.appendChild(opt);
+                });
+            });
+        }
+
+        function renderizarEmpleadosUI() {
+            const tbody = document.getElementById('tabla-lista-empleados');
+            tbody.innerHTML = '';
+            listaEmpleados.forEach(emp => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50';
+                tr.innerHTML = `
+                    <td class="p-3 font-mono font-bold text-slate-900">${emp.legajo}</td>
+                    <td class="p-3 font-semibold text-slate-800">${emp.nombreCompleto}</td>
+                    <td class="p-3 font-mono">${emp.cuit_cuil}</td>
+                    <td class="p-3"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-medium">${emp.cargo}</span></td>
+                    <td class="p-3">${emp.direccionCompleta}</td>
+                    <td class="p-3">${emp.telefono || '-'}</td>
+                    <td class="p-3 text-slate-600">${emp.email || '-'}</td>
+                    <td class="p-3">${emp.fecha_nacimiento || '-'}</td>
+                    <td class="p-3">${emp.fecha_ingreso || '-'}</td>
+                    <td class="p-3 text-right font-medium text-slate-900">$ ${emp.sueldo.toLocaleString()}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- NAVEGACIÓN Y MÓDULOS ---
+        function switchModulo(moduloName) {
+            const modulos = ['ventas', 'cobranzas', 'compras', 'produccion', 'clientes', 'proveedores', 'empleados'];
+            modulos.forEach(mod => {
+                const sec = document.getElementById(`sec-${mod}`);
+                const btn = document.getElementById(`tab-${mod}`);
+                if (mod === moduloName) {
+                    sec.classList.remove('hidden');
+                    btn.classList.add('active-tab');
+                } else {
+                    sec.classList.add('hidden');
+                    btn.classList.remove('active-tab');
+                }
+            });
+        }
+
+        function mostrarSubvistaVentas(subvista) {
+            document.getElementById('vista-listado-ventas').classList.add('hidden');
+            document.getElementById('vista-nuevo-pedido').classList.add('hidden');
+            document.getElementById('vista-presupuesto').classList.add('hidden');
+            const vistaDestino = document.getElementById(`vista-${subvista}`);
+            if (vistaDestino) vistaDestino.classList.remove('hidden');
+        }
+
+        function volverAlListadoVentas() {
+            document.getElementById('vista-nuevo-pedido').classList.add('hidden');
+            document.getElementById('vista-presupuesto').classList.add('hidden');
+            document.getElementById('vista-listado-ventas').classList.remove('hidden');
+        }
+
+        function mostrarSubvistaClientes(subvista) {
+            document.getElementById('vista-listado-clientes').classList.add('hidden');
+            document.getElementById('vista-cargar-cliente').classList.add('hidden');
+            if (subvista === 'listado') document.getElementById('vista-listado-clientes').classList.remove('hidden');
+            if (subvista === 'cargar-cliente') document.getElementById('vista-cargar-cliente').classList.remove('hidden');
+        }
+
+        function mostrarSubvistaProveedores(subvista) {
+            document.getElementById('vista-listado-proveedores').classList.add('hidden');
+            document.getElementById('vista-cargar-proveedor').classList.add('hidden');
+            if (subvista === 'listado') document.getElementById('vista-listado-proveedores').classList.remove('hidden');
+            if (subvista === 'cargar-proveedor') document.getElementById('vista-cargar-proveedor').classList.remove('hidden');
+        }
+
+        function mostrarSubvistaEmpleados(subvista) {
+            document.getElementById('vista-listado-empleados').classList.add('hidden');
+            document.getElementById('vista-cargar-empleado').classList.add('hidden');
+            if (subvista === 'listado') document.getElementById('vista-listado-empleados').classList.remove('hidden');
+            if (subvista === 'cargar-empleado') document.getElementById('vista-cargar-empleado').classList.remove('hidden');
+        }
+
+        // --- ALTA DE OBJETOS ---
+        function obtenerCalleSeleccionada(prefijo) {
+            const idCalle = parseInt(document.getElementById(`${prefijo}-calle`).value);
+            return dbCalles.find(c => c.id_calle === idCalle) || null;
+        }
+
+        function guardarNuevoCliente() {
+            const nombre = document.getElementById('cli-nombre').value.trim();
+            const cuit = document.getElementById('cli-cuit').value.trim();
+            const calleObj = obtenerCalleSeleccionada('cli');
+            const altura = document.getElementById('cli-altura').value.trim();
+            const telefono = document.getElementById('cli-telefono').value.trim();
+            const email = document.getElementById('cli-email').value.trim();
+            const iva = document.getElementById('cli-iva').value;
+            const tipo = document.getElementById('cli-tipo').value;
+            const limite = parseFloat(document.getElementById('cli-limite').value) || 0;
+
+            if (!nombre || !cuit) {
+                alert('Por favor complete la Razón Social / Nombre y CUIT del cliente.');
+                return;
+            }
+
+            const nuevoCliente = new Cliente(cuit, nombre, calleObj, altura, telefono, email, iva, tipo, limite);
+            listaClientes.unshift(nuevoCliente);
+
+            renderizarClientesUI();
+            alert(`¡Cliente "${nombre}" guardado con éxito!`);
+            mostrarSubvistaClientes('listado');
+        }
+
+        function guardarNuevoProveedor() {
+            const nombre = document.getElementById('prov-nombre').value.trim();
+            const cuit = document.getElementById('prov-cuit').value.trim();
+            const calleObj = obtenerCalleSeleccionada('prov');
+            const altura = document.getElementById('prov-altura').value.trim();
+            const telefono = document.getElementById('prov-telefono').value.trim();
+            const email = document.getElementById('prov-email').value.trim();
+            const iva = document.getElementById('prov-iva').value;
+            const rubro = document.getElementById('prov-rubro').value.trim();
+
+            if (!nombre || !cuit) {
+                alert('Por favor complete la Razón Social y CUIT del proveedor.');
+                return;
+            }
+
+            const nuevoProveedor = new Proveedor(cuit, nombre, calleObj, altura, telefono, email, iva, rubro);
+            listaProveedores.unshift(nuevoProveedor);
+
+            renderizarProveedoresUI();
+            alert(`¡Proveedor "${nombre}" guardado con éxito!`);
+            mostrarSubvistaProveedores('listado');
+        }
+
+        function guardarNuevoEmpleado() {
+            const nombre = document.getElementById('emp-nombre').value.trim();
+            const apellido = document.getElementById('emp-apellido').value.trim();
+            const cuil = document.getElementById('emp-cuil').value.trim();
+            const fechaNacimiento = document.getElementById('emp-fecha-nacimiento').value;
+            const calleObj = obtenerCalleSeleccionada('emp');
+            const altura = document.getElementById('emp-altura').value.trim();
+            const telefono = document.getElementById('emp-telefono').value.trim();
+            const email = document.getElementById('emp-email').value.trim();
+            const cargo = document.getElementById('emp-cargo').value;
+            const fecha = document.getElementById('emp-fecha').value || '2026-09-10';
+            const sueldo = parseFloat(document.getElementById('emp-sueldo').value) || 0;
+
+            if (!nombre || !apellido || !cuil || !fechaNacimiento) {
+                alert('Por favor complete Nombre, Apellido, CUIL y Fecha de Nacimiento del empleado.');
+                return;
+            }
+
+            const legajo = `EMP-00${numEmpleadoContador++}`;
+            const nuevoEmpleado = new Empleado(cuil, nombre, apellido, fechaNacimiento, calleObj, altura, telefono, email, legajo, cargo, fecha, sueldo);
+            listaEmpleados.unshift(nuevoEmpleado);
+
+            renderizarEmpleadosUI();
+            alert(`¡Empleado "${nombre} ${apellido}" registrado con éxito bajo legajo ${legajo}!`);
+            mostrarSubvistaEmpleados('listado');
+        }
+
+        // --- MÓDULO DE COMPRAS (MULTI-ITEM) ---
+        function agregarInsumoCompra() {
+            const insumoVal = document.getElementById('compra-insumo-select').value;
+            const cantidad = parseInt(document.getElementById('compra-insumo-cant').value);
+
+            if (!cantidad || cantidad <= 0) return alert('Ingrese una cantidad válida.');
+
+            const [nombreInsumo, precioStr] = insumoVal.split('|');
+            const precioUnitario = parseFloat(precioStr);
+            const subtotal = precioUnitario * cantidad;
+
+            itemsCompraActual.push({ id: Date.now(), nombreInsumo, cantidad, precioUnitario, subtotal });
+            renderizarTablaCompra();
+        }
+
+        function eliminarItemCompra(id) {
+            itemsCompraActual = itemsCompraActual.filter(item => item.id !== id);
+            renderizarTablaCompra();
+        }
+
+        function renderizarTablaCompra() {
+            const tbody = document.getElementById('tabla-items-compra');
+            tbody.innerHTML = '';
+            let total = 0;
+
+            itemsCompraActual.forEach(item => {
+                total += item.subtotal;
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50';
+                tr.innerHTML = `
+                    <td class="p-3 font-medium text-slate-800">${item.nombreInsumo}</td>
+                    <td class="p-3 text-center">${item.cantidad} u.</td>
+                    <td class="p-3 text-right">$ ${item.precioUnitario.toLocaleString()}</td>
+                    <td class="p-3 text-right font-semibold">$ ${item.subtotal.toLocaleString()}</td>
+                    <td class="p-3 text-center">
+                        <button type="button" onclick="eliminarItemCompra(${item.id})" class="text-red-500 hover:text-red-700">
+                            <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('compra-cant-items').innerText = itemsCompraActual.length;
+            document.getElementById('compra-total-monto').innerText = `$ ${total.toLocaleString()}`;
+            lucide.createIcons();
+        }
+
+        function generarOrdenCompra() {
+            const proveedor = document.getElementById('compra-proveedor').value;
+
+            if (!proveedor) return alert('Por favor seleccione un proveedor.');
+            if (itemsCompraActual.length === 0) return alert('Agregue al menos un insumo a la Orden de Compra.');
+
+            const totalOrden = itemsCompraActual.reduce((acc, i) => acc + i.subtotal, 0);
+            const detalleResumido = itemsCompraActual.map(i => `${i.cantidad}x ${i.nombreInsumo.split('(')[0].trim()}`).join(', ');
+
+            const tbody = document.getElementById('tabla-historial-compras');
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-slate-50';
+            tr.innerHTML = `
+                <td class="p-3 font-semibold font-mono">OC-${numOrdenCompraContador++}</td>
+                <td class="p-3 font-medium text-slate-800">${proveedor}</td>
+                <td class="p-3 text-slate-600">${detalleResumido}</td>
+                <td class="p-3 text-right font-bold text-slate-900">$ ${totalOrden.toLocaleString()}</td>
+                <td class="p-3 text-center"><span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-xs font-semibold">Enviada</span></td>
+            `;
+            tbody.prepend(tr);
+
+            alert(`¡Orden de Compra emitida exitosamente a ${proveedor}!`);
+            itemsCompraActual = [];
+            renderizarTablaCompra();
+        }
+
+        // --- VENTAS & COBRANZAS ---
+        function seleccionarClientePedido() {
+            const select = document.getElementById('select-cliente-pedido');
+            const val = select.value;
+            const inputManual = document.getElementById('input-nombre-cliente-pedido');
+            const alertaMorosidad = document.getElementById('alerta-morosidad');
+
+            if (!val || val === 'OTRO') {
+                inputManual.value = '';
+                if (val === 'OTRO') inputManual.focus();
+                alertaMorosidad.classList.add('hidden');
+                return;
+            }
+
+            const [nombre, tipo, codigoAlert] = val.split('|');
+            inputManual.value = nombre;
+            if (codigoAlert === 'hotel') alertaMorosidad.classList.remove('hidden');
+            else alertaMorosidad.classList.add('hidden');
+        }
+
+        function agregarProductoPedido() {
+            const prodSelect = document.getElementById('prod-select').value;
+            const cantidad = parseInt(document.getElementById('prod-cant').value);
+
+            if (!cantidad || cantidad <= 0) return alert('Ingrese una cantidad válida.');
+
+            const [nombre, precioStr] = prodSelect.split('|');
+            const precioUnitario = parseFloat(precioStr);
+            const subtotal = precioUnitario * cantidad;
+
+            itemsPedidoActual.push({ id: Date.now(), nombre, cantidad, precioUnitario, subtotal });
+            renderizarTablaPedido();
+        }
+
+        function eliminarItemPedido(id) {
+            itemsPedidoActual = itemsPedidoActual.filter(item => item.id !== id);
+            renderizarTablaPedido();
+        }
+
+        function renderizarTablaPedido() {
+            const tbody = document.getElementById('tabla-items-pedido');
+            tbody.innerHTML = '';
+            let total = 0;
+
+            itemsPedidoActual.forEach(item => {
+                total += item.subtotal;
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50';
+                tr.innerHTML = `
+                    <td class="p-3 font-medium text-slate-800">${item.nombre}</td>
+                    <td class="p-3 text-center">${item.cantidad}</td>
+                    <td class="p-3 text-right">$ ${item.precioUnitario.toLocaleString()}</td>
+                    <td class="p-3 text-right font-semibold">$ ${item.subtotal.toLocaleString()}</td>
+                    <td class="p-3 text-center">
+                        <button type="button" onclick="eliminarItemPedido(${item.id})" class="text-red-500 hover:text-red-700">
+                            <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('cant-items-num').innerText = itemsPedidoActual.length;
+            document.getElementById('total-pedido-monto').innerText = `$ ${total.toLocaleString()}`;
+            lucide.createIcons();
+        }
+
+        function obtenerNombreClienteFormulario() {
+            const valInput = document.getElementById('input-nombre-cliente-pedido').value.trim();
+            const valSelect = document.getElementById('select-cliente-pedido').value;
+
+            if (valInput) return valInput;
+            if (valSelect && valSelect !== 'OTRO') return valSelect.split('|')[0];
+            return '';
+        }
+
+        function confirmarPedido() {
+            const nombreCliente = obtenerNombreClienteFormulario();
+            if (!nombreCliente) return alert('Seleccione o ingrese el nombre del cliente.');
+            if (itemsPedidoActual.length === 0) return alert('Añada al menos un producto.');
+
+            const total = itemsPedidoActual.reduce((acc, i) => acc + i.subtotal, 0);
+            const tbody = document.getElementById('tabla-pedidos-registrados');
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-slate-50';
+            tr.innerHTML = `
+                <td class="px-6 py-4 font-semibold text-slate-900">PED-${numPedidoContador++}</td>
+                <td class="px-6 py-4">${nombreCliente}</td>
+                <td class="px-6 py-4"><span class="text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded">Venta</span></td>
+                <td class="px-6 py-4 text-right font-medium">$ ${total.toLocaleString()}</td>
+                <td class="px-6 py-4 text-center"><span class="px-2.5 py-1 bg-amber-100 text-amber-800 text-xs font-semibold rounded-full">Pendiente</span></td>
+                <td class="px-6 py-4 text-center">
+                    <button type="button" onclick="mostrarSubvistaVentas('presupuesto')" class="text-red-600 hover:text-red-800 text-xs font-semibold">Ver Presupuesto</button>
+                </td>
+            `;
+            tbody.prepend(tr);
+
+            alert(`¡Pedido para "${nombreCliente}" registrado!`);
+            itemsPedidoActual = [];
+            document.getElementById('input-nombre-cliente-pedido').value = '';
+            renderizarTablaPedido();
+            volverAlListadoVentas();
+        }
+
+        function emitirPresupuestoDesdePedido() {
+            const nombreCliente = obtenerNombreClienteFormulario();
+            if (!nombreCliente || itemsPedidoActual.length === 0) return alert('Verifique cliente y productos en la orden.');
+
+            document.getElementById('presupuesto-cliente-nombre').innerText = nombreCliente;
+            const tbody = document.getElementById('presupuesto-detalle-body');
+            tbody.innerHTML = '';
+            let total = 0;
+
+            itemsPedidoActual.forEach(item => {
+                total += item.subtotal;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="py-2">${item.nombre}</td>
+                    <td class="py-2 text-center">${item.cantidad}</td>
+                    <td class="py-2 text-right">$ ${item.precioUnitario.toLocaleString()}</td>
+                    <td class="py-2 text-right">$ ${item.subtotal.toLocaleString()}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('presupuesto-total-monto').innerText = `Total Presupuestado: $ ${total.toLocaleString()}`;
+            mostrarSubvistaVentas('presupuesto');
+        }
+
+        function procesarCobroYRecibo() {
+            const cliente = document.getElementById('cobro-cliente').value;
+            const medio = document.getElementById('cobro-medio').value;
+            const monto = parseFloat(document.getElementById('cobro-monto').value);
+
+            if (!monto || monto <= 0) return alert('Monto inválido');
+
+            totalCajaAcumulado += monto;
+            document.getElementById('caja-cobros-acumulados').innerText = `$ ${totalCajaAcumulado.toLocaleString()}`;
+            document.getElementById('caja-total-monto').innerText = `$ ${totalCajaAcumulado.toLocaleString()}`;
+
+            document.getElementById('recibo-num').innerText = `REC-00${numReciboContador++}`;
+            document.getElementById('recibo-cliente').innerText = cliente ? cliente.split('|')[0] : 'Consumidor Final';
+            document.getElementById('recibo-medio').innerText = medio;
+            document.getElementById('recibo-monto').innerText = `$ ${monto.toLocaleString()}`;
+
+            document.getElementById('vista-recibo-emitido').classList.remove('hidden');
+        }
+
+        function generarCierreDiario() {
+            if (totalCajaAcumulado === 0) return alert('Sin movimientos en caja');
+            alert(`Cierre de Caja exitoso. Total: $${totalCajaAcumulado.toLocaleString()}`);
+            totalCajaAcumulado = 0;
+            document.getElementById('caja-cobros-acumulados').innerText = '$ 0';
+            document.getElementById('caja-total-monto').innerText = '$ 0';
+        }
+
+        function iniciarOrdenYDescontarStock() {
+            const recetaVal = document.getElementById('prod-receta').value;
+            const cantidad = parseInt(document.getElementById('prod-cantidad-fabricar').value);
+            const [nombre, insumo, descuentoBase] = recetaVal.split('|');
+            const totalDescuento = Math.round((cantidad / 10) * parseInt(descuentoBase));
+
+            if (insumo.includes('Harina')) {
+                if (stockMateriaPrima.harina < totalDescuento) return alert('Stock insuficiente de Harina.');
+                stockMateriaPrima.harina -= totalDescuento;
+                document.getElementById('stock-harina').innerText = `${stockMateriaPrima.harina} kg`;
+            } else {
+                if (stockMateriaPrima.huevos < totalDescuento) return alert('Stock insuficiente de Huevos.');
+                stockMateriaPrima.huevos -= totalDescuento;
+                document.getElementById('stock-huevos').innerText = `${stockMateriaPrima.huevos} dzn`;
+            }
+
+            const tbody = document.getElementById('tabla-ordenes-produccion');
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td class="p-2 font-mono">LOT-${numLoteContador++}</td><td class="p-2 font-medium">${nombre}</td><td class="p-2">${cantidad} kg</td><td class="p-2 text-center"><span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded">En Proceso</span></td>`;
+            tbody.prepend(tr);
+            alert('¡Orden de producción iniciada!');
+        }
+    </script>
+</body>
+</html>
