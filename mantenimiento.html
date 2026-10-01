@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fábrica de Pastas - Mantenimiento</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body class="bg-slate-50 font-sans text-slate-800">
+
+    <div id="app-interno" class="hidden flex h-screen overflow-hidden">
+        <aside id="sidebar-placeholder"></aside>
+
+        <main id="contenido-modulo" class="flex-1 overflow-y-auto bg-slate-50 p-8">
+<section id="sec-mantenimiento" class="space-y-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="p-2.5 bg-emerald-100 text-emerald-600 rounded-xl"><i data-lucide="wrench" class="w-5 h-5"></i></div>
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900">Mantenimiento</h2>
+                            <p class="text-sm text-slate-500">Maquinaria de la fábrica y órdenes de mantenimiento preventivo y correctivo.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-white rounded-xl border border-slate-200 p-4 flex items-center space-x-3">
+                        <div class="p-2.5 bg-emerald-100 text-emerald-600 rounded-lg"><i data-lucide="cog" class="w-5 h-5"></i></div>
+                        <div><p id="kpi-maquinas-operativas" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Máquinas operativas</p></div>
+                    </div>
+                    <div class="bg-white rounded-xl border border-slate-200 p-4 flex items-center space-x-3">
+                        <div class="p-2.5 bg-amber-100 text-amber-600 rounded-lg"><i data-lucide="wrench" class="w-5 h-5"></i></div>
+                        <div><p id="kpi-ordenes-mant" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Órdenes registradas</p></div>
+                    </div>
+                    <div class="bg-white rounded-xl border border-slate-200 p-4 flex items-center space-x-3">
+                        <div class="p-2.5 bg-red-100 text-red-600 rounded-lg"><i data-lucide="alert-octagon" class="w-5 h-5"></i></div>
+                        <div><p id="kpi-maquinas-baja" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Fuera de servicio</p></div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-5">
+                    <h3 class="font-semibold text-lg text-slate-800 flex items-center space-x-2"><i data-lucide="clipboard-list" class="w-5 h-5 text-red-500"></i><span>Registrar Orden de Mantenimiento</span></h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo de Mantenimiento *</label>
+                            <select id="mant-tipo" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                <option>Preventivo</option>
+                                <option>Correctivo</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Empleado responsable *</label>
+                            <select id="mant-empleado" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha de emisión</label>
+                            <input id="mant-fecha-emision" type="date" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Observaciones generales de la orden</label>
+                        <textarea id="mant-observaciones" rows="2" placeholder="Ej: Mantenimiento programado de fin de mes." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></textarea>
+                    </div>
+
+                    <div class="border border-slate-200 bg-slate-50/50 rounded-xl p-4 space-y-4">
+                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Detalle: Máquinas intervenidas en esta orden</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                            <div class="md:col-span-3">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Maquinaria</label>
+                                <select id="mant-det-maquinaria" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white"></select>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha inicio</label>
+                                <input id="mant-det-fecha-inicio" type="date" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
+                            </div>
+                            <div class="md:col-span-1">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Hora in.</label>
+                                <input id="mant-det-hora-inicio" type="time" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha fin</label>
+                                <input id="mant-det-fecha-fin" type="date" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
+                            </div>
+                            <div class="md:col-span-1">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Hora fin</label>
+                                <input id="mant-det-hora-fin" type="time" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Tareas realizadas</label>
+                                <input id="mant-det-tareas" type="text" placeholder="Ej: Lubricación de rodillos" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
+                            </div>
+                            <div class="md:col-span-1 flex items-end">
+                                <button type="button" onclick="agregarDetalleMantenimiento()" class="w-full bg-slate-800 text-white rounded-lg p-2 text-sm font-semibold hover:bg-slate-900 transition flex items-center justify-center">
+                                    <i data-lucide="plus" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <table class="w-full text-sm text-left bg-white rounded-lg overflow-hidden border border-slate-200">
+                            <thead class="bg-slate-100 text-xs text-slate-600 uppercase border-b border-slate-200">
+                                <tr>
+                                    <th class="p-3">Maquinaria</th><th class="p-3">Inicio</th><th class="p-3">Fin</th><th class="p-3">Tareas realizadas</th><th class="p-3 text-center">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-detalle-mantenimiento" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+
+                    <button onclick="registrarOrdenMantenimiento()" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2">
+                        <i data-lucide="clipboard-check" class="w-4 h-4"></i><span>Registrar Orden de Mantenimiento</span>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-3">
+                        <h4 class="font-semibold text-slate-800 text-sm">Historial de Órdenes de Mantenimiento</h4>
+                        <div id="lista-ordenes-mantenimiento" class="space-y-3"></div>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-semibold text-slate-800">Maquinaria</h3>
+                            <button onclick="mostrarFormMaquinaria()" class="text-xs font-semibold text-red-600 hover:underline flex items-center space-x-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i><span>Nueva</span></button>
+                        </div>
+                        <div id="lista-maquinaria" class="space-y-2"></div>
+                        <div id="form-nueva-maquinaria" class="hidden space-y-2 pt-3 border-t border-slate-100">
+                            <input id="maq-nombre" type="text" placeholder="Nombre de la máquina *" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none">
+                            <input id="maq-descripcion" type="text" placeholder="Descripción breve" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none">
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Fecha de adquisición</label>
+                                    <input id="maq-fecha-adquisicion" type="date" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Unidad de tiempo</label>
+                                    <select id="maq-unidad-tiempo" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none">
+                                        <option>Horas</option><option>Días</option><option>Turnos</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Estado</label>
+                                <select id="maq-estado" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none">
+                                    <option>Operativa</option><option>En reparación</option><option>Fuera de servicio</option>
+                                </select>
+                            </div>
+                            <button onclick="guardarMaquinaria()" class="w-full bg-slate-800 hover:bg-slate-900 text-white rounded-lg p-2 text-sm font-semibold">Guardar máquina</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/shell.js"></script>
+    <script src="js/mantenimiento.js"></script>
+    <script>
+        initShell('mantenimiento', initPaginaMantenimiento);
+    </script>
+</body>
+</html>

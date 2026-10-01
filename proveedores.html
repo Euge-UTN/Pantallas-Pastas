@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fábrica de Pastas - Proveedores</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body class="bg-slate-50 font-sans text-slate-800">
+
+    <div id="app-interno" class="hidden flex h-screen overflow-hidden">
+        <aside id="sidebar-placeholder"></aside>
+
+        <main id="contenido-modulo" class="flex-1 overflow-y-auto bg-slate-50 p-8">
+<section id="sec-proveedores" class="space-y-6">
+                <div id="vista-listado-proveedores" class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2.5 bg-violet-100 text-violet-600 rounded-xl"><i data-lucide="warehouse" class="w-5 h-5"></i></div>
+                            <div>
+                                <h2 class="text-2xl font-bold text-slate-900">Proveedores Registrados</h2>
+                                <p class="text-sm text-slate-500">Gestión de proveedores e insumos.</p>
+                            </div>
+                        </div>
+                        <button onclick="mostrarSubvistaProveedores('cargar-proveedor')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2 shadow-sm transition">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Cargar Nuevo Proveedor</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center gap-3">
+                            <div class="relative flex-1 sm:max-w-xs">
+                                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                                <input type="text" id="buscar-proveedor" oninput="aplicarFiltroProveedores()" placeholder="Buscar por razón social, documento o rubro..." class="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-red-500">
+                            </div>
+                            <select id="filtro-proveedor-iva" onchange="aplicarFiltroProveedores()" class="border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none bg-white">
+                                <option value="">Todas las condiciones IVA</option>
+                                <option value="Responsable Inscripto">Responsable Inscripto</option>
+                                <option value="Monotributo">Monotributo</option>
+                                <option value="Exento">Exento</option>
+                            </select>
+                        </div>
+                        <table class="w-full text-xs text-left">
+                            <thead class="bg-slate-50 uppercase text-slate-500 border-b border-slate-200">
+                                <tr>
+                                    <th class="p-3">Razón Social</th>
+                                    <th class="p-3">CUIT</th>
+                                    <th class="p-3">Rubro / Insumos</th>
+                                    <th class="p-3">Dirección Completa</th>
+                                    <th class="p-3">Teléfono</th>
+                                    <th class="p-3">Email</th>
+                                    <th class="p-3">Condición IVA</th>
+                                    <th class="p-3 text-center">Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-lista-proveedores" class="divide-y divide-slate-100">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="vista-cargar-proveedor" class="space-y-6 hidden">
+                    <div class="flex items-center space-x-3">
+                        <button type="button" onclick="mostrarSubvistaProveedores('listado')" class="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition flex items-center justify-center">
+                            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                        </button>
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900">Cargar Nuevo Proveedor</h2>
+                            <p class="text-sm text-slate-500">Ingrese los datos para dar de alta a un proveedor.</p>
+                        </div>
+                    </div>
+
+                    <div class="max-w-3xl bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Razón Social / Nombre Comercial *</label>
+                                <input type="text" id="prov-razon-social" placeholder="Ej: Lácteos La Serenísima" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre (contacto)</label>
+                                <input type="text" id="prov-nombre" placeholder="Ej: Carla" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Apellido (contacto)</label>
+                                <input type="text" id="prov-apellido" placeholder="Ej: Funes" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo Doc. *</label>
+                                    <select id="prov-tipo-documento" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                        <option value="CUIT">CUIT</option>
+                                        <option value="DNI">DNI</option>
+                                        <option value="CUIL">CUIL</option>
+                                        <option value="Pasaporte">Pasaporte</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">N° Documento *</label>
+                                    <input type="text" id="prov-numero-documento" placeholder="30112233" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Provincia</label>
+                                <select id="prov-provincia" onchange="cargarLocalidadesCascada('prov')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                    <option value="">-- Seleccione Provincia --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Localidad</label>
+                                <select id="prov-localidad" onchange="cargarCallesCascada('prov')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none" disabled>
+                                    <option value="">-- Seleccione Localidad --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Calle</label>
+                                <select id="prov-calle" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none" disabled>
+                                    <option value="">-- Seleccione Calle --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Altura</label>
+                                <input type="text" id="prov-altura" placeholder="Ej: 1234" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Teléfono</label>
+                                <input type="text" id="prov-telefono" placeholder="(011) 4000-0000" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Correo Electrónico</label>
+                                <input type="email" id="prov-email" placeholder="contacto@proveedor.com" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Condición Frente al IVA</label>
+                                <select id="prov-iva" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                    <option>Responsable Inscripto</option>
+                                    <option>Monotributo</option>
+                                    <option>Exento</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Rubro / Insumos Suministrados</label>
+                                <input type="text" id="prov-rubro" placeholder="Ej: Harinas, Quesos, Embalajes" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                            <button type="button" onclick="mostrarSubvistaProveedores('listado')" class="bg-slate-100 text-slate-600 px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-200">Cancelar</button>
+                            <button type="button" onclick="guardarNuevoProveedor()" class="bg-red-600 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-red-700 flex items-center space-x-2">
+                                <i data-lucide="save" class="w-4 h-4"></i>
+                                <span>Guardar Proveedor</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/shell.js"></script>
+    <script src="js/proveedores.js"></script>
+    <script>
+        initShell('proveedores', initPaginaProveedores);
+    </script>
+</body>
+</html>

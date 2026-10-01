@@ -1,0 +1,98 @@
+.nav-link {
+    color: rgba(255,255,255,0.78);
+}
+.nav-link:hover {
+    background-color: rgba(255,255,255,0.08);
+    color: #fff;
+}
+.active-tab {
+    background-color: #fff;
+    color: #b91c1c;
+    font-weight: 600;
+}
+.active-tab:hover {
+    background-color: #fff;
+    color: #b91c1c;
+}
+.nav-icon-badge {
+    background-color: rgba(255,255,255,0.12);
+    transition: background-color .15s, color .15s;
+}
+.active-tab .nav-icon-badge {
+    background-color: rgba(185,28,28,0.12);
+    color: #b91c1c;
+}
+.nav-group-toggle[data-abierto="true"]:not(.active-tab) {
+    background-color: rgba(255,255,255,0.06);
+}
+.nav-submenu {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-left: 1.6rem;
+    padding-left: 0.75rem;
+    border-left: 2px solid rgba(255,255,255,0.14);
+}
+.nav-sublink {
+    color: rgba(255,255,255,0.65);
+}
+.nav-sublink:hover {
+    background-color: rgba(255,255,255,0.08);
+    color: #fff;
+}
+.active-subtab {
+    background-color: rgba(255,255,255,0.16);
+    color: #fff;
+    font-weight: 600;
+}
+
+/* ---------- Sidebar colapsable (solo íconos) ---------- */
+.sidebar-shell {
+    width: 17rem;
+    transition: width .18s ease;
+}
+.sidebar-shell.sidebar-colapsado {
+    width: 4.5rem;
+}
+.sidebar-colapsado .sidebar-texto {
+    display: none;
+}
+.sidebar-colapsado .sidebar-header {
+    flex-direction: column;
+    gap: .5rem;
+}
+.sidebar-colapsado .nav-link,
+.sidebar-colapsado .nav-group-toggle {
+    justify-content: center;
+    padding-left: .5rem;
+    padding-right: .5rem;
+}
+.sidebar-colapsado .nav-link > span:first-child,
+.sidebar-colapsado .nav-group-toggle > span:first-child {
+    justify-content: center;
+}
+.sidebar-colapsado a[href="tienda-online.html"] {
+    justify-content: center;
+    padding-left: .5rem;
+    padding-right: .5rem;
+}
+.sidebar-colapsado .sidebar-footer {
+    flex-direction: column;
+    gap: .5rem;
+    padding: .75rem .5rem;
+}
+.sidebar-colapsado .sidebar-footer > div:first-child {
+    justify-content: center;
+}
+@media print {
+    body * { visibility: hidden; }
+    #area-impresion, #area-impresion *,
+    #area-comprobante-pago, #area-comprobante-pago *,
+    #area-comprobante-venta, #area-comprobante-venta *,
+    #area-resumen-deuda, #area-resumen-deuda *,
+    #area-detalle-pedido, #area-detalle-pedido * { visibility: visible; }
+    #area-impresion, #area-comprobante-pago, #area-comprobante-venta, #area-resumen-deuda, #area-detalle-pedido { position: absolute; left: 0; top: 0; width: 100%; }
+    .no-print { display: none !important; }
+}
+.toast-login { animation: toastIn .2s ease-out; }
+@keyframes toastIn { from { opacity:0; transform:translateY(-6px);} to { opacity:1; transform:translateY(0);} }

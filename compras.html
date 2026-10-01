@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fábrica de Pastas - Compras</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body class="bg-slate-50 font-sans text-slate-800">
+
+    <div id="app-interno" class="hidden flex h-screen overflow-hidden">
+        <aside id="sidebar-placeholder"></aside>
+
+        <main id="contenido-modulo" class="flex-1 overflow-y-auto bg-slate-50 p-8">
+<section id="sec-compras" class="space-y-6">
+                <div class="flex items-center space-x-3">
+                    <div class="p-2.5 bg-blue-100 text-blue-600 rounded-xl"><i data-lucide="shopping-basket" class="w-5 h-5"></i></div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900">Compras</h2>
+                        <p class="text-sm text-slate-500">Gestión de órdenes de compra con múltiples insumos por proveedor.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
+                    <h3 class="font-semibold text-lg text-slate-800">Generar Nueva Orden de Compra</h3>
+
+                    <!-- Proveedor -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Seleccionar Proveedor *</label>
+                            <select id="compra-proveedor" class="select-proveedor-dinamico w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Agregar Productos al Detalle -->
+                    <div class="border border-slate-200 bg-slate-50/50 rounded-xl p-4 space-y-4">
+                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Añadir Insumos / Productos a la Orden</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                            <div class="md:col-span-5">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Materia Prima / Insumo</label>
+                                <select id="compra-insumo-select" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
+                                    <option value="Harina 0000 (Bolsa 50kg)|25000">Harina 0000 (Bolsa 50kg) - $25.000</option>
+                                    <option value="Huevos Frescos (Cajón 30 dzn)|18000">Huevos Frescos (Cajón 30 dzn) - $18.000</option>
+                                    <option value="Ricotta Fresca (Balde 10kg)|14000">Ricotta Fresca (Balde 10kg) - $14.000</option>
+                                    <option value="Queso Mozzarella (Bloque 5kg)|22000">Queso Mozzarella (Bloque 5kg) - $22.000</option>
+                                    <option value="Cajas para Ravioles (Pack x100)|8500">Cajas para Ravioles (Pack x100) - $8.500</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-3">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Cantidad Unidades</label>
+                                <input type="number" id="compra-insumo-cant" value="1" min="1" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
+                            </div>
+                            <div class="md:col-span-4 flex items-end">
+                                <button type="button" onclick="agregarInsumoCompra()" class="w-full bg-slate-800 text-white rounded-lg p-2 text-sm font-semibold hover:bg-slate-900 transition flex items-center justify-center space-x-1">
+                                    <i data-lucide="plus" class="w-4 h-4"></i>
+                                    <span>Agregar Insumo</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Tabla de Items Agregados -->
+                        <table class="w-full text-sm text-left bg-white rounded-lg overflow-hidden border border-slate-200">
+                            <thead class="bg-slate-100 text-xs text-slate-600 uppercase border-b border-slate-200">
+                                <tr>
+                                    <th class="p-3">Insumo / Descripción</th>
+                                    <th class="p-3 text-center">Cant.</th>
+                                    <th class="p-3 text-right">Precio Est.</th>
+                                    <th class="p-3 text-right">Subtotal</th>
+                                    <th class="p-3 text-center">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-items-compra" class="divide-y divide-slate-100">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Total Orden Compra -->
+                    <div class="flex justify-between items-center pt-2 border-t border-slate-100">
+                        <span class="text-xs text-slate-400">Total de Insumos: <span id="compra-cant-items">0</span></span>
+                        <div class="text-right">
+                            <span class="text-xs text-slate-500 block">Total Estimado Orden</span>
+                            <span id="compra-total-monto" class="text-2xl font-bold text-slate-900">$ 0</span>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end pt-2">
+                        <button onclick="generarOrdenCompra()" class="bg-red-600 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-red-700 flex items-center space-x-2">
+                            <i data-lucide="file-plus" class="w-4 h-4"></i>
+                            <span>Emitir Orden de Compra</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                    <h4 class="font-semibold text-slate-800 mb-3 text-sm">Historial de Ordenes de Compra Emitidas</h4>
+                    <table class="w-full text-xs text-left">
+                        <thead class="bg-slate-50 uppercase text-slate-500 border-b">
+                            <tr>
+                                <th class="p-3">N° Orden</th>
+                                <th class="p-3">Proveedor</th>
+                                <th class="p-3">Detalle Insumos</th>
+                                <th class="p-3 text-right">Total $</th>
+                                <th class="p-3 text-center">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-historial-compras" class="divide-y divide-slate-100">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/shell.js"></script>
+    <script src="js/compras.js"></script>
+    <script>
+        initShell('compras', initPaginaCompras);
+    </script>
+</body>
+</html>

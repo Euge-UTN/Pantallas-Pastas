@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fábrica de Pastas - Ingreso</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body class="bg-slate-50 font-sans text-slate-800">
+
+    <div class="min-h-screen flex flex-col lg:flex-row">
+
+        <!-- Panel izquierdo: presentación del sistema -->
+        <div class="lg:w-1/2 bg-gradient-to-br from-red-700 via-red-800 to-red-900 text-white px-8 py-12 sm:px-12 lg:px-16 lg:py-20 flex flex-col justify-between">
+            <div>
+                <div class="flex items-center space-x-3 mb-10">
+                    <div class="w-12 h-12 bg-white text-red-700 rounded-xl flex items-center justify-center shadow-lg shadow-black/10">
+                        <i data-lucide="utensils-crossed" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-xl leading-tight">Fábrica de Pastas</h1>
+                        <p class="text-xs text-red-200">Gestión Integrada</p>
+                    </div>
+                </div>
+
+                <h2 class="text-3xl lg:text-4xl font-bold leading-tight mb-4">Pastas artesanales,<br>gestión profesional.</h2>
+                <p class="text-red-100 text-sm max-w-md mb-10">Panel interno para administrar ventas, producción, compras, cobranzas y mantenimiento de la fábrica, todo en un mismo lugar.</p>
+
+                <div class="grid grid-cols-2 gap-3 max-w-md">
+                    <div class="flex items-center space-x-2.5 bg-white/10 rounded-lg px-3.5 py-3">
+                        <i data-lucide="receipt-text" class="w-4 h-4 text-red-200 shrink-0"></i><span class="text-sm">Ventas</span>
+                    </div>
+                    <div class="flex items-center space-x-2.5 bg-white/10 rounded-lg px-3.5 py-3">
+                        <i data-lucide="chef-hat" class="w-4 h-4 text-red-200 shrink-0"></i><span class="text-sm">Producción</span>
+                    </div>
+                    <div class="flex items-center space-x-2.5 bg-white/10 rounded-lg px-3.5 py-3">
+                        <i data-lucide="shopping-basket" class="w-4 h-4 text-red-200 shrink-0"></i><span class="text-sm">Compras</span>
+                    </div>
+                    <div class="flex items-center space-x-2.5 bg-white/10 rounded-lg px-3.5 py-3">
+                        <i data-lucide="hand-coins" class="w-4 h-4 text-red-200 shrink-0"></i><span class="text-sm">Cobranzas</span>
+                    </div>
+                    <div class="flex items-center space-x-2.5 bg-white/10 rounded-lg px-3.5 py-3">
+                        <i data-lucide="wrench" class="w-4 h-4 text-red-200 shrink-0"></i><span class="text-sm">Mantenimiento</span>
+                    </div>
+                    <div class="flex items-center space-x-2.5 bg-white/10 rounded-lg px-3.5 py-3">
+                        <i data-lucide="users-round" class="w-4 h-4 text-red-200 shrink-0"></i><span class="text-sm">Clientes</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-12 pt-6 border-t border-white/15">
+                <p class="text-sm text-red-100 mb-3">¿Sos cliente y querés hacer un pedido?</p>
+                <a href="tienda-online.html" class="inline-flex items-center space-x-2 bg-white/10 hover:bg-white/20 border border-dashed border-white/30 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition">
+                    <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+                    <span>Ir a la Tienda Online</span>
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Panel derecho: ingreso del personal interno -->
+        <div class="lg:w-1/2 flex items-center justify-center p-8 sm:p-12">
+            <div class="w-full max-w-sm space-y-5">
+                <div class="text-center space-y-1 mb-2">
+                    <div class="w-12 h-12 bg-red-50 text-red-600 rounded-xl flex items-center justify-center mx-auto mb-3">
+                        <i data-lucide="lock-keyhole" class="w-5 h-5"></i>
+                    </div>
+                    <h2 class="font-bold text-xl text-slate-900">Ingreso al Panel Interno</h2>
+                    <p class="text-xs text-slate-500">Accedé con tu usuario y contraseña de empleado.</p>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Usuario</label>
+                    <input id="login-interno-usuario" type="text" placeholder="Ingresá tu usuario" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Contraseña</label>
+                    <div class="relative">
+                        <input id="login-interno-password" type="password" placeholder="••••••" class="w-full border border-slate-300 rounded-lg p-2.5 pr-10 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                        <button type="button" onclick="togglePasswordInterno(this)" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                <button onclick="validarUsuarioInterno()" class="w-full bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-lg text-sm font-semibold transition">Ingresar</button>
+                <p id="login-interno-error" class="hidden text-xs text-red-600 text-center">Usuario o contraseña incorrectos.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/shell.js"></script>
+    <script>
+        initShellLogin();
+    </script>
+</body>
+</html>

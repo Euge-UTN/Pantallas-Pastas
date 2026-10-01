@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fábrica de Pastas - Inicio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body class="bg-slate-50 font-sans text-slate-800">
+
+    <div id="app-interno" class="hidden flex h-screen overflow-hidden">
+        <aside id="sidebar-placeholder"></aside>
+
+        <main id="contenido-modulo" class="flex-1 overflow-y-auto bg-slate-50 p-8">
+<section id="sec-inicio" class="space-y-6">
+                <div class="flex items-center space-x-3">
+                    <div class="p-2.5 bg-red-100 text-red-600 rounded-xl"><i data-lucide="home" class="w-5 h-5"></i></div>
+                    <div>
+                        <h2 id="inicio-saludo" class="text-2xl font-bold text-slate-900">¡Hola!</h2>
+                        <p class="text-sm text-slate-500">Panorama general de la fábrica y accesos rápidos.</p>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Panorama General</h3>
+                    <div id="grid-stats-inicio" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+                </div>
+
+                <div>
+                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Accesos Rápidos</h3>
+                    <div id="grid-accesos-inicio" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL: AGREGAR ACCESO DIRECTO -->
+    <div id="modal-agregar-acceso" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl p-6 w-full max-w-lg space-y-4 max-h-[85vh] flex flex-col">
+            <div class="flex items-center justify-between shrink-0">
+                <h3 class="font-bold text-slate-900 flex items-center space-x-2"><i data-lucide="layout-grid" class="w-5 h-5 text-red-600"></i><span>Agregar Acceso Directo</span></h3>
+                <button type="button" onclick="cerrarModalAgregarAcceso()" class="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <p class="text-xs text-slate-500 shrink-0">Elegí las funcionalidades que querés tener a mano en tu Inicio.</p>
+            <div id="lista-modal-accesos" class="space-y-2 overflow-y-auto"></div>
+            <div class="flex justify-end pt-2 border-t border-slate-100 shrink-0">
+                <button type="button" onclick="cerrarModalAgregarAcceso()" class="px-4 py-2 text-sm font-semibold text-slate-500 hover:text-slate-700">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/shell.js"></script>
+    <script src="js/inicio.js"></script>
+    <script>
+        initShell('inicio', initPaginaInicio);
+    </script>
+</body>
+</html>

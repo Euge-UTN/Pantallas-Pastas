@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fábrica de Pastas - Cobranzas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body class="bg-slate-50 font-sans text-slate-800">
+
+    <div id="app-interno" class="hidden flex h-screen overflow-hidden">
+        <aside id="sidebar-placeholder"></aside>
+
+        <main id="contenido-modulo" class="flex-1 overflow-y-auto bg-slate-50 p-8">
+<section id="sec-cobranzas" class="space-y-6">
+                <div class="flex items-center space-x-3">
+                    <div class="p-2.5 bg-amber-100 text-amber-600 rounded-xl"><i data-lucide="hand-coins" class="w-5 h-5"></i></div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900">Cobranzas</h2>
+                        <p class="text-sm text-slate-500">Registro de cobros, comprobantes de pago y cierre de caja diaria.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 space-y-6">
+
+                        <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
+                            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="user" class="w-4 h-4"></i><span>Cliente</span></h4>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Cliente *</label>
+                                <select id="cobro-cliente" onchange="renderizarSelectOrdenCobro()" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                                    <option value="" disabled selected>Elegí un cliente</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
+                            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="receipt-text" class="w-4 h-4"></i><span>Orden de Pedido a Cobrar</span></h4>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Orden de Pedido *</label>
+                                <select id="cobro-orden" onchange="seleccionarOrdenCobro()" disabled class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500 disabled:bg-slate-100 disabled:text-slate-400">
+                                    <option value="" disabled selected>Elegí primero el cliente</option>
+                                </select>
+                            </div>
+                            <div id="ficha-orden-cobro" class="hidden bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-600"></div>
+                        </div>
+
+                        <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
+                            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="credit-card" class="w-4 h-4"></i><span>Datos del Cobro</span></h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Medio de Pago *</label>
+                                    <select id="cobro-medio" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                        <option value="" disabled selected>Elegí un medio de pago</option>
+                                        <option value="1">Efectivo</option>
+                                        <option value="2">Tarjeta de Débito</option>
+                                        <option value="3">Transferencia Bancaria</option>
+                                        <option value="4">Mercado Pago</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Condición de Pago *</label>
+                                    <select id="cobro-condicion" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                        <option value="" disabled selected>Elegí una opción</option>
+                                        <option value="Contado">Contado</option>
+                                        <option value="Cuenta Corriente">Cuenta Corriente</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Monto a Cobrar ($)</label>
+                                    <input type="text" id="cobro-monto" value="" readonly placeholder="Seleccioná una orden de pedido" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none bg-slate-100 text-slate-500">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Observaciones</label>
+                                <textarea id="cobro-observaciones" rows="2" placeholder="Ej: Pago parcial acordado con el cliente." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></textarea>
+                            </div>
+                            <div class="pt-2">
+                                <button onclick="procesarCobroYComprobante()" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2">
+                                    <i data-lucide="receipt" class="w-4 h-4"></i>
+                                    <span>Registrar Cobro y Emitir Comprobante</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="vista-comprobante-pago" class="hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                            <div class="flex justify-between items-center border-b pb-3 no-print">
+                                <h3 class="font-bold text-slate-800 flex items-center space-x-2">
+                                    <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600"></i>
+                                    <span>Comprobante de Pago Emitido</span>
+                                </h3>
+                                <button onclick="window.print()" class="bg-slate-800 text-white text-xs px-3 py-1.5 rounded-lg">Imprimir Comprobante</button>
+                            </div>
+                            <div id="area-comprobante-pago" class="p-4 bg-slate-50 rounded-lg text-sm space-y-1.5 border border-slate-200"></div>
+                        </div>
+
+                        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center gap-3">
+                                <h3 class="font-semibold text-slate-800 sm:mr-auto">Historial de Cobros</h3>
+                                <div class="relative">
+                                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                                    <input type="text" id="buscar-cobro-cliente" oninput="renderizarTablaCobros()" placeholder="Buscar por cliente..." class="pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-red-500 w-full sm:w-52">
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="bg-slate-50 text-xs text-slate-500 border-b border-slate-200 uppercase">
+                                    <tr>
+                                        <th class="px-6 py-3">N° Comprobante</th>
+                                        <th class="px-6 py-3">Cliente</th>
+                                        <th class="px-6 py-3">Pedido / Venta</th>
+                                        <th class="px-6 py-3">Medio de Pago</th>
+                                        <th class="px-6 py-3">Fecha</th>
+                                        <th class="px-6 py-3 text-right">Importe</th>
+                                        <th class="px-6 py-3 text-center">Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-cobros-registrados" class="divide-y divide-slate-200"></tbody>
+                            </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
+                            <h3 class="font-semibold text-slate-800 flex items-center justify-between">
+                                <span>Cierre de Caja Diario</span>
+                                <span id="estado-caja-tag" class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">Abierta</span>
+                            </h3>
+
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between py-1 border-b">
+                                    <span class="text-slate-500">Cobros del Día:</span>
+                                    <span id="caja-cobros-acumulados" class="font-medium">$ 0</span>
+                                </div>
+                                <div class="flex justify-between py-2 font-bold text-base text-slate-900">
+                                    <span>Total en Caja:</span>
+                                    <span id="caja-total-monto">$ 0</span>
+                                </div>
+                            </div>
+
+                            <button onclick="generarCierreDiario()" class="w-full bg-slate-900 text-white py-2 rounded-lg text-sm font-semibold hover:bg-slate-800 flex items-center justify-center space-x-2">
+                                <i data-lucide="lock" class="w-4 h-4"></i>
+                                <span>Generar Cierre Diario</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/shell.js"></script>
+    <script src="js/cobranzas.js"></script>
+    <script>
+        initShell('cobranzas', initPaginaCobranzas);
+    </script>
+</body>
+</html>

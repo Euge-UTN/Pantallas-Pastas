@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fábrica de Pastas - Clientes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body class="bg-slate-50 font-sans text-slate-800">
+
+    <div id="app-interno" class="hidden flex h-screen overflow-hidden">
+        <aside id="sidebar-placeholder"></aside>
+
+        <main id="contenido-modulo" class="flex-1 overflow-y-auto bg-slate-50 p-8">
+<section id="sec-clientes" class="space-y-6">
+                <div id="vista-listado-clientes" class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2.5 bg-sky-100 text-sky-600 rounded-xl"><i data-lucide="users-round" class="w-5 h-5"></i></div>
+                            <div>
+                                <h2 class="text-2xl font-bold text-slate-900">Clientes Registrados</h2>
+                                <p class="text-sm text-slate-500">Listado general de clientes.</p>
+                            </div>
+                        </div>
+                        <button onclick="mostrarSubvistaClientes('cargar-cliente')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2 shadow-sm transition">
+                            <i data-lucide="user-plus" class="w-4 h-4"></i>
+                            <span>Cargar Nuevo Cliente</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center gap-3">
+                            <div class="relative flex-1 sm:max-w-xs">
+                                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                                <input type="text" id="buscar-cliente" oninput="aplicarFiltroClientes()" placeholder="Buscar por nombre o documento..." class="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-red-500">
+                            </div>
+                            <select id="filtro-cliente-tipo" onchange="aplicarFiltroClientes()" class="border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none bg-white">
+                                <option value="">Todos los tipos</option>
+                                <option value="Mostrador">Mostrador</option>
+                                <option value="Mayorista">Mayorista</option>
+                            </select>
+                        </div>
+                        <table class="w-full text-xs text-left">
+                            <thead class="bg-slate-50 uppercase text-slate-500 border-b border-slate-200">
+                                <tr>
+                                    <th class="p-3">Nombre / Razón Social</th>
+                                    <th class="p-3">CUIT / DNI</th>
+                                    <th class="p-3">Tipo Cliente</th>
+                                    <th class="p-3">Dirección Completa</th>
+                                    <th class="p-3">Teléfono</th>
+                                    <th class="p-3">Email</th>
+                                    <th class="p-3">Condición IVA</th>
+                                    <th class="p-3 text-right">Límite Crédito</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-lista-clientes" class="divide-y divide-slate-100">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="vista-cargar-cliente" class="space-y-6 hidden">
+                    <div class="flex items-center space-x-3">
+                        <button type="button" onclick="mostrarSubvistaClientes('listado')" class="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition flex items-center justify-center">
+                            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                        </button>
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900">Cargar Nuevo Cliente</h2>
+                            <p class="text-sm text-slate-500">Complete los datos generales y la ubicación geográfica del cliente.</p>
+                        </div>
+                    </div>
+
+                    <div class="max-w-3xl bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre *</label>
+                                <input type="text" id="cli-nombre" placeholder="Ej: Mario" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Apellido *</label>
+                                <input type="text" id="cli-apellido" placeholder="Ej: Rossi" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Razón Social (si corresponde)</label>
+                                <input type="text" id="cli-razon-social" placeholder="Ej: Trattoria Bella Italia" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo Doc. *</label>
+                                    <select id="cli-tipo-documento" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                        <option value="DNI">DNI</option>
+                                        <option value="CUIT">CUIT</option>
+                                        <option value="CUIL">CUIL</option>
+                                        <option value="Pasaporte">Pasaporte</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">N° Documento *</label>
+                                    <input type="text" id="cli-numero-documento" placeholder="30123456" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Provincia</label>
+                                <select id="cli-provincia" onchange="cargarLocalidadesCascada('cli')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                    <option value="">-- Seleccione Provincia --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Localidad</label>
+                                <select id="cli-localidad" onchange="cargarCallesCascada('cli')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none" disabled>
+                                    <option value="">-- Seleccione Localidad --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Calle</label>
+                                <select id="cli-calle" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none" disabled>
+                                    <option value="">-- Seleccione Calle --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Altura</label>
+                                <input type="text" id="cli-altura" placeholder="Ej: 450" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Teléfono</label>
+                                <input type="text" id="cli-telefono" placeholder="(011) 4567-8900" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Correo Electrónico (Email)</label>
+                                <input type="email" id="cli-email" placeholder="contacto@cliente.com" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Condición Frente al IVA</label>
+                                <select id="cli-iva" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                    <option>Responsable Inscripto</option>
+                                    <option>Monotributo</option>
+                                    <option>Consumidor Final</option>
+                                    <option>Exento</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo de Cliente</label>
+                                <select id="cli-tipo" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                    <option value="Mayorista">Mayorista (Restaurante / Hotel)</option>
+                                    <option value="Mostrador">Consumidor Final (Mostrador)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Límite de Crédito Permitido ($)</label>
+                                <input type="number" id="cli-limite" placeholder="50000" value="50000" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                            <button type="button" onclick="mostrarSubvistaClientes('listado')" class="bg-slate-100 text-slate-600 px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-200">Cancelar</button>
+                            <button type="button" onclick="guardarNuevoCliente()" class="bg-red-600 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-red-700 flex items-center space-x-2">
+                                <i data-lucide="save" class="w-4 h-4"></i>
+                                <span>Guardar Cliente</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/shell.js"></script>
+    <script src="js/clientes.js"></script>
+    <script>
+        initShell('clientes', initPaginaClientes);
+    </script>
+</body>
+</html>

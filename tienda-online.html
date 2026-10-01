@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fábrica de Pastas - Tienda Online</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+    body { font-family: 'Segoe UI', system-ui, sans-serif; }
+    .toast { animation: slideIn .25s ease-out; }
+    @keyframes slideIn { from { transform: translateY(-10px); opacity:0; } to { transform: translateY(0); opacity:1; } }
+    .cart-drawer { transition: transform .3s ease; }
+    .step-dot.active { background-color:#dc2626; color:#fff; }
+    .step-line.active { background-color:#dc2626; }
+    ::-webkit-scrollbar { width:8px; height:8px; }
+    ::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:9999px; }
+    @media print {
+        body * { visibility:hidden; }
+        #area-comprobante, #area-comprobante * { visibility:visible; }
+        #area-comprobante { position:absolute; left:0; top:0; width:100%; }
+        .no-print { display:none !important; }
+    }
+</style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+<!-- TOASTS -->
+<div id="toast-container" class="fixed top-4 right-4 z-[100] space-y-2 no-print"></div>
+
+<!-- HEADER -->
+<header class="bg-white border-b border-slate-200 sticky top-0 z-40 no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
+        <div class="flex items-center space-x-3 cursor-pointer" onclick="irA('inicio')">
+            <div class="p-2 bg-red-600 text-white rounded-lg"><i data-lucide="utensils-crossed" class="w-5 h-5"></i></div>
+            <div class="leading-tight">
+                <p class="font-bold text-slate-900 text-sm sm:text-base">Fábrica de Pastas</p>
+                <p class="text-[11px] text-slate-500 -mt-0.5">Tienda Online</p>
+            </div>
+        </div>
+
+        <nav class="hidden md:flex items-center space-x-1 text-sm font-medium">
+            <button onclick="irA('inicio')" class="px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-600">Inicio</button>
+            <button onclick="irA('productos')" class="px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-600">Productos</button>
+            <button id="nav-mis-pedidos" onclick="irAProtegido('mis-pedidos')" class="hidden px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-600">Mis Pedidos</button>
+            <button id="nav-mis-presupuestos" onclick="irAProtegido('mis-presupuestos')" class="hidden px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-600">Mis Presupuestos</button>
+        </nav>
+
+        <div class="flex items-center space-x-2">
+            <div id="caja-sesion" class="relative hidden sm:block"></div>
+            <button onclick="toggleCarrito(true)" class="relative p-2.5 rounded-lg hover:bg-slate-100">
+                <i data-lucide="shopping-cart" class="w-5 h-5 text-slate-700"></i>
+                <span id="badge-carrito" class="hidden absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">0</span>
+            </button>
+            <button onclick="document.getElementById('mobile-nav').classList.toggle('hidden')" class="md:hidden p-2.5 rounded-lg hover:bg-slate-100">
+                <i data-lucide="menu" class="w-5 h-5"></i>
+            </button>
+        </div>
+    </div>
+    <div id="mobile-nav" class="hidden md:hidden border-t border-slate-100 px-4 py-3 space-y-1 text-sm font-medium">
+        <button onclick="irA('inicio'); cerrarMenuMobile()" class="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100">Inicio</button>
+        <button onclick="irA('productos'); cerrarMenuMobile()" class="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100">Productos</button>
+        <button id="nav-mis-pedidos-mobile" onclick="irAProtegido('mis-pedidos'); cerrarMenuMobile()" class="hidden w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100">Mis Pedidos</button>
+        <button id="nav-mis-presupuestos-mobile" onclick="irAProtegido('mis-presupuestos'); cerrarMenuMobile()" class="hidden w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100">Mis Presupuestos</button>
+        <div id="caja-sesion-mobile" class="pt-2 border-t border-slate-100"></div>
+    </div>
+</header>
+
+<!-- ================= VISTA INICIO ================= -->
+<main id="vista-inicio" class="space-y-14 pb-14">
+    <div class="relative overflow-hidden bg-gradient-to-br from-red-600 to-red-800 text-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 relative z-10">
+            <p class="text-red-100 text-sm font-semibold tracking-wide uppercase mb-2">Pastas y salsas artesanales desde Trenque Lauquen</p>
+            <h1 class="text-3xl sm:text-5xl font-bold mb-4 max-w-2xl">Hechas como en casa, ahora también a un clic</h1>
+            <p class="text-red-50 text-sm sm:text-lg max-w-xl mb-6">Elaboramos pastas frescas y salsas todos los días en nuestra fábrica. Comprá para consumidor final por la web: elegí tus productos, retirá en el local o pedí envío a domicilio.</p>
+            <div class="flex flex-wrap gap-3">
+                <button onclick="irA('productos')" class="bg-white text-red-700 font-semibold px-6 py-3 rounded-lg text-sm hover:bg-red-50 flex items-center space-x-2">
+                    <i data-lucide="shopping-bag" class="w-4 h-4"></i><span>Ver productos</span>
+                </button>
+                <button onclick="irA('acceso')" id="btn-hero-cuenta" class="bg-red-700/40 border border-white/40 text-white font-semibold px-6 py-3 rounded-lg text-sm hover:bg-red-700/60">Crear mi cuenta</button>
+            </div>
+        </div>
+        <i data-lucide="chef-hat" class="w-56 h-56 absolute -right-8 -bottom-10 text-red-500/30 hidden lg:block"></i>
+    </div>
+
+    <section class="max-w-7xl mx-auto px-4 sm:px-6">
+        <h2 class="text-xl font-bold text-slate-900 mb-6 text-center">¿Cómo comprar?</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-5">
+            <div class="bg-white border border-slate-200 rounded-xl p-5 text-center space-y-2">
+                <div class="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto"><i data-lucide="list" class="w-5 h-5"></i></div>
+                <p class="font-semibold text-sm text-slate-800">1. Elegí tus productos</p>
+                <p class="text-xs text-slate-500">Recorré el catálogo y agregalos al carrito.</p>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-xl p-5 text-center space-y-2">
+                <div class="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto"><i data-lucide="user-plus" class="w-5 h-5"></i></div>
+                <p class="font-semibold text-sm text-slate-800">2. Identificate</p>
+                <p class="text-xs text-slate-500">Iniciá sesión o creá tu cuenta de cliente.</p>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-xl p-5 text-center space-y-2">
+                <div class="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto"><i data-lucide="truck" class="w-5 h-5"></i></div>
+                <p class="font-semibold text-sm text-slate-800">3. Elegí entrega y pago</p>
+                <p class="text-xs text-slate-500">Retiro en el local o envío a domicilio.</p>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-xl p-5 text-center space-y-2">
+                <div class="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto"><i data-lucide="package-check" class="w-5 h-5"></i></div>
+                <p class="font-semibold text-sm text-slate-800">4. Recibí tu pedido</p>
+                <p class="text-xs text-slate-500">Seguilo desde "Mis Pedidos" hasta la entrega.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+        <div class="space-y-3">
+            <p class="text-xs font-bold uppercase tracking-wide text-red-600">Sobre la fábrica</p>
+            <h2 class="text-2xl font-bold text-slate-900">Pastas frescas elaboradas todos los días</h2>
+            <p class="text-sm text-slate-600">Fabricamos pastas de todo tipo y tres variedades de salsas, con maquinaria propia y recetas cuidadas al detalle. Además de atender en nuestro local y distribuir a restaurantes, hoteles y comercios de barrio, esta tienda online está pensada para que el consumidor final compre fácil, elija cómo retirar su pedido y pague como prefiera.</p>
+            <ul class="text-sm text-slate-600 space-y-1.5 pt-2">
+                <li class="flex items-center space-x-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600"></i><span>Elaboración artesanal diaria</span></li>
+                <li class="flex items-center space-x-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600"></i><span>Retiro en el local o envío a domicilio</span></li>
+                <li class="flex items-center space-x-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600"></i><span>Pedidos especiales para eventos y fiestas</span></li>
+            </ul>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-xl p-6 space-y-4">
+            <p class="text-sm font-semibold text-slate-800">Medios de pago aceptados</p>
+            <div class="grid grid-cols-3 gap-3 text-center">
+                <div class="bg-slate-50 rounded-lg p-3"><i data-lucide="banknote" class="w-5 h-5 mx-auto text-slate-500 mb-1"></i><p class="text-[11px] text-slate-600">Efectivo</p></div>
+                <div class="bg-slate-50 rounded-lg p-3"><i data-lucide="credit-card" class="w-5 h-5 mx-auto text-slate-500 mb-1"></i><p class="text-[11px] text-slate-600">Débito</p></div>
+                <div class="bg-slate-50 rounded-lg p-3"><i data-lucide="landmark" class="w-5 h-5 mx-auto text-slate-500 mb-1"></i><p class="text-[11px] text-slate-600">Transferencia</p></div>
+                <div class="bg-slate-50 rounded-lg p-3"><i data-lucide="smartphone" class="w-5 h-5 mx-auto text-slate-500 mb-1"></i><p class="text-[11px] text-slate-600">Mercado Pago</p></div>
+                <div class="bg-slate-50 rounded-lg p-3"><i data-lucide="wallet" class="w-5 h-5 mx-auto text-slate-500 mb-1"></i><p class="text-[11px] text-slate-600">Cuenta DNI</p></div>
+                <div class="bg-slate-50 rounded-lg p-3"><i data-lucide="x" class="w-5 h-5 mx-auto text-slate-400 mb-1"></i><p class="text-[11px] text-slate-400">Sin tarjeta de crédito</p></div>
+            </div>
+            <p class="text-xs text-slate-400">La tienda online está disponible para compras minoristas (consumidor final). Los clientes mayoristas gestionan su pedido fijo semanal directamente con la fábrica.</p>
+        </div>
+    </section>
+
+    <section class="max-w-7xl mx-auto px-4 sm:px-6">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold text-slate-900">Productos destacados</h2>
+            <button onclick="irA('productos')" class="text-sm font-semibold text-red-600 hover:underline">Ver todo →</button>
+        </div>
+        <div id="grid-destacados" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"></div>
+    </section>
+</main>
+
+<!-- ================= VISTA PRODUCTOS ================= -->
+<main id="vista-productos" class="hidden max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+    <div>
+        <h2 class="text-2xl font-bold text-slate-900">Nuestros Productos</h2>
+        <p class="text-sm text-slate-500">Pastas frescas y salsas, con precio diferenciado automático para clientes con bonificación.</p>
+    </div>
+
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="flex items-center gap-2 overflow-x-auto pb-1" id="filtros-categoria">
+            <button data-cat="Todas" onclick="filtrarCategoria('Todas')" class="chip-cat px-4 py-2 rounded-full text-sm font-semibold bg-red-600 text-white whitespace-nowrap">Todas</button>
+            <button data-cat="Pastas Rellenas" onclick="filtrarCategoria('Pastas Rellenas')" class="chip-cat px-4 py-2 rounded-full text-sm font-semibold bg-white border border-slate-200 text-slate-600 whitespace-nowrap">Pastas Rellenas</button>
+            <button data-cat="Pastas Secas" onclick="filtrarCategoria('Pastas Secas')" class="chip-cat px-4 py-2 rounded-full text-sm font-semibold bg-white border border-slate-200 text-slate-600 whitespace-nowrap">Pastas Secas</button>
+            <button data-cat="Salsas" onclick="filtrarCategoria('Salsas')" class="chip-cat px-4 py-2 rounded-full text-sm font-semibold bg-white border border-slate-200 text-slate-600 whitespace-nowrap">Salsas</button>
+        </div>
+        <div class="relative w-full sm:w-72">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input id="input-buscar-producto" oninput="renderCatalogo()" type="text" placeholder="Buscar producto..." class="w-full border border-slate-300 rounded-lg pl-9 pr-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+        </div>
+    </div>
+
+    <div id="grid-productos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+</main>
+
+<!-- ================= VISTA ACCESO (login / registro, independiente del carrito) ================= -->
+<main id="vista-acceso" class="hidden max-w-xl mx-auto px-4 sm:px-6 py-10">
+    <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-5">
+        <div class="flex border-b border-slate-200">
+            <button onclick="mostrarTabAuth('login')" id="tab-btn-login" class="px-4 py-2 text-sm font-semibold border-b-2 border-red-600 text-red-600">Iniciar sesión</button>
+            <button onclick="mostrarTabAuth('registro')" id="tab-btn-registro" class="px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-500">Registrarme</button>
+        </div>
+
+        <div id="tab-login" class="space-y-3">
+            <p class="text-sm text-slate-500">Ingresá con tu usuario para identificarte como cliente registrado.</p>
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Usuario (email)</label>
+                <input id="login-usuario" type="text" placeholder="jperez@gmail.com" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Contraseña</label>
+                <div class="relative">
+                    <input id="login-password" type="password" placeholder="••••••••" class="w-full border border-slate-300 rounded-lg p-2.5 pr-10 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                    <button type="button" onclick="togglePassword('login-password', this)" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                        <i data-lucide="eye" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+            <button onclick="loginCliente()" class="w-full bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-lg text-sm font-semibold">Ingresar</button>
+            <p class="text-xs text-slate-400">Clientes de prueba: <b>jperez@gmail.com</b> (minorista) · <b>donmosa@gmail.com</b> (mayorista, sólo para ver Mi Cuenta).</p>
+        </div>
+
+        <div id="tab-registro" class="hidden space-y-4">
+            <p class="text-sm text-slate-500">Completá tus datos para registrarte como cliente minorista de la fábrica.</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre *</label>
+                    <input id="reg-nombre" type="text" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Apellido *</label>
+                    <input id="reg-apellido" type="text" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo de Documento *</label>
+                    <select id="reg-tipo-documento" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                        <option value="DNI">DNI</option>
+                        <option value="CUIT">CUIT</option>
+                        <option value="CUIL">CUIL</option>
+                        <option value="Pasaporte">Pasaporte</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Número de Documento *</label>
+                    <input id="reg-numero-documento" type="text" placeholder="30123456" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Provincia</label>
+                    <select id="reg-provincia" onchange="cargarLocalidadesCascada('reg')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Localidad</label>
+                    <select id="reg-localidad" onchange="cargarCallesCascada('reg')" disabled class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Calle</label>
+                    <select id="reg-calle" disabled class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Altura</label>
+                    <input id="reg-altura" type="text" placeholder="Ej: 450" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Teléfono</label>
+                    <input id="reg-telefono" type="text" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Email *</label>
+                    <input id="reg-email" type="email" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Contraseña *</label>
+                    <div class="relative">
+                        <input id="reg-password" type="password" class="w-full border border-slate-300 rounded-lg p-2.5 pr-10 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                        <button type="button" onclick="togglePassword('reg-password', this)" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <button onclick="registrarCliente()" class="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold">Crear cuenta</button>
+        </div>
+    </div>
+</main>
+
+<!-- ================= VISTA EDITAR PERFIL (Administrar cliente, autogestión) ================= -->
+<main id="vista-editar-perfil" class="hidden max-w-2xl mx-auto px-4 sm:px-6 py-8">
+    <h2 class="text-2xl font-bold text-slate-900 mb-6">Editar Perfil</h2>
+    <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre</label>
+                <input id="perfil-nombre" type="text" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Apellido</label>
+                <input id="perfil-apellido" type="text" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Teléfono</label>
+                <input id="perfil-telefono" type="text" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Email</label>
+                <input id="perfil-email" type="email" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Altura</label>
+                <input id="perfil-altura" type="text" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Nueva contraseña (opcional)</label>
+                <div class="relative">
+                    <input id="perfil-password" type="password" placeholder="Dejar vacío para no cambiarla" class="w-full border border-slate-300 rounded-lg p-2.5 pr-10 text-sm outline-none">
+                    <button type="button" onclick="togglePassword('perfil-password', this)" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                        <i data-lucide="eye" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="flex justify-end gap-3 pt-2 border-t border-slate-100">
+            <button onclick="irA('mi-cuenta')" class="px-4 py-2.5 text-sm font-semibold text-slate-500 hover:text-slate-800">Cancelar</button>
+            <button onclick="guardarPerfil()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold">Guardar cambios</button>
+        </div>
+    </div>
+</main>
+
+<!-- ================= VISTA CHECKOUT ================= -->
+<main id="vista-checkout" class="hidden max-w-4xl mx-auto px-4 sm:px-6 py-8">
+    <button onclick="irA('productos')" class="flex items-center text-sm text-slate-500 hover:text-slate-800 mb-4">
+        <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i> Seguir comprando
+    </button>
+
+    <div class="flex items-center justify-center mb-8 text-xs font-semibold text-slate-400">
+        <div class="flex items-center">
+            <div id="dot-1" class="step-dot w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center">1</div>
+            <span class="ml-2 hidden sm:inline">Tus datos</span>
+        </div>
+        <div id="line-1" class="step-line w-10 sm:w-16 h-0.5 bg-slate-200 mx-2"></div>
+        <div class="flex items-center">
+            <div id="dot-2" class="step-dot w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center">2</div>
+            <span class="ml-2 hidden sm:inline">Entrega</span>
+        </div>
+        <div id="line-2" class="step-line w-10 sm:w-16 h-0.5 bg-slate-200 mx-2"></div>
+        <div class="flex items-center">
+            <div id="dot-3" class="step-dot w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center">3</div>
+            <span class="ml-2 hidden sm:inline">Pago</span>
+        </div>
+    </div>
+
+    <!-- PASO 1: DATOS DEL CLIENTE -->
+    <section id="paso-1" class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-5">
+        <div id="paso1-no-logueado" class="text-center py-8 space-y-3">
+            <i data-lucide="lock" class="w-10 h-10 text-slate-300 mx-auto"></i>
+            <p class="text-sm text-slate-600">Necesitás iniciar sesión o crear tu cuenta para continuar con la compra.</p>
+            <button onclick="irA('acceso')" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold">Iniciar sesión / Registrarme</button>
+        </div>
+
+        <div id="paso1-no-minorista" class="hidden text-center py-8 space-y-3">
+            <i data-lucide="store" class="w-10 h-10 text-amber-400 mx-auto"></i>
+            <p class="text-sm text-slate-700 font-semibold">La tienda online está disponible solo para clientes minoristas.</p>
+            <p class="text-xs text-slate-500 max-w-sm mx-auto">Tu cuenta es de tipo mayorista: tu pedido fijo semanal se gestiona directamente con la fábrica. Desde "Mi Cuenta" podés ver tu cuenta corriente y registrar pagos.</p>
+            <button onclick="irA('mi-cuenta')" class="bg-slate-800 hover:bg-slate-900 text-white px-6 py-2.5 rounded-lg text-sm font-semibold">Ir a Mi Cuenta</button>
+        </div>
+
+        <div id="paso1-moroso" class="hidden text-center py-8 space-y-3">
+            <i data-lucide="alert-triangle" class="w-10 h-10 text-red-400 mx-auto"></i>
+            <p class="text-sm text-slate-700 font-semibold">No es posible generar nuevos pedidos.</p>
+            <p class="text-xs text-slate-500 max-w-sm mx-auto">Tu cuenta tiene una deuda vencida en cuenta corriente. Regularizá el pago desde "Mi Cuenta" para volver a comprar.</p>
+            <button onclick="irA('mi-cuenta')" class="bg-slate-800 hover:bg-slate-900 text-white px-6 py-2.5 rounded-lg text-sm font-semibold">Ir a Mi Cuenta</button>
+        </div>
+
+        <div id="paso1-logueado" class="hidden">
+            <div class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl p-4">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-full bg-red-100 text-red-700 flex items-center justify-center font-bold" id="avatar-cliente-checkout">?</div>
+                    <div>
+                        <p class="font-semibold text-slate-800" id="nombre-cliente-checkout">-</p>
+                        <p class="text-xs text-slate-500" id="tipo-cliente-checkout">-</p>
+                    </div>
+                </div>
+                <button onclick="cerrarSesionCliente()" class="text-xs font-semibold text-slate-500 hover:text-red-600">Cerrar sesión</button>
+            </div>
+            <button onclick="irPasoCheckout(2)" class="mt-5 bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold">Continuar a Entrega →</button>
+        </div>
+    </section>
+
+    <!-- PASO 2: ENTREGA -->
+    <section id="paso-2" class="hidden bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-5">
+        <h3 class="font-semibold text-lg text-slate-800">¿Cómo querés recibir tu pedido?</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <label class="border border-slate-200 rounded-xl p-4 cursor-pointer flex items-start space-x-3 has-[:checked]:border-red-500 has-[:checked]:bg-red-50">
+                <input type="radio" name="modalidad-entrega" value="Retiro en local" checked onchange="renderResumenEntrega()" class="mt-1">
+                <div>
+                    <p class="font-semibold text-sm text-slate-800">Retiro en el local</p>
+                    <p class="text-xs text-slate-500 mt-1">Sin costo adicional. Te avisamos cuando esté listo.</p>
+                </div>
+            </label>
+            <label class="border border-slate-200 rounded-xl p-4 cursor-pointer flex items-start space-x-3 has-[:checked]:border-red-500 has-[:checked]:bg-red-50">
+                <input type="radio" name="modalidad-entrega" value="Envío a domicilio" onchange="renderResumenEntrega()" class="mt-1">
+                <div>
+                    <p class="font-semibold text-sm text-slate-800">Envío a domicilio</p>
+                    <p class="text-xs text-slate-500 mt-1">Mediante delivery externo. El costo se coordina y abona directamente al repartidor.</p>
+                </div>
+            </label>
+        </div>
+
+        <div id="bloque-direccion-envio" class="hidden">
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Dirección de entrega</label>
+            <input id="direccion-envio" type="text" placeholder="Calle, altura, localidad" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+        </div>
+
+        <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha deseada de entrega / retiro</label>
+            <input id="fecha-entrega" type="date" onchange="validarFechaEvento()" class="w-full sm:w-60 border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+        </div>
+
+        <label class="flex items-start space-x-3 border border-amber-200 bg-amber-50 rounded-xl p-4 cursor-pointer">
+            <input type="checkbox" id="check-evento" onchange="toggleEvento()" class="mt-1">
+            <div>
+                <p class="text-sm font-semibold text-amber-800">Es un pedido especial (evento, cumpleaños, fiesta)</p>
+                <p class="text-xs text-amber-700 mt-1">Requiere al menos 48hs de anticipación. Los pedidos especiales se tramitan primero como presupuesto; una vez aceptado por la fábrica se abona una seña del 50% (no reintegrable ante cancelación) y el resto al recibir la mercadería.</p>
+            </div>
+        </label>
+        <p id="aviso-fecha-evento" class="hidden text-xs font-semibold text-red-600">La fecha elegida no cumple con las 48hs de anticipación requeridas para pedidos especiales.</p>
+
+        <div class="flex justify-between pt-2">
+            <button onclick="irPasoCheckout(1)" class="text-sm font-semibold text-slate-500 hover:text-slate-800">← Volver</button>
+            <button onclick="confirmarPasoEntrega()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold">Continuar a Pago →</button>
+        </div>
+    </section>
+
+    <!-- PASO 3: PAGO -->
+    <section id="paso-3" class="hidden bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-5">
+        <h3 class="font-semibold text-lg text-slate-800">Forma de pago</h3>
+
+        <div id="resumen-totales-pago" class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm space-y-1"></div>
+
+        <div id="aviso-deuda-vencida" class="hidden bg-red-50 border border-red-200 rounded-xl p-4 flex items-start space-x-3">
+            <i data-lucide="alert-triangle" class="w-5 h-5 text-red-600 mt-0.5"></i>
+            <p class="text-sm text-red-700">Tu cuenta tiene facturas vencidas en cuenta corriente. No es posible utilizar cuenta corriente hasta regularizar la deuda; podés abonar con otro medio de pago.</p>
+        </div>
+
+        <div id="bloque-medio-pago">
+            <label class="block text-xs font-semibold text-slate-600 mb-2">Medio de pago</label>
+            <div id="grid-medios-pago" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
+        </div>
+
+        <label id="bloque-terminos" class="flex items-start space-x-2 text-xs text-slate-500">
+            <input type="checkbox" id="check-terminos" class="mt-0.5">
+            <span>Confirmo los datos del pedido. En caso de pedidos especiales entiendo que la seña del 50% no es reembolsable ante cancelación.</span>
+        </label>
+
+        <div class="flex justify-between pt-2">
+            <button onclick="irPasoCheckout(2)" class="text-sm font-semibold text-slate-500 hover:text-slate-800">← Volver</button>
+            <div class="flex gap-3">
+                <button id="btn-solicitar-presupuesto" onclick="solicitarPresupuesto()" class="bg-slate-100 border border-slate-300 text-slate-700 px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-200">Solicitar presupuesto</button>
+                <button id="btn-confirmar-pedido" onclick="confirmarPedido()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold">Confirmar Pedido</button>
+            </div>
+        </div>
+    </section>
+</main>
+
+<!-- ================= VISTA CONFIRMACION ================= -->
+<main id="vista-confirmacion" class="hidden max-w-2xl mx-auto px-4 sm:px-6 py-10">
+    <div class="text-center mb-6 no-print">
+        <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i data-lucide="check-circle" class="w-8 h-8"></i>
+        </div>
+        <h2 id="titulo-confirmacion" class="text-2xl font-bold text-slate-900">¡Pedido confirmado!</h2>
+        <p class="text-sm text-slate-500 mt-1">Guardá el número de orden para hacer el seguimiento en "Mis Pedidos".</p>
+    </div>
+
+    <div id="area-comprobante" class="bg-white border border-slate-200 rounded-xl p-8 shadow-sm space-y-5">
+        <div class="flex justify-between items-start border-b border-slate-200 pb-4">
+            <div>
+                <h1 class="text-xl font-bold text-red-600">FÁBRICA DE PASTAS</h1>
+                <p class="text-xs text-slate-500">Comprobante de venta preliminar</p>
+            </div>
+            <div class="text-right">
+                <p id="confirm-numero" class="text-sm font-bold text-slate-800">PED-0000</p>
+                <p id="confirm-fecha" class="text-xs text-slate-400">-</p>
+            </div>
+        </div>
+        <div id="confirm-cliente-info" class="text-xs text-slate-600"></div>
+        <table class="w-full text-xs text-left">
+            <thead class="border-b border-slate-300 uppercase text-slate-500">
+                <tr><th class="py-2">Producto</th><th class="py-2 text-center">Cant.</th><th class="py-2 text-right">P. Unit.</th><th class="py-2 text-right">Subtotal</th></tr>
+            </thead>
+            <tbody id="confirm-detalle"></tbody>
+        </table>
+        <div id="confirm-totales" class="border-t border-slate-200 pt-4 text-sm space-y-1 text-right"></div>
+    </div>
+
+    <div class="flex flex-col sm:flex-row gap-3 mt-6 no-print">
+        <button onclick="window.print()" class="flex-1 bg-slate-900 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-800 flex items-center justify-center space-x-2"><i data-lucide="printer" class="w-4 h-4"></i><span>Imprimir comprobante</span></button>
+        <button onclick="irAProtegido('mis-pedidos')" class="flex-1 bg-red-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-red-700">Ver mis pedidos</button>
+        <button onclick="irA('productos')" class="flex-1 bg-slate-100 border border-slate-300 text-slate-700 py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-200">Seguir comprando</button>
+    </div>
+</main>
+
+<!-- ================= VISTA MIS PEDIDOS ================= -->
+<main id="vista-mis-pedidos" class="hidden max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+    <div id="listado-mis-pedidos" class="space-y-6">
+        <h2 class="text-2xl font-bold text-slate-900">Mis Pedidos</h2>
+        <p class="text-sm text-slate-500 -mt-4">Seguimiento de tus órdenes de pedido. Mientras estén "Pendiente" podés modificarlas.</p>
+        <div id="tabla-mis-pedidos" class="space-y-3"></div>
+    </div>
+
+    <div id="detalle-mi-pedido" class="hidden bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
+        <button onclick="document.getElementById('detalle-mi-pedido').classList.add('hidden'); document.getElementById('listado-mis-pedidos').classList.remove('hidden')" class="text-sm font-semibold text-slate-500 hover:text-slate-800 flex items-center"><i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i>Volver al listado</button>
+        <div id="contenido-detalle-pedido"></div>
+    </div>
+</main>
+
+<!-- ================= VISTA MIS PRESUPUESTOS ================= -->
+<main id="vista-mis-presupuestos" class="hidden max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+    <h2 class="text-2xl font-bold text-slate-900">Mis Presupuestos</h2>
+    <p class="text-sm text-slate-500 -mt-4">Presupuestos solicitados para eventos o pedidos especiales.</p>
+    <div id="tabla-mis-presupuestos" class="space-y-3"></div>
+</main>
+
+<!-- ================= VISTA MI CUENTA ================= -->
+<main id="vista-mi-cuenta" class="hidden max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+    <h2 class="text-2xl font-bold text-slate-900">Mi Cuenta</h2>
+    <div id="contenido-mi-cuenta" class="space-y-6"></div>
+</main>
+
+<!-- ================= CARRITO (DRAWER) ================= -->
+<div id="overlay-carrito" onclick="toggleCarrito(false)" class="hidden fixed inset-0 bg-black/40 z-40 no-print"></div>
+<aside id="drawer-carrito" class="cart-drawer fixed top-0 right-0 h-full w-full sm:w-96 bg-white z-50 shadow-2xl translate-x-full flex flex-col no-print">
+    <div class="flex items-center justify-between p-5 border-b border-slate-200">
+        <h3 class="font-bold text-slate-900 flex items-center space-x-2"><i data-lucide="shopping-cart" class="w-5 h-5"></i><span>Tu carrito</span></h3>
+        <button onclick="toggleCarrito(false)" class="p-1 hover:bg-slate-100 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <div id="items-carrito" class="flex-1 overflow-y-auto p-5 space-y-4"></div>
+    <div class="p-5 border-t border-slate-200 space-y-3">
+        <div class="flex justify-between text-sm text-slate-500"><span>Subtotal</span><span id="carrito-subtotal">$ 0</span></div>
+        <div id="carrito-bonificacion-fila" class="hidden flex justify-between text-sm text-emerald-600"><span>Bonificación</span><span id="carrito-bonificacion">-$ 0</span></div>
+        <div class="flex justify-between font-bold text-lg text-slate-900"><span>Total</span><span id="carrito-total">$ 0</span></div>
+        <button onclick="irA('checkout')" id="btn-ir-checkout" class="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed">Iniciar compra</button>
+    </div>
+</aside>
+
+<footer class="bg-white border-t border-slate-200 py-6 mt-10 no-print">
+    <div class="max-w-7xl mx-auto px-6 text-center text-xs text-slate-400">
+        Fábrica de Pastas — Tienda Online para clientes minoristas. Medios de pago: Efectivo, Débito, Transferencia, Mercado Pago, Cuenta DNI. No se aceptan cheques ni tarjeta de crédito.
+    </div>
+</footer>
+
+<script>
+lucide.createIcons();
+
+// ==========================================
+// MODELO (fiel al Diagrama de Clases del TP)
+// ==========================================
+class Provincia { constructor(id_provincia, nombre){ this.id_provincia=id_provincia; this.nombre=nombre; } }
+class Localidad { constructor(id_localidad, nombre, id_provincia){ this.id_localidad=id_localidad; this.nombre=nombre; this.id_provincia=id_provincia; } }
+class Calle { constructor(id_calle, nombre, id_localidad){ this.id_calle=id_calle; this.nombre=nombre; this.id_localidad=id_localidad; } }
+
+const dbProvincias = [ new Provincia(1,'Buenos Aires'), new Provincia(2,'Santa Fe'), new Provincia(3,'Córdoba') ];
+const dbLocalidades = [ new Localidad(101,'Trenque Lauquen',1), new Localidad(102,'La Plata',1), new Localidad(103,'Rosario',2), new Localidad(104,'Córdoba Capital',3) ];
+const dbCalles = [ new Calle(1001,'Av. Villegas',101), new Calle(1002,'Calle 9 de Julio',101), new Calle(1003,'Calle 7',102), new Calle(1004,'Av. Pellegrini',103), new Calle(1005,'Av. Colón',104) ];
+
+class Persona {
+    constructor(id_persona, nombre, apellido, tipo_documento, numero_documento, telefono, email, condicion_iva, calleObj, altura){
+        this.id_persona=id_persona; this.nombre=nombre; this.apellido=apellido;
+        this.tipo_documento=tipo_documento||'DNI'; this.numero_documento=numero_documento;
+        this.telefono=telefono; this.email=email; this.condicion_iva=condicion_iva||'Consumidor Final';
+        this.calleObj=calleObj; this.altura=altura;
+    }
+    get nombreCompleto(){ return `${this.nombre} ${this.apellido}`.trim(); }
+    get documentoCompleto(){ return `${this.tipo_documento} ${this.numero_documento}`; }
+    get direccionCompleta(){
+        if(!this.calleObj) return this.altura || 'Sin domicilio registrado';
+        const loc = dbLocalidades.find(l=>l.id_localidad===this.calleObj.id_localidad);
+        const prov = loc ? dbProvincias.find(p=>p.id_provincia===loc.id_provincia) : null;
+        return `${this.calleObj.nombre} ${this.altura||''}, ${loc?loc.nombre:''} (${prov?prov.nombre:''})`.trim();
+    }
+}
+
+class Cliente extends Persona {
+    constructor(id_cliente, nombre, apellido, tipo_documento, numero_documento, telefono, email, condicion_iva, calleObj, altura, tipo_cliente, usuario, password, opts={}){
+        super(id_cliente, nombre, apellido, tipo_documento, numero_documento, telefono, email, condicion_iva, calleObj, altura);
+        this.id_cliente = id_cliente;
+        this.tipo_cliente = tipo_cliente; // 'Mostrador' (minorista) | 'Mayorista'
+        this.usuario = usuario;
+        this.password = password;
+        this.tiene_cuenta_corriente = opts.tiene_cuenta_corriente || false;
+        this.limite_credito = opts.limite_credito || 0;
+        this.saldo_actual = opts.saldo_actual || 0;
+        this.tiene_deuda_vencida = opts.tiene_deuda_vencida || false;
+        this.porcentaje_bonificacion = opts.porcentaje_bonificacion || 0;
+        this.dia_fijo_entrega = opts.dia_fijo_entrega || null;
+    }
+}
+
+class Producto {
+    constructor(id_producto, nombre, tipo_producto, unidad_medida, precio_unitario, descripcion, icono){
+        this.id_producto=id_producto; this.nombre=nombre; this.tipo_producto=tipo_producto;
+        this.unidad_medida=unidad_medida; this.precio_unitario=precio_unitario; this.descripcion=descripcion; this.icono=icono;
+    }
+}
+
+// ==========================================
+// DATOS SEMILLA
+// ==========================================
+const catalogo = [
+    new Producto(1,'Ravioles de Ricotta y Verdura','Pastas Rellenas','kg',3500,'Ravioles caseros rellenos de ricotta fresca y espinaca.','package'),
+    new Producto(2,'Sorrentinos de Jamón y Queso','Pastas Rellenas','kg',4200,'Sorrentinos rellenos de jamón cocido y queso cremoso.','package'),
+    new Producto(3,'Capeletis de Pollo y Verdura','Pastas Rellenas','kg',3900,'Capeletis rellenos de pollo braseado y verdura salteada.','package'),
+    new Producto(4,'Tallarines al Huevo','Pastas Secas','kg',2800,'Tallarines frescos elaborados con huevo de campo.','wheat'),
+    new Producto(5,'Ñoquis de Papa','Pastas Secas','kg',3000,'Ñoquis caseros de papa, suaves y livianos.','wheat'),
+    new Producto(6,'Fideos Caseros Cortados','Pastas Secas','kg',2600,'Fideos cortados a mano, ideales para salsas espesas.','wheat'),
+    new Producto(7,'Salsa Fileto en Pote','Salsas','un (500g)',1200,'Salsa de tomate clásica a fuego lento.','soup'),
+    new Producto(8,'Salsa Bolognesa en Pote','Salsas','un (500g)',1800,'Salsa con carne picada y vegetales.','soup'),
+    new Producto(9,'Salsa Blanca (Crema) en Pote','Salsas','un (500g)',1500,'Salsa blanca cremosa, ideal para pastas rellenas.','soup'),
+];
+
+const clientesRegistrados = [
+    new Cliente(1,'Mariano','Mosa','CUIT','30889911224','11-4567-1234','donmosa@gmail.com','Responsable Inscripto',dbCalles[2],'890','Mayorista','donmosa@gmail.com','1234',
+        { tiene_cuenta_corriente:true, limite_credito:80000, saldo_actual:32000, tiene_deuda_vencida:false, porcentaje_bonificacion:10, dia_fijo_entrega:'Lunes' }),
+    new Cliente(2,'Hotel Plaza','S.A.','CUIT','30712345678','(02392) 456789','compras@hotelplaza.com','Responsable Inscripto',dbCalles[0],'450','Mayorista','compras@hotelplaza.com','1234',
+        { tiene_cuenta_corriente:true, limite_credito:150000, saldo_actual:158000, tiene_deuda_vencida:true, porcentaje_bonificacion:10, dia_fijo_entrega:'Martes' }),
+    new Cliente(3,'Juan','Pérez','DNI','30123456','11-5555-1234','jperez@gmail.com','Consumidor Final',null,null,'Mostrador','jperez@gmail.com','1234',
+        { tiene_cuenta_corriente:false, limite_credito:0, saldo_actual:0, tiene_deuda_vencida:false, porcentaje_bonificacion:0 }),
+];
+
+let clienteActual = null;
+let carrito = []; // { producto, cantidad }
+let misPedidos = [];     // Orden_Pedido_Cliente
+let misPresupuestos = []; // Presupuesto_Cliente
+let misComprobantesPago = []; // Comprobante_Pago_Cliente
+
+let contadorCliente = 4;
+let contadorPedido = 1043;
+let contadorPresupuesto = 94;
+let contadorPago = 1;
+
+let datosEntrega = {};
+let medioPagoSeleccionado = null;
+let origenCheckout = null; // para volver a la vista pedida tras loguearse
+
+// ==========================================
+// INIT
+// ==========================================
+window.onload = function(){
+    inicializarCombosUbicacion();
+    renderCatalogo();
+    renderDestacados();
+    renderSesion();
+    lucide.createIcons();
+    document.addEventListener('click', (e)=>{
+        const menu = document.getElementById('menu-perfil');
+        const btn = document.getElementById('btn-avatar-perfil');
+        if(menu && !menu.classList.contains('hidden') && !menu.contains(e.target) && e.target!==btn && !btn?.contains(e.target)){
+            menu.classList.add('hidden');
+        }
+    });
+};
+
+function cerrarMenuMobile(){ document.getElementById('mobile-nav').classList.add('hidden'); }
+
+function inicializarCombosUbicacion(){
+    const select = document.getElementById('reg-provincia');
+    if(!select) return;
+    select.innerHTML = '<option value="">-- Seleccione Provincia --</option>';
+    dbProvincias.forEach(p=>{
+        const opt = document.createElement('option');
+        opt.value = p.id_provincia; opt.innerText = p.nombre;
+        select.appendChild(opt);
+    });
+}
+
+function cargarLocalidadesCascada(prefijo){
+    const idProv = parseInt(document.getElementById(`${prefijo}-provincia`).value);
+    const selectLoc = document.getElementById(`${prefijo}-localidad`);
+    const selectCalle = document.getElementById(`${prefijo}-calle`);
+    selectLoc.innerHTML = '<option value="">-- Seleccione Localidad --</option>';
+    selectCalle.innerHTML = '<option value="">-- Seleccione Calle --</option>';
+    selectCalle.disabled = true;
+    if(!idProv){ selectLoc.disabled = true; return; }
+    dbLocalidades.filter(l=>l.id_provincia===idProv).forEach(l=>{
+        const opt = document.createElement('option');
+        opt.value = l.id_localidad; opt.innerText = l.nombre;
+        selectLoc.appendChild(opt);
+    });
+    selectLoc.disabled = false;
+}
+
+function cargarCallesCascada(prefijo){
+    const idLoc = parseInt(document.getElementById(`${prefijo}-localidad`).value);
+    const selectCalle = document.getElementById(`${prefijo}-calle`);
+    selectCalle.innerHTML = '<option value="">-- Seleccione Calle --</option>';
+    if(!idLoc){ selectCalle.disabled = true; return; }
+    dbCalles.filter(c=>c.id_localidad===idLoc).forEach(c=>{
+        const opt = document.createElement('option');
+        opt.value = c.id_calle; opt.innerText = c.nombre;
+        selectCalle.appendChild(opt);
+    });
+    selectCalle.disabled = false;
+}
+
+// ==========================================
+// UTILIDADES: contraseña visible / toasts
+// ==========================================
+function togglePassword(inputId, btnEl){
+    const input = document.getElementById(inputId);
+    const mostrar = input.type === 'password';
+    input.type = mostrar ? 'text' : 'password';
+    btnEl.innerHTML = `<i data-lucide="${mostrar ? 'eye-off' : 'eye'}" class="w-4 h-4"></i>`;
+    lucide.createIcons();
+}
+
+function toast(mensaje, tipo='success'){
+    const colores = { success:'bg-emerald-600', error:'bg-red-600', info:'bg-slate-800' };
+    const div = document.createElement('div');
+    div.className = `toast ${colores[tipo]||colores.success} text-white text-sm font-medium px-4 py-3 rounded-lg shadow-lg max-w-xs`;
+    div.innerText = mensaje;
+    document.getElementById('toast-container').appendChild(div);
+    setTimeout(()=>{ div.remove(); }, 3800);
+}
+
+// ==========================================
+// NAVEGACION
+// ==========================================
+const VISTAS = ['inicio','productos','acceso','editar-perfil','checkout','confirmacion','mis-pedidos','mis-presupuestos','mi-cuenta'];
+function irA(vista){
+    toggleCarrito(false);
+    cerrarMenuPerfil();
+    VISTAS.forEach(v=> document.getElementById(`vista-${v}`).classList.add('hidden'));
+    document.getElementById(`vista-${vista}`).classList.remove('hidden');
+    window.scrollTo({top:0, behavior:'smooth'});
+    if(vista==='checkout') iniciarCheckout();
+    if(vista==='mis-pedidos') renderMisPedidos();
+    if(vista==='mis-presupuestos') renderMisPresupuestos();
+    if(vista==='mi-cuenta') renderMiCuenta();
+    if(vista==='editar-perfil') cargarFormularioPerfil();
+    if(vista==='acceso') mostrarTabAuth('login');
+    lucide.createIcons();
+}
+
+function irAProtegido(vista){
+    if(!clienteActual){ origenCheckout=vista; toast('Iniciá sesión para continuar.','info'); irA('acceso'); return; }
+    irA(vista);
+}
+
+// ==========================================
+// CATALOGO
+// ==========================================
+let categoriaActiva = 'Todas';
+function filtrarCategoria(cat){
+    categoriaActiva = cat;
+    document.querySelectorAll('.chip-cat').forEach(btn=>{
+        const activo = btn.dataset.cat === cat;
+        btn.className = `chip-cat px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap ${activo ? 'bg-red-600 text-white' : 'bg-white border border-slate-200 text-slate-600'}`;
+    });
+    renderCatalogo();
+}
+
+function precioParaCliente(producto){
+    if(clienteActual && clienteActual.tipo_cliente==='Mayorista' && clienteActual.porcentaje_bonificacion>0){
+        return producto.precio_unitario * (1 - clienteActual.porcentaje_bonificacion/100);
+    }
+    return producto.precio_unitario;
+}
+
+function tarjetaProducto(p){
+    const precioFinal = precioParaCliente(p);
+    const tieneDescuento = precioFinal < p.precio_unitario;
+    const div = document.createElement('div');
+    div.className = 'bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition flex flex-col';
+    div.innerHTML = `
+        <div class="h-32 bg-gradient-to-br from-red-50 to-amber-50 flex items-center justify-center">
+            <i data-lucide="${p.icono}" class="w-12 h-12 text-red-400"></i>
+        </div>
+        <div class="p-4 flex-1 flex flex-col">
+            <span class="text-[10px] font-bold uppercase tracking-wide text-red-500">${p.tipo_producto}</span>
+            <h3 class="font-semibold text-slate-800 mt-1">${p.nombre}</h3>
+            <p class="text-xs text-slate-500 mt-1 flex-1">${p.descripcion}</p>
+            <div class="mt-3 flex items-end justify-between">
+                <div>
+                    ${tieneDescuento ? `<span class="text-xs text-slate-400 line-through">$ ${p.precio_unitario.toLocaleString()}</span>` : ''}
+                    <p class="font-bold text-slate-900">$ ${precioFinal.toLocaleString(undefined,{maximumFractionDigits:0})} <span class="text-xs font-normal text-slate-400">/ ${p.unidad_medida}</span></p>
+                </div>
+            </div>
+            <button onclick="agregarAlCarrito(${p.id_producto})" class="mt-3 w-full bg-slate-900 hover:bg-red-600 text-white text-sm font-semibold py-2 rounded-lg transition flex items-center justify-center space-x-2">
+                <i data-lucide="plus" class="w-4 h-4"></i><span>Agregar al carrito</span>
+            </button>
+        </div>`;
+    return div;
+}
+
+function renderDestacados(){
+    const grid = document.getElementById('grid-destacados');
+    grid.innerHTML = '';
+    catalogo.slice(0,4).forEach(p=> grid.appendChild(tarjetaProducto(p)));
+    lucide.createIcons();
+}
+
+function renderCatalogo(){
+    const grid = document.getElementById('grid-productos');
+    const texto = (document.getElementById('input-buscar-producto')?.value || '').toLowerCase();
+    grid.innerHTML = '';
+    const lista = catalogo.filter(p => (categoriaActiva==='Todas' || p.tipo_producto===categoriaActiva) && p.nombre.toLowerCase().includes(texto));
+
+    if(lista.length===0){
+        grid.innerHTML = `<p class="col-span-full text-center text-sm text-slate-400 py-10">No se encontraron productos.</p>`;
+        return;
+    }
+    lista.forEach(p=> grid.appendChild(tarjetaProducto(p)));
+    lucide.createIcons();
+}
+
+// ==========================================
+// CARRITO
+// ==========================================
+function agregarAlCarrito(idProducto){
+    const producto = catalogo.find(p=>p.id_producto===idProducto);
+    const existente = carrito.find(i=>i.producto.id_producto===idProducto);
+    if(existente) existente.cantidad += 1;
+    else carrito.push({ producto, cantidad:1 });
+    renderCarrito();
+    toast(`${producto.nombre} agregado al carrito`);
+    toggleCarrito(true);
+}
+
+function cambiarCantidadCarrito(idProducto, delta){
+    const item = carrito.find(i=>i.producto.id_producto===idProducto);
+    if(!item) return;
+    item.cantidad += delta;
+    if(item.cantidad<=0) carrito = carrito.filter(i=>i.producto.id_producto!==idProducto);
+    renderCarrito();
+}
+
+function quitarDelCarrito(idProducto){
+    carrito = carrito.filter(i=>i.producto.id_producto!==idProducto);
+    renderCarrito();
+}
+
+function calcularTotalesCarrito(){
+    let subtotal = 0, subtotalConDescuento = 0;
+    carrito.forEach(i=>{
+        subtotal += i.producto.precio_unitario * i.cantidad;
+        subtotalConDescuento += precioParaCliente(i.producto) * i.cantidad;
+    });
+    return { subtotal, bonificacion: subtotal - subtotalConDescuento, total: subtotalConDescuento };
+}
+
+function renderCarrito(){
+    const cont = document.getElementById('items-carrito');
+    cont.innerHTML = '';
+    if(carrito.length===0){
+        cont.innerHTML = `<p class="text-sm text-slate-400 text-center py-10">Tu carrito está vacío.</p>`;
+    }
+    carrito.forEach(i=>{
+        const div = document.createElement('div');
+        div.className = 'flex items-center justify-between border-b border-slate-100 pb-3';
+        div.innerHTML = `
+            <div class="flex-1">
+                <p class="text-sm font-semibold text-slate-800">${i.producto.nombre}</p>
+                <p class="text-xs text-slate-400">$ ${precioParaCliente(i.producto).toLocaleString(undefined,{maximumFractionDigits:0})} / ${i.producto.unidad_medida}</p>
+                <div class="flex items-center space-x-2 mt-1">
+                    <button onclick="cambiarCantidadCarrito(${i.producto.id_producto},-1)" class="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 text-sm">-</button>
+                    <span class="text-sm font-medium w-6 text-center">${i.cantidad}</span>
+                    <button onclick="cambiarCantidadCarrito(${i.producto.id_producto},1)" class="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 text-sm">+</button>
+                </div>
+            </div>
+            <div class="text-right">
+                <p class="text-sm font-bold text-slate-900">$ ${(precioParaCliente(i.producto)*i.cantidad).toLocaleString(undefined,{maximumFractionDigits:0})}</p>
+                <button onclick="quitarDelCarrito(${i.producto.id_producto})" class="text-xs text-red-500 hover:text-red-700 mt-1">Quitar</button>
+            </div>`;
+        cont.appendChild(div);
+    });
+
+    const totales = calcularTotalesCarrito();
+    document.getElementById('carrito-subtotal').innerText = `$ ${totales.subtotal.toLocaleString(undefined,{maximumFractionDigits:0})}`;
+    document.getElementById('carrito-total').innerText = `$ ${totales.total.toLocaleString(undefined,{maximumFractionDigits:0})}`;
+    const filaBonif = document.getElementById('carrito-bonificacion-fila');
+    if(totales.bonificacion>0){
+        filaBonif.classList.remove('hidden');
+        document.getElementById('carrito-bonificacion').innerText = `-$ ${totales.bonificacion.toLocaleString(undefined,{maximumFractionDigits:0})}`;
+    } else filaBonif.classList.add('hidden');
+
+    const badge = document.getElementById('badge-carrito');
+    const cantidadTotal = carrito.reduce((a,i)=>a+i.cantidad,0);
+    if(cantidadTotal>0){ badge.classList.remove('hidden'); badge.innerText = cantidadTotal; } else badge.classList.add('hidden');
+
+    document.getElementById('btn-ir-checkout').disabled = carrito.length===0;
+}
+
+function toggleCarrito(mostrar){
+    const drawer = document.getElementById('drawer-carrito');
+    const overlay = document.getElementById('overlay-carrito');
+    if(mostrar){ drawer.classList.remove('translate-x-full'); overlay.classList.remove('hidden'); }
+    else { drawer.classList.add('translate-x-full'); overlay.classList.add('hidden'); }
+}
+
+// ==========================================
+// SESION / LOGIN / REGISTRO / PERFIL
+// ==========================================
+function renderSesion(){
+    const cont = document.getElementById('caja-sesion');
+    const contM = document.getElementById('caja-sesion-mobile');
+    document.getElementById('nav-mis-pedidos').classList.toggle('hidden', !clienteActual);
+    document.getElementById('nav-mis-presupuestos').classList.toggle('hidden', !clienteActual);
+    document.getElementById('nav-mis-pedidos-mobile').classList.toggle('hidden', !clienteActual);
+    document.getElementById('nav-mis-presupuestos-mobile').classList.toggle('hidden', !clienteActual);
+    const btnHero = document.getElementById('btn-hero-cuenta');
+    if(btnHero) btnHero.classList.toggle('hidden', !!clienteActual);
+
+    if(clienteActual){
+        const inicial = clienteActual.nombre.charAt(0).toUpperCase();
+        cont.innerHTML = `
+            <button id="btn-avatar-perfil" onclick="toggleMenuPerfil()" class="w-9 h-9 rounded-full bg-red-600 text-white font-bold flex items-center justify-center hover:bg-red-700">${inicial}</button>
+            <div id="menu-perfil" class="hidden absolute right-0 mt-2 w-52 bg-white border border-slate-200 rounded-xl shadow-lg py-2 text-sm z-50">
+                <div class="px-4 py-2 border-b border-slate-100">
+                    <p class="font-semibold text-slate-800 truncate">${clienteActual.nombreCompleto}</p>
+                    <p class="text-xs text-slate-400">${clienteActual.tipo_cliente}</p>
+                </div>
+                <button onclick="irA('mi-cuenta')" class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center space-x-2"><i data-lucide="user" class="w-4 h-4"></i><span>Mi Cuenta</span></button>
+                <button onclick="irA('mis-pedidos')" class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center space-x-2"><i data-lucide="package" class="w-4 h-4"></i><span>Mis Pedidos</span></button>
+                <button onclick="irA('mis-presupuestos')" class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center space-x-2"><i data-lucide="file-text" class="w-4 h-4"></i><span>Mis Presupuestos</span></button>
+                <button onclick="irA('editar-perfil')" class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center space-x-2"><i data-lucide="settings" class="w-4 h-4"></i><span>Editar Perfil</span></button>
+                <div class="border-t border-slate-100 mt-1 pt-1">
+                    <button onclick="cerrarSesionCliente()" class="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 flex items-center space-x-2"><i data-lucide="log-out" class="w-4 h-4"></i><span>Cerrar sesión</span></button>
+                </div>
+            </div>`;
+        contM.innerHTML = `<p class="font-semibold text-slate-800 text-sm">${clienteActual.nombreCompleto}</p>
+            <button onclick="irA('mi-cuenta')" class="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100">Mi Cuenta</button>
+            <button onclick="irA('editar-perfil')" class="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100">Editar Perfil</button>
+            <button onclick="cerrarSesionCliente()" class="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 text-red-600">Cerrar sesión</button>`;
+    } else {
+        cont.innerHTML = `<button onclick="irA('acceso')" class="text-sm font-semibold text-red-600 hover:underline">Iniciar sesión</button>`;
+        contM.innerHTML = `<button onclick="irA('acceso')" class="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 text-red-600 font-semibold">Iniciar sesión / Registrarme</button>`;
+    }
+    lucide.createIcons();
+}
+
+function toggleMenuPerfil(){ document.getElementById('menu-perfil').classList.toggle('hidden'); }
+function cerrarMenuPerfil(){ const m = document.getElementById('menu-perfil'); if(m) m.classList.add('hidden'); }
+
+function mostrarTabAuth(tab){
+    const esLogin = tab==='login';
+    document.getElementById('tab-login').classList.toggle('hidden', !esLogin);
+    document.getElementById('tab-registro').classList.toggle('hidden', esLogin);
+    document.getElementById('tab-btn-login').className = `px-4 py-2 text-sm font-semibold border-b-2 ${esLogin?'border-red-600 text-red-600':'border-transparent text-slate-500'}`;
+    document.getElementById('tab-btn-registro').className = `px-4 py-2 text-sm font-semibold border-b-2 ${!esLogin?'border-red-600 text-red-600':'border-transparent text-slate-500'}`;
+}
+
+function loginCliente(){
+    const usuario = document.getElementById('login-usuario').value.trim().toLowerCase();
+    const password = document.getElementById('login-password').value;
+    const cli = clientesRegistrados.find(c=>c.usuario.toLowerCase()===usuario && c.password===password);
+    if(!cli){ toast('Usuario o contraseña incorrectos.','error'); return; }
+    clienteActual = cli;
+    renderSesion();
+    toast(`Bienvenido/a, ${cli.nombre}`);
+    if(cli.tiene_deuda_vencida){
+        toast('Atención: tenés facturas vencidas en tu cuenta corriente.','error');
+    }
+    const destino = origenCheckout || 'inicio';
+    origenCheckout = null;
+    irA(destino);
+}
+
+function cerrarSesionCliente(){
+    clienteActual = null;
+    renderSesion();
+    irA('inicio');
+    toast('Sesión cerrada','info');
+}
+
+function registrarCliente(){
+    const nombre = document.getElementById('reg-nombre').value.trim();
+    const apellido = document.getElementById('reg-apellido').value.trim();
+    const tipoDocumento = document.getElementById('reg-tipo-documento').value;
+    const numeroDocumento = document.getElementById('reg-numero-documento').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const password = document.getElementById('reg-password').value;
+    if(!nombre || !apellido || !numeroDocumento || !email || !password){ toast('Completá los campos obligatorios (*).','error'); return; }
+    if(clientesRegistrados.some(c=>c.usuario.toLowerCase()===email.toLowerCase())){ toast('Ya existe una cuenta con ese email.','error'); return; }
+
+    const idCalle = parseInt(document.getElementById('reg-calle').value);
+    const calleObj = dbCalles.find(c=>c.id_calle===idCalle) || null;
+    const altura = document.getElementById('reg-altura').value.trim();
+    const telefono = document.getElementById('reg-telefono').value.trim();
+
+    const nuevo = new Cliente(contadorCliente++, nombre, apellido, tipoDocumento, numeroDocumento, telefono, email, 'Consumidor Final', calleObj, altura, 'Mostrador', email, password, {});
+    clientesRegistrados.push(nuevo);
+    clienteActual = nuevo;
+    renderSesion();
+    toast('¡Cuenta creada con éxito!');
+    const destino = origenCheckout || 'inicio';
+    origenCheckout = null;
+    irA(destino);
+}
+
+function cargarFormularioPerfil(){
+    const c = clienteActual;
+    document.getElementById('perfil-nombre').value = c.nombre;
+    document.getElementById('perfil-apellido').value = c.apellido;
+    document.getElementById('perfil-telefono').value = c.telefono || '';
+    document.getElementById('perfil-email').value = c.email;
+    document.getElementById('perfil-altura').value = c.altura || '';
+    document.getElementById('perfil-password').value = '';
+}
+
+function guardarPerfil(){
+    const c = clienteActual;
+    c.nombre = document.getElementById('perfil-nombre').value.trim() || c.nombre;
+    c.apellido = document.getElementById('perfil-apellido').value.trim() || c.apellido;
+    c.telefono = document.getElementById('perfil-telefono').value.trim();
+    c.email = document.getElementById('perfil-email').value.trim() || c.email;
+    c.usuario = c.email;
+    c.altura = document.getElementById('perfil-altura').value.trim();
+    const nuevaPassword = document.getElementById('perfil-password').value;
+    if(nuevaPassword) c.password = nuevaPassword;
+    renderSesion();
+    toast('Perfil actualizado correctamente.');
+    irA('mi-cuenta');
+}
+
+// ==========================================
+// CHECKOUT (Registrar pedido de cliente — minoristas)
+// ==========================================
+function iniciarCheckout(){
+    if(carrito.length===0){ toast('Tu carrito está vacío.','error'); irA('productos'); return; }
+    datosEntrega = {};
+    medioPagoSeleccionado = null;
+    document.getElementById('check-evento').checked = false;
+    document.getElementById('aviso-fecha-evento').classList.add('hidden');
+    document.getElementById('fecha-entrega').value = '';
+    document.getElementById('direccion-envio').value = '';
+    document.getElementById('check-terminos').checked = false;
+    const radioRetiro = document.querySelector('input[name="modalidad-entrega"][value="Retiro en local"]');
+    if(radioRetiro) radioRetiro.checked = true;
+    renderResumenEntrega();
+    irPasoCheckout(1);
+    actualizarPaso1();
+}
+
+function actualizarPaso1(){
+    const bloques = ['paso1-no-logueado','paso1-no-minorista','paso1-moroso','paso1-logueado'];
+    bloques.forEach(id=> document.getElementById(id).classList.add('hidden'));
+
+    if(!clienteActual){ document.getElementById('paso1-no-logueado').classList.remove('hidden'); return; }
+    if(clienteActual.tipo_cliente !== 'Mostrador'){ document.getElementById('paso1-no-minorista').classList.remove('hidden'); return; }
+    if(clienteActual.tiene_deuda_vencida){ document.getElementById('paso1-moroso').classList.remove('hidden'); return; }
+
+    document.getElementById('paso1-logueado').classList.remove('hidden');
+    document.getElementById('avatar-cliente-checkout').innerText = clienteActual.nombre.charAt(0).toUpperCase();
+    document.getElementById('nombre-cliente-checkout').innerText = clienteActual.nombreCompleto;
+    document.getElementById('tipo-cliente-checkout').innerText = `Cliente ${clienteActual.tipo_cliente}`;
+}
+
+function irPasoCheckout(n){
+    [1,2,3].forEach(i=>{
+        document.getElementById(`paso-${i}`).classList.toggle('hidden', i!==n);
+        document.getElementById(`dot-${i}`).classList.toggle('active', i<=n);
+        if(i<3) document.getElementById(`line-${i}`).classList.toggle('active', i<n);
+    });
+    if(n===3) renderPasoPago();
+    window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function toggleEvento(){
+    const marcado = document.getElementById('check-evento').checked;
+    datosEntrega.esEvento = marcado;
+}
+
+function validarFechaEvento(){
+    const fecha = document.getElementById('fecha-entrega').value;
+    const aviso = document.getElementById('aviso-fecha-evento');
+    if(!document.getElementById('check-evento').checked || !fecha){ aviso.classList.add('hidden'); return true; }
+    const limite = new Date(); limite.setHours(0,0,0,0); limite.setDate(limite.getDate()+2);
+    const elegida = new Date(fecha+'T00:00:00');
+    if(elegida < limite){ aviso.classList.remove('hidden'); return false; }
+    aviso.classList.add('hidden'); return true;
+}
+
+function confirmarPasoEntrega(){
+    const modalidad = document.querySelector('input[name="modalidad-entrega"]:checked').value;
+    const fecha = document.getElementById('fecha-entrega').value;
+    const esEvento = document.getElementById('check-evento').checked;
+
+    if(!fecha){ toast('Indicá una fecha de entrega o retiro.','error'); return; }
+    if(modalidad==='Envío a domicilio' && !document.getElementById('direccion-envio').value.trim()){
+        toast('Ingresá la dirección de envío.','error'); return;
+    }
+    if(esEvento && !validarFechaEvento()){ toast('Los pedidos especiales requieren 48hs de anticipación.','error'); return; }
+
+    datosEntrega = {
+        modalidad, fecha, esEvento,
+        direccion: modalidad==='Envío a domicilio' ? document.getElementById('direccion-envio').value.trim() : (clienteActual ? clienteActual.direccionCompleta : 'Retiro en local')
+    };
+    irPasoCheckout(3);
+}
+
+function renderResumenEntrega(){
+    const modalidad = document.querySelector('input[name="modalidad-entrega"]:checked').value;
+    document.getElementById('bloque-direccion-envio').classList.toggle('hidden', modalidad!=='Envío a domicilio');
+}
+
+function renderPasoPago(){
+    const totales = calcularTotalesCarrito();
+    const esEvento = datosEntrega.esEvento;
+    const anticipo = esEvento ? totales.total*0.5 : totales.total;
+    const resumen = document.getElementById('resumen-totales-pago');
+    resumen.innerHTML = `
+        <div class="flex justify-between"><span class="text-slate-500">Subtotal</span><span>$ ${totales.subtotal.toLocaleString(undefined,{maximumFractionDigits:0})}</span></div>
+        ${totales.bonificacion>0?`<div class="flex justify-between text-emerald-600"><span>Bonificación</span><span>-$ ${totales.bonificacion.toLocaleString(undefined,{maximumFractionDigits:0})}</span></div>`:''}
+        <div class="flex justify-between font-bold text-base pt-1 border-t border-slate-200 mt-1"><span>Total del pedido</span><span>$ ${totales.total.toLocaleString(undefined,{maximumFractionDigits:0})}</span></div>
+        ${esEvento ? `<div class="flex justify-between text-amber-700 font-semibold pt-1"><span>Seña estimada (50%, se abona al aceptar el presupuesto)</span><span>$ ${anticipo.toLocaleString(undefined,{maximumFractionDigits:0})}</span></div>` : ''}
+    `;
+
+    document.getElementById('aviso-deuda-vencida').classList.add('hidden');
+
+    // Los pedidos especiales (evento) requieren primero un presupuesto: no se confirma la venta directamente.
+    document.getElementById('btn-confirmar-pedido').classList.toggle('hidden', !!esEvento);
+    document.getElementById('bloque-medio-pago').classList.toggle('hidden', !!esEvento);
+    document.getElementById('bloque-terminos').classList.toggle('hidden', !!esEvento);
+    if(esEvento) return;
+
+    const medios = ['Efectivo','Tarjeta de Débito','Transferencia Bancaria','Mercado Pago','Cuenta DNI'];
+    if(clienteActual && clienteActual.tiene_cuenta_corriente) medios.push('Cuenta Corriente');
+    const grid = document.getElementById('grid-medios-pago');
+    grid.innerHTML = '';
+    medioPagoSeleccionado = null;
+    medios.forEach(m=>{
+        const btn = document.createElement('button');
+        btn.type='button';
+        btn.className = 'medio-pago-btn border rounded-lg p-3 text-xs font-semibold text-center transition border-slate-200 hover:border-red-400';
+        btn.innerText = m;
+        btn.onclick = ()=> seleccionarMedioPago(m, btn);
+        grid.appendChild(btn);
+    });
+}
+
+function seleccionarMedioPago(medio, btnEl){
+    medioPagoSeleccionado = medio;
+    document.querySelectorAll('.medio-pago-btn').forEach(b=> b.classList.remove('border-red-600','bg-red-50','text-red-700'));
+    btnEl.classList.add('border-red-600','bg-red-50','text-red-700');
+}
+
+function validarLimiteCredito(total){
+    if(medioPagoSeleccionado!=='Cuenta Corriente') return true;
+    if(!clienteActual) return false;
+    if((clienteActual.saldo_actual + total) > clienteActual.limite_credito){
+        toast('El monto supera tu límite de crédito autorizado en cuenta corriente. Elegí otro medio de pago.','error');
+        return false;
+    }
+    return true;
+}
+
+function confirmarPedido(){
+    if(!clienteActual || clienteActual.tipo_cliente!=='Mostrador'){ toast('Los pedidos web son exclusivos para clientes minoristas.','error'); return; }
+    if(clienteActual.tiene_deuda_vencida){ toast('No se pueden generar nuevos pedidos con deuda vencida.','error'); return; }
+    if(!medioPagoSeleccionado){ toast('Seleccioná un medio de pago.','error'); return; }
+    if(!document.getElementById('check-terminos').checked){ toast('Debés confirmar los datos del pedido.','error'); return; }
+
+    const totales = calcularTotalesCarrito();
+    if(!validarLimiteCredito(totales.total)) return;
+
+    const idOrden = contadorPedido++;
+    const orden = {
+        id_orden_pedido_cliente: idOrden,
+        id_cliente: clienteActual.id_cliente,
+        fecha_pedido: new Date().toISOString(),
+        fecha_entrega: datosEntrega.fecha,
+        modalidad_entrega: datosEntrega.modalidad,
+        direccion_entrega: datosEntrega.direccion,
+        tipo_pedido: 'Mostrador',
+        medio_pago: medioPagoSeleccionado,
+        estado: 'Pendiente',
+        detalle: carrito.map(i=>({ producto: i.producto, cantidad: i.cantidad, precio_unitario: precioParaCliente(i.producto), subtotal: precioParaCliente(i.producto)*i.cantidad })),
+        total: totales.total,
+        observaciones: ''
+    };
+    misPedidos.push(orden);
+
+    if(medioPagoSeleccionado==='Cuenta Corriente'){
+        clienteActual.saldo_actual += totales.total;
+    }
+
+    mostrarConfirmacion(orden, 'Pedido');
+    carrito = []; renderCarrito();
+    toast('¡Pedido confirmado con éxito!');
+}
+
+function solicitarPresupuesto(){
+    if(!clienteActual || clienteActual.tipo_cliente!=='Mostrador'){ toast('Los pedidos web son exclusivos para clientes minoristas.','error'); return; }
+    const totales = calcularTotalesCarrito();
+    const idPres = contadorPresupuesto++;
+    const vencimiento = new Date(); vencimiento.setDate(vencimiento.getDate()+7);
+    const presupuesto = {
+        id_presupuesto_cliente: idPres,
+        id_cliente: clienteActual.id_cliente,
+        fecha_emision: new Date().toISOString(),
+        fecha_vencimiento: vencimiento.toISOString(),
+        estado: 'Pendiente',
+        es_evento: !!datosEntrega.esEvento,
+        detalle: carrito.map(i=>({ producto: i.producto, cantidad: i.cantidad, precio_unitario: precioParaCliente(i.producto), subtotal: precioParaCliente(i.producto)*i.cantidad })),
+        total_estimado: totales.total
+    };
+    misPresupuestos.push(presupuesto);
+    mostrarConfirmacion(presupuesto, 'Presupuesto');
+    carrito = []; renderCarrito();
+    toast('Presupuesto solicitado. Podés verlo en "Mis Presupuestos".');
+}
+
+function mostrarConfirmacion(doc, tipo){
+    const esPedido = tipo==='Pedido';
+    document.getElementById('titulo-confirmacion').innerText = esPedido ? '¡Pedido confirmado!' : '¡Presupuesto solicitado!';
+    document.getElementById('confirm-numero').innerText = esPedido ? `PED-${doc.id_orden_pedido_cliente}` : `PRES-${String(doc.id_presupuesto_cliente).padStart(5,'0')}`;
+    document.getElementById('confirm-fecha').innerText = `Fecha: ${new Date().toLocaleDateString('es-AR')}`;
+    document.getElementById('confirm-cliente-info').innerHTML = `<b>Cliente:</b> ${clienteActual.nombreCompleto} &nbsp;|&nbsp; <b>${clienteActual.tipo_documento}:</b> ${clienteActual.numero_documento}`;
+    const tbody = document.getElementById('confirm-detalle');
+    tbody.innerHTML = '';
+    doc.detalle.forEach(d=>{
+        tbody.innerHTML += `<tr class="border-b border-slate-100"><td class="py-2">${d.producto.nombre}</td><td class="py-2 text-center">${d.cantidad}</td><td class="py-2 text-right">$ ${d.precio_unitario.toLocaleString(undefined,{maximumFractionDigits:0})}</td><td class="py-2 text-right">$ ${d.subtotal.toLocaleString(undefined,{maximumFractionDigits:0})}</td></tr>`;
+    });
+    const total = esPedido ? doc.total : doc.total_estimado;
+    document.getElementById('confirm-totales').innerHTML = esPedido
+        ? `<p>Modalidad de entrega: <b>${doc.modalidad_entrega}</b></p><p>Fecha: <b>${doc.fecha_entrega}</b></p><p>Medio de pago: <b>${doc.medio_pago}</b></p><p class="text-lg font-bold text-slate-900 pt-1">Total: $ ${total.toLocaleString(undefined,{maximumFractionDigits:0})}</p>`
+        : `<p>Válido hasta: <b>${new Date(doc.fecha_vencimiento).toLocaleDateString('es-AR')}</b></p><p class="text-lg font-bold text-slate-900 pt-1">Total estimado: $ ${total.toLocaleString(undefined,{maximumFractionDigits:0})}</p>`;
+    irA('confirmacion');
+}
+
+// ==========================================
+// MIS PEDIDOS (Consultar / Modificar pedido de cliente)
+// ==========================================
+const COLOR_ESTADO = {
+    'Pendiente':'bg-amber-100 text-amber-800', 'En preparación':'bg-blue-100 text-blue-800',
+    'Listo':'bg-indigo-100 text-indigo-800', 'Entregado':'bg-emerald-100 text-emerald-800', 'Cancelado':'bg-slate-200 text-slate-600'
+};
+
+function renderMisPedidos(){
+    document.getElementById('detalle-mi-pedido').classList.add('hidden');
+    document.getElementById('listado-mis-pedidos').classList.remove('hidden');
+    const cont = document.getElementById('tabla-mis-pedidos');
+    const propios = misPedidos.filter(p=>p.id_cliente===clienteActual.id_cliente).sort((a,b)=>b.id_orden_pedido_cliente-a.id_orden_pedido_cliente);
+    cont.innerHTML = '';
+    if(propios.length===0){ cont.innerHTML = `<p class="text-sm text-slate-400 py-10 text-center">Todavía no realizaste pedidos.</p>`; return; }
+    propios.forEach(p=>{
+        const div = document.createElement('div');
+        div.className = 'bg-white border border-slate-200 rounded-xl p-4 flex items-center justify-between hover:shadow-sm transition cursor-pointer';
+        div.onclick = ()=> verDetallePedido(p.id_orden_pedido_cliente);
+        div.innerHTML = `
+            <div>
+                <p class="font-semibold text-slate-800">PED-${p.id_orden_pedido_cliente} <span class="text-xs font-normal text-slate-400">· ${p.tipo_pedido}</span></p>
+                <p class="text-xs text-slate-500 mt-0.5">Entrega: ${p.fecha_entrega} · ${p.modalidad_entrega}</p>
+            </div>
+            <div class="text-right">
+                <p class="font-bold text-slate-900">$ ${p.total.toLocaleString(undefined,{maximumFractionDigits:0})}</p>
+                <span class="text-xs font-semibold px-2.5 py-1 rounded-full ${COLOR_ESTADO[p.estado]}">${p.estado}</span>
+            </div>`;
+        cont.appendChild(div);
+    });
+}
+
+function verDetallePedido(id){
+    const pedido = misPedidos.find(p=>p.id_orden_pedido_cliente===id);
+    document.getElementById('listado-mis-pedidos').classList.add('hidden');
+    document.getElementById('detalle-mi-pedido').classList.remove('hidden');
+    const cont = document.getElementById('contenido-detalle-pedido');
+
+    let filasEdit = '';
+    pedido.detalle.forEach((d,idx)=>{
+        filasEdit += `<tr class="border-b border-slate-100">
+            <td class="py-2">${d.producto.nombre}</td>
+            <td class="py-2 text-center">
+                ${pedido.estado==='Pendiente' ? `<div class="flex items-center justify-center space-x-2">
+                    <button onclick="editarCantidadPedido(${id},${idx},-1)" class="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200">-</button>
+                    <span>${d.cantidad}</span>
+                    <button onclick="editarCantidadPedido(${id},${idx},1)" class="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200">+</button>
+                </div>` : d.cantidad}
+            </td>
+            <td class="py-2 text-right">$ ${d.precio_unitario.toLocaleString(undefined,{maximumFractionDigits:0})}</td>
+            <td class="py-2 text-right">$ ${d.subtotal.toLocaleString(undefined,{maximumFractionDigits:0})}</td>
+            <td class="py-2 text-center">${pedido.estado==='Pendiente' ? `<button onclick="quitarItemPedido(${id},${idx})" class="text-red-500 hover:text-red-700"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : ''}</td>
+        </tr>`;
+    });
+
+    cont.innerHTML = `
+        <div class="flex flex-wrap items-center justify-between gap-2">
+            <h3 class="text-xl font-bold text-slate-900">Pedido PED-${pedido.id_orden_pedido_cliente}</h3>
+            <span class="text-xs font-semibold px-3 py-1 rounded-full ${COLOR_ESTADO[pedido.estado]}">${pedido.estado}</span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs text-slate-500 mt-3">
+            <div><p class="font-semibold text-slate-700">Tipo</p>${pedido.tipo_pedido}</div>
+            <div><p class="font-semibold text-slate-700">Entrega</p>${pedido.modalidad_entrega}</div>
+            <div><p class="font-semibold text-slate-700">Fecha</p>${pedido.fecha_entrega}</div>
+            <div><p class="font-semibold text-slate-700">Pago</p>${pedido.medio_pago}</div>
+        </div>
+        <table class="w-full text-sm text-left mt-4">
+            <thead class="border-b border-slate-200 text-xs uppercase text-slate-500"><tr><th class="py-2">Producto</th><th class="py-2 text-center">Cant.</th><th class="py-2 text-right">P. Unit.</th><th class="py-2 text-right">Subtotal</th><th></th></tr></thead>
+            <tbody id="tbody-detalle-editable">${filasEdit}</tbody>
+        </table>
+        <div class="text-right font-bold text-lg text-slate-900 pt-3 border-t border-slate-200">Total: $ <span id="total-pedido-editable">${pedido.total.toLocaleString(undefined,{maximumFractionDigits:0})}</span></div>
+        ${pedido.estado==='Pendiente' ? `<div class="flex justify-end gap-3 pt-2"><button onclick="guardarModificacionPedido(${id})" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold">Guardar modificación</button></div>
+        <p class="text-xs text-slate-400">Para cancelar un pedido comunicate directamente con la fábrica.</p>` : ''}
+    `;
+    lucide.createIcons();
+}
+
+function editarCantidadPedido(idPedido, idx, delta){
+    const pedido = misPedidos.find(p=>p.id_orden_pedido_cliente===idPedido);
+    pedido.detalle[idx].cantidad += delta;
+    if(pedido.detalle[idx].cantidad<=0) pedido.detalle.splice(idx,1);
+    recalcularTotalPedido(pedido);
+    verDetallePedido(idPedido);
+}
+
+function quitarItemPedido(idPedido, idx){
+    const pedido = misPedidos.find(p=>p.id_orden_pedido_cliente===idPedido);
+    pedido.detalle.splice(idx,1);
+    recalcularTotalPedido(pedido);
+    verDetallePedido(idPedido);
+}
+
+function recalcularTotalPedido(pedido){
+    pedido.detalle.forEach(d=> d.subtotal = d.precio_unitario*d.cantidad);
+    pedido.total = pedido.detalle.reduce((a,d)=>a+d.subtotal,0);
+}
+
+function guardarModificacionPedido(idPedido){
+    const pedido = misPedidos.find(p=>p.id_orden_pedido_cliente===idPedido);
+    if(pedido.detalle.length===0){ toast('El pedido debe tener al menos un producto. Contactá a la fábrica para cancelarlo.','error'); return; }
+    toast('Pedido modificado correctamente.');
+    renderMisPedidos();
+}
+
+// ==========================================
+// MIS PRESUPUESTOS (Consultar presupuesto de cliente)
+// ==========================================
+const COLOR_PRESUPUESTO = { 'Pendiente':'bg-amber-100 text-amber-800','Aceptado':'bg-emerald-100 text-emerald-800','Rechazado':'bg-red-100 text-red-700','Vencido':'bg-slate-200 text-slate-600' };
+
+function renderMisPresupuestos(){
+    const cont = document.getElementById('tabla-mis-presupuestos');
+    const propios = misPresupuestos.filter(p=>p.id_cliente===clienteActual.id_cliente).sort((a,b)=>b.id_presupuesto_cliente-a.id_presupuesto_cliente);
+    cont.innerHTML = '';
+    if(propios.length===0){ cont.innerHTML = `<p class="text-sm text-slate-400 py-10 text-center">No solicitaste presupuestos todavía. Podés pedir uno desde el carrito marcando "pedido especial".</p>`; return; }
+    propios.forEach(p=>{
+        const vencido = new Date(p.fecha_vencimiento) < new Date();
+        const estado = vencido && p.estado==='Pendiente' ? 'Vencido' : p.estado;
+        const div = document.createElement('div');
+        div.className = 'bg-white border border-slate-200 rounded-xl p-4 flex items-center justify-between';
+        div.innerHTML = `
+            <div>
+                <p class="font-semibold text-slate-800">PRES-${String(p.id_presupuesto_cliente).padStart(5,'0')} ${p.es_evento ? '<span class="text-xs font-normal text-amber-600">· Evento</span>' : ''}</p>
+                <p class="text-xs text-slate-500 mt-0.5">Emitido: ${new Date(p.fecha_emision).toLocaleDateString('es-AR')} · Vence: ${new Date(p.fecha_vencimiento).toLocaleDateString('es-AR')}</p>
+            </div>
+            <div class="text-right">
+                <p class="font-bold text-slate-900">$ ${p.total_estimado.toLocaleString(undefined,{maximumFractionDigits:0})}</p>
+                <span class="text-xs font-semibold px-2.5 py-1 rounded-full ${COLOR_PRESUPUESTO[estado]}">${estado}</span>
+            </div>`;
+        cont.appendChild(div);
+    });
+}
+
+// ==========================================
+// MI CUENTA (datos + cuenta corriente + Registrar pago de cliente)
+// ==========================================
+function renderMiCuenta(){
+    const c = clienteActual;
+    const cont = document.getElementById('contenido-mi-cuenta');
+    let bloqueCC = '';
+    if(c.tiene_cuenta_corriente){
+        const pct = Math.min(100, Math.round((c.saldo_actual / c.limite_credito)*100));
+        bloqueCC = `
+        <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-3">
+            <h3 class="font-semibold text-slate-800 flex items-center space-x-2"><i data-lucide="wallet" class="w-5 h-5 text-red-500"></i><span>Cuenta Corriente</span></h3>
+            ${c.tiene_deuda_vencida ? `<div class="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-700 flex items-center space-x-2"><i data-lucide="alert-triangle" class="w-4 h-4"></i><span>Tenés facturas vencidas. Las entregas pueden suspenderse hasta regularizar el pago.</span></div>` : ''}
+            <div class="flex justify-between text-sm"><span class="text-slate-500">Saldo adeudado</span><span class="font-bold text-slate-900">$ ${c.saldo_actual.toLocaleString()}</span></div>
+            <div class="flex justify-between text-sm"><span class="text-slate-500">Límite de crédito</span><span class="font-medium">$ ${c.limite_credito.toLocaleString()}</span></div>
+            <div class="w-full bg-slate-100 rounded-full h-2"><div class="h-2 rounded-full ${pct>=100?'bg-red-600':'bg-red-400'}" style="width:${pct}%"></div></div>
+            <button onclick="abrirRegistrarPago()" class="w-full bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-lg text-sm font-semibold mt-2">Registrar un pago</button>
+        </div>`;
+    }
+
+    const historial = misComprobantesPago.filter(p=>p.id_cliente===c.id_cliente).sort((a,b)=>b.id_comprobante_pago_cliente-a.id_comprobante_pago_cliente);
+    let filasHistorial = historial.map(p=>`<tr class="border-b border-slate-100"><td class="py-2">REC-${String(p.id_comprobante_pago_cliente).padStart(4,'0')}</td><td class="py-2">${new Date(p.fecha_pago).toLocaleDateString('es-AR')}</td><td class="py-2">${p.medio_pago}</td><td class="py-2 text-right font-semibold">$ ${p.importe.toLocaleString()}</td></tr>`).join('');
+
+    cont.innerHTML = `
+        <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="font-semibold text-slate-800">Mis datos</h3>
+                <button onclick="irA('editar-perfil')" class="text-xs font-semibold text-red-600 hover:underline">Editar perfil</button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                <div><p class="text-xs text-slate-400">Nombre y Apellido</p><p class="font-medium">${c.nombreCompleto}</p></div>
+                <div><p class="text-xs text-slate-400">Documento</p><p class="font-medium">${c.documentoCompleto}</p></div>
+                <div><p class="text-xs text-slate-400">Email</p><p class="font-medium">${c.email}</p></div>
+                <div><p class="text-xs text-slate-400">Teléfono</p><p class="font-medium">${c.telefono||'-'}</p></div>
+                <div><p class="text-xs text-slate-400">Domicilio</p><p class="font-medium">${c.direccionCompleta}</p></div>
+                <div><p class="text-xs text-slate-400">Condición IVA</p><p class="font-medium">${c.condicion_iva}</p></div>
+                <div><p class="text-xs text-slate-400">Tipo de cliente</p><p class="font-medium">${c.tipo_cliente}${c.porcentaje_bonificacion>0?` (${c.porcentaje_bonificacion}% bonificación)`:''}</p></div>
+                ${c.dia_fijo_entrega ? `<div><p class="text-xs text-slate-400">Día fijo de entrega semanal</p><p class="font-medium">${c.dia_fijo_entrega}</p></div>` : ''}
+            </div>
+        </div>
+        ${bloqueCC}
+        <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+            <h3 class="font-semibold text-slate-800 mb-3">Historial de pagos</h3>
+            ${historial.length===0 ? `<p class="text-sm text-slate-400">Todavía no registraste pagos.</p>` : `<table class="w-full text-sm text-left"><thead class="text-xs uppercase text-slate-500 border-b"><tr><th class="py-2">N° Recibo</th><th class="py-2">Fecha</th><th class="py-2">Medio</th><th class="py-2 text-right">Importe</th></tr></thead><tbody>${filasHistorial}</tbody></table>`}
+        </div>
+        <div id="modal-registrar-pago" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-xl p-6 w-full max-w-sm space-y-4">
+                <h3 class="font-bold text-slate-900">Registrar pago</h3>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Monto a pagar ($)</label>
+                    <input id="pago-monto" type="number" value="${c.saldo_actual}" max="${c.saldo_actual}" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Medio de pago</label>
+                    <select id="pago-medio" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                        <option>Efectivo</option><option>Tarjeta de Débito</option><option>Transferencia Bancaria</option><option>Mercado Pago</option><option>Cuenta DNI</option>
+                    </select>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button onclick="document.getElementById('modal-registrar-pago').classList.add('hidden')" class="px-4 py-2 text-sm font-semibold text-slate-500">Cancelar</button>
+                    <button onclick="confirmarRegistrarPago()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">Confirmar pago</button>
+                </div>
+            </div>
+        </div>
+    `;
+    lucide.createIcons();
+}
+
+function abrirRegistrarPago(){ document.getElementById('modal-registrar-pago').classList.remove('hidden'); }
+
+function confirmarRegistrarPago(){
+    const monto = parseFloat(document.getElementById('pago-monto').value);
+    const medio = document.getElementById('pago-medio').value;
+    if(!monto || monto<=0){ toast('Ingresá un monto válido.','error'); return; }
+    if(monto > clienteActual.saldo_actual){ toast('El monto supera el saldo adeudado.','error'); return; }
+
+    const idPago = contadorPago++;
+    misComprobantesPago.push({ id_comprobante_pago_cliente:idPago, id_cliente:clienteActual.id_cliente, medio_pago:medio, importe:monto, fecha_pago:new Date().toISOString() });
+    clienteActual.saldo_actual -= monto;
+    document.getElementById('modal-registrar-pago').classList.add('hidden');
+    toast('Pago registrado con éxito. Se emitió tu comprobante de pago.');
+    renderMiCuenta();
+}
+</script>
+</body>
+</html>
