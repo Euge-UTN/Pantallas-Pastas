@@ -15,136 +15,260 @@
 
         <main id="contenido-modulo" class="flex-1 overflow-y-auto bg-slate-50 p-8">
 <section id="sec-cobranzas" class="space-y-6">
-                <div class="flex items-center space-x-3">
-                    <div class="p-2.5 bg-amber-100 text-amber-600 rounded-xl"><i data-lucide="hand-coins" class="w-5 h-5"></i></div>
-                    <div>
-                        <h2 class="text-2xl font-bold text-slate-900">Cobranzas</h2>
-                        <p class="text-sm text-slate-500">Registro de cobros, comprobantes de pago y cierre de caja diaria.</p>
+
+                <!-- VISTA: REGISTRAR COBRO -->
+                <div id="vista-registrar-cobro" class="space-y-6 hidden">
+                    <div class="flex items-center space-x-3">
+                        <button type="button" onclick="volverAPagos()" class="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition flex items-center justify-center">
+                            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                        </button>
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900">Registrar Cobro</h2>
+                            <p class="text-sm text-slate-500">Buscá el cliente y registrá el cobro de un comprobante de venta pendiente.</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 space-y-6">
+                            <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
+                                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="user" class="w-4 h-4"></i><span>Cliente</span></h4>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Cliente *</label>
+                                    <div class="relative">
+                                        <input type="text" id="cobro-cliente-autocompletar" autocomplete="off" oninput="filtrarClientesAutocompletadoCobro()" onfocus="filtrarClientesAutocompletadoCobro()" placeholder="Empezá a escribir nombre o apellido..." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white outline-none focus:ring-2 focus:ring-red-500">
+                                        <input type="hidden" id="select-cobro-cliente" value="">
+                                        <div id="cobro-cliente-autocompletar-opciones" class="hidden absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-56 overflow-y-auto"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
+                                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="receipt-text" class="w-4 h-4"></i><span>Cobro de Comprobante de Venta</span></h4>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Comprobante de Venta *</label>
+                                    <button type="button" id="btn-elegir-comprobante-cobro" onclick="abrirModalComprobantesCobro()" disabled class="w-full flex items-center justify-between border border-slate-300 rounded-lg p-2.5 text-sm text-left outline-none focus:ring-2 focus:ring-red-500 disabled:bg-slate-100 disabled:text-slate-400 hover:border-red-400 transition">
+                                        <span id="btn-elegir-comprobante-cobro-texto">Elegí primero el cliente</span>
+                                        <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                    </button>
+                                    <select id="cobro-comprobante-venta" onchange="seleccionarComprobanteVentaCobro()" class="hidden">
+                                        <option value="" disabled selected>Elegí primero el cliente</option>
+                                    </select>
+                                </div>
+                                <div id="ficha-cv-cobro" class="hidden bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-600"></div>
+                            </div>
+
+                            <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
+                                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="credit-card" class="w-4 h-4"></i><span>Datos del Cobro</span></h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Medio de Pago *</label>
+                                        <select id="cobro-medio" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                            <option value="" disabled selected>Elegí un medio de pago</option>
+                                            <option value="1">Efectivo</option>
+                                            <option value="2">Tarjeta de Débito</option>
+                                            <option value="3">Transferencia Bancaria</option>
+                                            <option value="4">QR</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Condición de Pago *</label>
+                                        <select id="cobro-condicion" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                            <option value="" disabled selected>Elegí una opción</option>
+                                            <option value="Contado">Contado</option>
+                                            <option id="cobro-condicion-cuenta-corriente" value="Cuenta Corriente">Cuenta Corriente</option>
+                                        </select>
+                                        <p id="nota-condicion-pago-mostrador" class="hidden text-[11px] text-slate-400 mt-1">Clientes Mostrador solo pueden pagar al Contado.</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Monto a Cobrar ($)</label>
+                                        <input type="text" id="cobro-monto" value="" readonly placeholder="Seleccioná un comprobante" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none bg-slate-100 text-slate-500">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Observaciones</label>
+                                    <textarea id="cobro-observaciones" rows="2" placeholder="Ej: Pago parcial acordado con el cliente." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></textarea>
+                                </div>
+                                <div class="pt-2">
+                                    <button onclick="procesarCobroYComprobante()" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2">
+                                        <i data-lucide="receipt" class="w-4 h-4"></i>
+                                        <span>Registrar Cobro y Emitir Comprobante</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="lg:col-span-2 space-y-6">
+                <!-- MODAL: ELEGIR COMPROBANTE DE VENTA A COBRAR (previsualización antes de seleccionar, para no confundir comprobantes con montos idénticos) -->
+                <div id="modal-elegir-comprobante-cobro" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 no-print">
+                    <div class="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[80vh] flex flex-col">
+                        <div class="p-4 border-b border-slate-200 flex items-center justify-between shrink-0">
+                            <h3 class="font-bold text-slate-900 flex items-center space-x-2"><i data-lucide="file-stack" class="w-5 h-5 text-red-600"></i><span>Elegí el comprobante a cobrar</span></h3>
+                            <button type="button" onclick="cerrarModalComprobantesCobro()" class="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600"><i data-lucide="x" class="w-4 h-4"></i></button>
+                        </div>
+                        <div id="lista-comprobantes-cobro-modal" class="p-4 space-y-2 overflow-y-auto"></div>
+                    </div>
+                </div>
 
-                        <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
-                            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="user" class="w-4 h-4"></i><span>Cliente</span></h4>
+                <!-- VISTA: PAGOS -->
+                <div id="vista-pagos" class="space-y-6 hidden">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2.5 bg-amber-100 text-amber-600 rounded-xl"><i data-lucide="wallet" class="w-5 h-5"></i></div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Cliente *</label>
-                                <select id="cobro-cliente" onchange="renderizarSelectOrdenCobro()" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
-                                    <option value="" disabled selected>Elegí un cliente</option>
-                                </select>
+                                <h2 class="text-2xl font-bold text-slate-900">Pagos</h2>
+                                <p class="text-sm text-slate-500">Historial completo de comprobantes de pago registrados.</p>
                             </div>
                         </div>
+                        <button onclick="irAReporteCaja()" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2 shadow-sm transition">
+                            <i data-lucide="file-bar-chart" class="w-4 h-4"></i>
+                            <span>Reporte de Caja</span>
+                        </button>
+                    </div>
 
-                        <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
-                            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="receipt-text" class="w-4 h-4"></i><span>Orden de Pedido a Cobrar</span></h4>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Orden de Pedido *</label>
-                                <select id="cobro-orden" onchange="seleccionarOrdenCobro()" disabled class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500 disabled:bg-slate-100 disabled:text-slate-400">
-                                    <option value="" disabled selected>Elegí primero el cliente</option>
-                                </select>
-                            </div>
-                            <div id="ficha-orden-cobro" class="hidden bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-600"></div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
+                            <div class="p-2.5 bg-slate-100 text-slate-600 rounded-lg"><i data-lucide="wallet" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-pagos-total" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Pagos</p></div>
                         </div>
-
-                        <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
-                            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="credit-card" class="w-4 h-4"></i><span>Datos del Cobro</span></h4>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Medio de Pago *</label>
-                                    <select id="cobro-medio" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
-                                        <option value="" disabled selected>Elegí un medio de pago</option>
-                                        <option value="1">Efectivo</option>
-                                        <option value="2">Tarjeta de Débito</option>
-                                        <option value="3">Transferencia Bancaria</option>
-                                        <option value="4">Mercado Pago</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Condición de Pago *</label>
-                                    <select id="cobro-condicion" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
-                                        <option value="" disabled selected>Elegí una opción</option>
-                                        <option value="Contado">Contado</option>
-                                        <option value="Cuenta Corriente">Cuenta Corriente</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Monto a Cobrar ($)</label>
-                                    <input type="text" id="cobro-monto" value="" readonly placeholder="Seleccioná una orden de pedido" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none bg-slate-100 text-slate-500">
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Observaciones</label>
-                                <textarea id="cobro-observaciones" rows="2" placeholder="Ej: Pago parcial acordado con el cliente." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></textarea>
-                            </div>
-                            <div class="pt-2">
-                                <button onclick="procesarCobroYComprobante()" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2">
-                                    <i data-lucide="receipt" class="w-4 h-4"></i>
-                                    <span>Registrar Cobro y Emitir Comprobante</span>
-                                </button>
-                            </div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
+                            <div class="p-2.5 bg-emerald-100 text-emerald-600 rounded-lg"><i data-lucide="check-check" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-pagos-vigentes" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Vigentes</p></div>
                         </div>
-
-                        <div id="vista-comprobante-pago" class="hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
-                            <div class="flex justify-between items-center border-b pb-3 no-print">
-                                <h3 class="font-bold text-slate-800 flex items-center space-x-2">
-                                    <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600"></i>
-                                    <span>Comprobante de Pago Emitido</span>
-                                </h3>
-                                <button onclick="window.print()" class="bg-slate-800 text-white text-xs px-3 py-1.5 rounded-lg">Imprimir Comprobante</button>
-                            </div>
-                            <div id="area-comprobante-pago" class="p-4 bg-slate-50 rounded-lg text-sm space-y-1.5 border border-slate-200"></div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
+                            <div class="p-2.5 bg-slate-100 text-slate-500 rounded-lg"><i data-lucide="x-circle" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-pagos-anulados" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Anulados</p></div>
                         </div>
-
-                        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                            <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center gap-3">
-                                <h3 class="font-semibold text-slate-800 sm:mr-auto">Historial de Cobros</h3>
-                                <div class="relative">
-                                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
-                                    <input type="text" id="buscar-cobro-cliente" oninput="renderizarTablaCobros()" placeholder="Buscar por cliente..." class="pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-red-500 w-full sm:w-52">
-                                </div>
-                            </div>
-                            <div class="overflow-x-auto">
-                            <table class="w-full text-sm text-left">
-                                <thead class="bg-slate-50 text-xs text-slate-500 border-b border-slate-200 uppercase">
-                                    <tr>
-                                        <th class="px-6 py-3">N° Comprobante</th>
-                                        <th class="px-6 py-3">Cliente</th>
-                                        <th class="px-6 py-3">Pedido / Venta</th>
-                                        <th class="px-6 py-3">Medio de Pago</th>
-                                        <th class="px-6 py-3">Fecha</th>
-                                        <th class="px-6 py-3 text-right">Importe</th>
-                                        <th class="px-6 py-3 text-center">Estado</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tabla-cobros-registrados" class="divide-y divide-slate-200"></tbody>
-                            </table>
-                            </div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
+                            <div class="p-2.5 bg-red-100 text-red-600 rounded-lg"><i data-lucide="banknote" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-pagos-total-monto" class="text-xl font-bold text-slate-900">$ 0</p><p class="text-xs text-slate-500">Cobrado</p></div>
                         </div>
                     </div>
 
-                    <div class="space-y-6">
-                        <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
-                            <h3 class="font-semibold text-slate-800 flex items-center justify-between">
-                                <span>Cierre de Caja Diario</span>
-                                <span id="estado-caja-tag" class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">Abierta</span>
-                            </h3>
-
-                            <div class="space-y-2 text-sm">
-                                <div class="flex justify-between py-1 border-b">
-                                    <span class="text-slate-500">Cobros del Día:</span>
-                                    <span id="caja-cobros-acumulados" class="font-medium">$ 0</span>
-                                </div>
-                                <div class="flex justify-between py-2 font-bold text-base text-slate-900">
-                                    <span>Total en Caja:</span>
-                                    <span id="caja-total-monto">$ 0</span>
-                                </div>
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center gap-3">
+                            <h3 class="font-semibold text-slate-800 sm:mr-auto">Historial de Pagos</h3>
+                            <div class="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs shrink-0">
+                                <button type="button" onclick="elegirSegmentoPagos('')" id="segmento-pagos-" class="segmento-pagos px-3 py-1.5 rounded-md font-semibold transition">Todos</button>
+                                <button type="button" onclick="elegirSegmentoPagos('Evento')" id="segmento-pagos-Evento" class="segmento-pagos px-3 py-1.5 rounded-md font-semibold transition">Eventos</button>
+                                <button type="button" onclick="elegirSegmentoPagos('Donacion')" id="segmento-pagos-Donacion" class="segmento-pagos px-3 py-1.5 rounded-md font-semibold transition">Donaciones</button>
                             </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-50 text-xs text-slate-500 border-b border-slate-200 uppercase">
+                                <tr>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>N° Comprobante</span>
+                                            <button type="button" onclick="togglePopoverColumna('pop-num-pago')" title="Buscar N° de comprobante" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-num-pago" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
+                                                <input type="text" id="buscar-num-pago" oninput="renderizarTablaPagos()" placeholder="Buscar N° comprobante..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>Nombre</span>
+                                            <button type="button" id="btn-orden-nombre-pago" onclick="alternarOrdenPagos('nombre')" title="Ordenar de la A a la Z" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button>
+                                            <button type="button" onclick="togglePopoverColumna('pop-nombre-pago')" title="Buscar nombre" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-nombre-pago" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
+                                                <input type="text" id="buscar-nombre-pago" oninput="renderizarTablaPagos()" placeholder="Buscar nombre..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>Apellido</span>
+                                            <button type="button" id="btn-orden-apellido-pago" onclick="alternarOrdenPagos('apellido')" title="Ordenar de la A a la Z" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button>
+                                            <button type="button" onclick="togglePopoverColumna('pop-apellido-pago')" title="Buscar apellido" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-apellido-pago" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
+                                                <input type="text" id="buscar-apellido-pago" oninput="renderizarTablaPagos()" placeholder="Buscar apellido..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">Tipo Doc.</th>
+                                    <th class="px-6 py-3">N° Documento</th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>Medio de Pago</span>
+                                            <button type="button" id="btn-filtro-medio-pago" onclick="togglePopoverColumna('pop-medio-pago')" title="Filtrar por medio de pago" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-medio-pago" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 min-w-[10rem] normal-case">
+                                                <button type="button" onclick="elegirFiltroMedioPago('')" class="opcion-filtro-medio-pago block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="">Todos</button>
+                                                <button type="button" onclick="elegirFiltroMedioPago('1')" class="opcion-filtro-medio-pago block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="1">Efectivo</button>
+                                                <button type="button" onclick="elegirFiltroMedioPago('2')" class="opcion-filtro-medio-pago block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="2">Tarjeta de Débito</button>
+                                                <button type="button" onclick="elegirFiltroMedioPago('3')" class="opcion-filtro-medio-pago block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="3">Transferencia Bancaria</button>
+                                                <button type="button" onclick="elegirFiltroMedioPago('4')" class="opcion-filtro-medio-pago block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="4">QR</button>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">Fecha</th>
+                                    <th class="px-6 py-3 text-right">Importe</th>
+                                    <th class="px-6 py-3 text-center">
+                                        <div class="flex items-center justify-center gap-1.5 popover-trigger">
+                                            <span>Estado</span>
+                                            <button type="button" id="btn-filtro-estado-pago" onclick="togglePopoverColumna('pop-estado-pago')" title="Filtrar por estado" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-estado-pago" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 min-w-[9rem] normal-case text-left">
+                                                <button type="button" onclick="elegirFiltroEstadoPagos('')" class="opcion-filtro-estado-pago block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="">Todos los estados</button>
+                                                <button type="button" onclick="elegirFiltroEstadoPagos('Vigente')" class="opcion-filtro-estado-pago block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Vigente">Vigente</button>
+                                                <button type="button" onclick="elegirFiltroEstadoPagos('Anulado')" class="opcion-filtro-estado-pago block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Anulado">Anulado</button>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-pagos" class="divide-y divide-slate-200"></tbody>
+                        </table>
+                        </div>
+                    </div>
+                </div>
 
-                            <button onclick="generarCierreDiario()" class="w-full bg-slate-900 text-white py-2 rounded-lg text-sm font-semibold hover:bg-slate-800 flex items-center justify-center space-x-2">
-                                <i data-lucide="lock" class="w-4 h-4"></i>
-                                <span>Generar Cierre Diario</span>
+                <!-- VISTA: COMPROBANTE DE PAGO -->
+                <div id="vista-comprobante-pago" class="space-y-6 hidden">
+                    <div class="flex items-center justify-between no-print">
+                        <div class="flex items-center space-x-3">
+                            <button type="button" onclick="volverDesdeComprobantePago()" class="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition flex items-center justify-center">
+                                <i data-lucide="arrow-left" class="w-5 h-5"></i>
                             </button>
+                            <h2 class="text-2xl font-bold text-slate-900">Comprobante de Pago</h2>
+                        </div>
+                        <button onclick="window.print()" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-800 flex items-center space-x-2">
+                            <i data-lucide="printer" class="w-4 h-4"></i><span>Imprimir</span>
+                        </button>
+                    </div>
+                    <div class="max-w-3xl mx-auto bg-white border border-slate-200 p-10 rounded-xl shadow-lg">
+                        <div id="area-comprobante-pago" class="text-sm space-y-6"></div>
+                    </div>
+                </div>
+
+                <!-- VISTA: REPORTE DE CAJA (reemplaza al antiguo Cierre de Caja) -->
+                <div id="vista-reporte-caja" class="space-y-6 hidden">
+                    <div class="flex items-center justify-between no-print">
+                        <div class="flex items-center space-x-3">
+                            <button type="button" onclick="volverAPagos()" class="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition flex items-center justify-center">
+                                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                            </button>
+                            <h2 class="text-2xl font-bold text-slate-900">Reporte de Caja</h2>
+                        </div>
+                        <button onclick="window.print()" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-800 flex items-center space-x-2">
+                            <i data-lucide="printer" class="w-4 h-4"></i><span>Imprimir</span>
+                        </button>
+                    </div>
+                    <div class="max-w-2xl mx-auto bg-white border border-slate-200 p-10 rounded-xl shadow-lg space-y-6">
+                        <div class="border-b border-slate-200 pb-4">
+                            <h1 class="text-2xl font-bold text-red-600">FÁBRICA DE PASTAS</h1>
+                            <p class="text-xs text-slate-500">Total vendido por medio de pago</p>
+                            <p id="reporte-caja-fecha" class="text-xs text-slate-400 mt-1"></p>
+                        </div>
+                        <table class="w-full text-sm text-left">
+                            <thead class="border-b border-slate-300 uppercase text-slate-500 text-xs">
+                                <tr><th class="py-2">Medio de Pago</th><th class="py-2 text-right">Total Cobrado</th></tr>
+                            </thead>
+                            <tbody id="reporte-caja-body" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                        <div class="border-t border-slate-200 pt-4 text-right">
+                            <p id="reporte-caja-total" class="text-lg font-bold text-slate-900">Total: $ 0</p>
                         </div>
                     </div>
                 </div>

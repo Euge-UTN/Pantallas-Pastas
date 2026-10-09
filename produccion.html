@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fábrica de Pastas - Producción & Stock</title>
+    <title>Fábrica de Pastas - Producción</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="css/estilos.css">
@@ -15,159 +15,259 @@
 
         <main id="contenido-modulo" class="flex-1 overflow-y-auto bg-slate-50 p-8">
 <section id="sec-produccion" class="space-y-6">
-                <div class="flex items-center space-x-3">
-                    <div class="p-2.5 bg-orange-100 text-orange-600 rounded-xl"><i data-lucide="chef-hat" class="w-5 h-5"></i></div>
-                    <div>
-                        <h2 class="text-2xl font-bold text-slate-900">Producción & Stock</h2>
-                        <p class="text-sm text-slate-500">Registre órdenes de producción con su detalle de producto, materia prima y maquinaria.</p>
-                    </div>
-                </div>
 
-                <div id="grid-stock-materia-prima" class="grid grid-cols-2 sm:grid-cols-4 gap-4"></div>
+                <!-- ============================================= -->
+                <!-- PANTALLA A: HISTORIAL / LISTADO DE OP -->
+                <!-- ============================================= -->
+                <div id="vista-historial" class="space-y-6">
 
-                <!-- ENCABEZADO DE LA ORDEN -->
-                <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-5">
-                    <h3 class="font-semibold text-lg text-slate-800 flex items-center space-x-2"><i data-lucide="factory" class="w-5 h-5 text-red-500"></i><span>Nueva Orden de Producción</span></h3>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Orden de Pedido de Cliente asociada</label>
-                            <select id="prod-pedido-asociado" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
-                                <option value="">Sin pedido asociado (producción para stock)</option>
-                            </select>
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2.5 bg-orange-100 text-orange-600 rounded-xl"><i data-lucide="chef-hat" class="w-5 h-5"></i></div>
+                            <div>
+                                <h2 class="text-2xl font-bold text-slate-900">Órdenes de Producción</h2>
+                                <p class="text-sm text-slate-500">Planifique, ejecute y controle las órdenes de producción y el stock de materia prima.</p>
+                            </div>
                         </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Receta *</label>
-                            <select id="prod-receta" onchange="actualizarVistaPreviaReceta()" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Empleado responsable *</label>
-                            <select id="prod-empleado" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></select>
-                        </div>
+                        <button onclick="irANuevaOrdenProduccion()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2 shadow-sm transition">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Registrar Orden de Producción</span>
+                        </button>
                     </div>
 
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha emisión</label>
-                            <input id="prod-fecha-emision" type="date" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                    <div id="grid-stock-materia-prima" class="grid grid-cols-2 sm:grid-cols-4 gap-4"></div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
+                            <div class="p-2.5 bg-indigo-100 text-indigo-600 rounded-lg"><i data-lucide="factory" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-prod-total" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Total Órdenes</p></div>
                         </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Hora emisión</label>
-                            <input id="prod-hora-emision" type="time" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
+                            <div class="p-2.5 bg-amber-100 text-amber-600 rounded-lg"><i data-lucide="clock" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-prod-planificadas" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Planificadas</p></div>
                         </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha inicio</label>
-                            <input id="prod-fecha-inicio" type="date" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
+                            <div class="p-2.5 bg-blue-100 text-blue-600 rounded-lg"><i data-lucide="chef-hat" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-prod-en-proceso" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">En Proceso</p></div>
                         </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Hora inicio</label>
-                            <input id="prod-hora-inicio" type="time" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
+                            <div class="p-2.5 bg-emerald-100 text-emerald-600 rounded-lg"><i data-lucide="check-check" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-prod-finalizadas" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Finalizadas</p></div>
                         </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha fin</label>
-                            <input id="prod-fecha-fin" type="date" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
+                            <div class="p-2.5 bg-slate-100 text-slate-600 rounded-lg"><i data-lucide="x-circle" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-prod-canceladas" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Canceladas</p></div>
                         </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Hora fin</label>
-                            <input id="prod-hora-fin" type="time" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha vencimiento (lote)</label>
-                            <input id="prod-fecha-vencimiento" type="date" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Hora vencimiento</label>
-                            <input id="prod-hora-vencimiento" type="time" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
+                            <div class="p-2.5 bg-red-100 text-red-600 rounded-lg"><i data-lucide="alert-triangle" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-prod-stock-bajo" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Stock Bajo MP</p></div>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Estado de la Orden</label>
-                            <select id="prod-estado" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center gap-3">
+                            <h4 class="font-semibold text-slate-800 text-sm sm:mr-auto">Órdenes de Producción Registradas</h4>
+                            <input type="text" id="historial-buscador" oninput="renderizarHistorialProduccion()" placeholder="Buscar por código, producto o pedido..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-xs outline-none w-full sm:w-64">
+                            <select id="historial-filtro-estado" onchange="renderizarHistorialProduccion()" class="border border-slate-300 rounded-lg px-3 py-1.5 text-xs outline-none">
+                                <option value="">Todos los estados</option>
                                 <option>Planificada</option>
                                 <option>En Proceso</option>
                                 <option>Finalizada</option>
                                 <option>Cancelada</option>
                             </select>
                         </div>
-                        <div class="md:col-span-2">
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Observaciones</label>
-                            <input id="prod-observaciones" type="text" placeholder="Ej: Producción programada para cubrir pedidos de la semana." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
-                        </div>
-                    </div>
-
-                    <!-- DETALLE PRODUCTO -->
-                    <div class="border border-slate-200 bg-slate-50/50 rounded-xl p-4 space-y-3">
-                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Detalle: Producto a Fabricar</h4>
-                        <div id="prod-preview-receta" class="text-sm text-slate-600">Seleccione una receta para ver el producto asociado.</div>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Cantidad Planificada (Kg)</label>
-                                <input type="number" id="prod-cantidad-planificada" value="20" min="1" onchange="actualizarVistaPreviaReceta()" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">N° de Lote</label>
-                                <input type="text" id="prod-numero-lote" disabled placeholder="Se genera al registrar" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-slate-100 outline-none text-slate-400">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Cantidad Real (al finalizar)</label>
-                                <input type="number" id="prod-cantidad-real" placeholder="Opcional" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white outline-none">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- DETALLE MATERIA PRIMA -->
-                    <div class="border border-slate-200 bg-slate-50/50 rounded-xl p-4 space-y-3">
-                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Detalle: Materia Prima requerida (según receta)</h4>
-                        <table class="w-full text-sm text-left bg-white rounded-lg overflow-hidden border border-slate-200">
-                            <thead class="bg-slate-100 text-xs text-slate-600 uppercase border-b border-slate-200">
-                                <tr><th class="p-3">Materia Prima</th><th class="p-3 text-center">Cant. Planificada</th><th class="p-3 text-center">Stock Disponible</th></tr>
+                        <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-50 text-xs text-slate-500 border-b border-slate-200 uppercase">
+                                <tr>
+                                    <th class="px-6 py-3">Código</th>
+                                    <th class="px-6 py-3">Pedido asociado</th>
+                                    <th class="px-6 py-3">Empleado</th>
+                                    <th class="px-6 py-3">Producto(s)</th>
+                                    <th class="px-6 py-3">Fecha emisión</th>
+                                    <th class="px-6 py-3 text-center">Estado</th>
+                                    <th class="px-6 py-3 text-center">Acciones</th>
+                                </tr>
                             </thead>
-                            <tbody id="tabla-detalle-materia-prima" class="divide-y divide-slate-100"></tbody>
+                            <tbody id="tabla-ordenes-produccion" class="divide-y divide-slate-100"></tbody>
                         </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================= -->
+                <!-- PANTALLA B: CARGA / CREACIÓN DE OP -->
+                <!-- ============================================= -->
+                <div id="vista-nueva-orden" class="hidden space-y-6">
+
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2.5 bg-red-100 text-red-600 rounded-xl"><i data-lucide="factory" class="w-5 h-5"></i></div>
+                            <div>
+                                <h2 class="text-xl font-bold text-slate-900">Registrar Orden de Producción</h2>
+                                <p class="text-xs text-slate-500">Código: <span class="font-semibold text-slate-600">se asigna automáticamente al registrar</span></p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="volverAlHistorialProduccion()" class="text-sm font-semibold text-slate-500 hover:text-slate-700 flex items-center space-x-1">
+                            <i data-lucide="arrow-left" class="w-4 h-4"></i><span>Volver al historial</span>
+                        </button>
                     </div>
 
-                    <!-- DETALLE MAQUINARIA -->
-                    <div class="border border-slate-200 bg-slate-50/50 rounded-xl p-4 space-y-4">
-                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Detalle: Maquinaria utilizada</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
-                            <div class="md:col-span-4">
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Maquinaria</label>
-                                <select id="prod-det-maquinaria" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white"></select>
+                    <div id="card-nueva-orden-produccion" class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-5">
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="relative">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Origen de la orden *</label>
+                                <input type="text" id="prod-pedido-autocompletar" autocomplete="off" oninput="filtrarPedidosOrigen()" onfocus="filtrarPedidosOrigen()" placeholder="Buscar pedido pendiente o dejar vacío para Producción interna..." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white outline-none focus:ring-2 focus:ring-red-500">
+                                <input type="hidden" id="prod-pedido-asociado" value="">
+                                <div id="prod-pedido-autocompletar-opciones" class="hidden absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-56 overflow-y-auto"></div>
                             </div>
-                            <div class="md:col-span-3">
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Hora inicio planificada</label>
-                                <input id="prod-det-hora-inicio-plan" type="time" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Empleado responsable *</label>
+                                <select id="prod-empleado" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                    <option value="" disabled selected class="text-slate-400">Seleccione un empleado</option>
+                                </select>
                             </div>
-                            <div class="md:col-span-3">
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Hora fin planificada</label>
-                                <input id="prod-det-hora-fin-plan" type="time" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
+                        </div>
+
+                        <button type="button" id="btn-precargar-pedido" onclick="precargarProductosDesdePedido()" class="hidden text-xs font-semibold text-red-600 hover:text-red-700 flex items-center space-x-1">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i><span>Precargar productos de este pedido</span>
+                        </button>
+
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha inicio programada</label>
+                                <input id="prod-fecha-inicio" type="date" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
                             </div>
-                            <div class="md:col-span-2 flex items-end">
-                                <button type="button" onclick="agregarMaquinariaProduccion()" class="w-full bg-slate-800 text-white rounded-lg p-2 text-sm font-semibold hover:bg-slate-900 transition flex items-center justify-center">
-                                    <i data-lucide="plus" class="w-4 h-4"></i>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Hora inicio programada</label>
+                                <input id="prod-hora-inicio" type="time" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha fin programada</label>
+                                <input id="prod-fecha-fin" type="date" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Hora fin programada</label>
+                                <input id="prod-hora-fin" type="time" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Estado inicial</label>
+                                <select id="prod-estado" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                    <option>Planificada</option>
+                                    <option>En Proceso</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Observaciones</label>
+                                <input id="prod-observaciones" type="text" placeholder="Ej: Producción programada..." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                        </div>
+
+                        <!-- SECCIÓN 1: PRODUCTOS A FABRICAR -->
+                        <div class="border border-slate-200 bg-slate-50/50 rounded-xl p-4 space-y-3">
+                            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Sección 1 · Productos a fabricar</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                                <div class="md:col-span-7 relative">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Producto final *</label>
+                                    <input type="text" id="prod-item-autocompletar" autocomplete="off" oninput="filtrarProductosProduccion()" onfocus="filtrarProductosProduccion()" placeholder="Empezá a escribir para buscar..." class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white outline-none focus:ring-2 focus:ring-red-500">
+                                    <input type="hidden" id="prod-item-select" value="">
+                                    <div id="prod-item-autocompletar-opciones" class="hidden absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-56 overflow-y-auto"></div>
+                                    <p id="prod-item-receta-detectada" class="text-[11px] text-slate-500 mt-1 h-4"></p>
+                                </div>
+                                <div class="md:col-span-3">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Cantidad a fabricar (Kg) *</label>
+                                    <input type="number" id="prod-item-cant" value="20" min="1" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">&nbsp;</label>
+                                    <button type="button" onclick="agregarProductoProduccion()" title="Agregar producto" class="w-full bg-slate-800 text-white rounded-lg p-2 text-sm font-semibold hover:bg-slate-900 transition flex items-center justify-center">
+                                        <i data-lucide="plus" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <table class="w-full text-sm text-left bg-white rounded-lg overflow-hidden border border-slate-200">
+                                <thead class="bg-slate-100 text-xs text-slate-600 uppercase border-b border-slate-200">
+                                    <tr><th class="p-3">Producto</th><th class="p-3">Receta asociada</th><th class="p-3 text-center">Cant. Planificada (Kg)</th><th class="p-3">Lote proyectado</th><th class="p-3 text-center">Acción</th></tr>
+                                </thead>
+                                <tbody id="tabla-productos-produccion" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+
+                        <!-- SECCIÓN 2: REQUERIMIENTO DE MATERIA PRIMA -->
+                        <div class="border border-slate-200 bg-slate-50/50 rounded-xl p-4 space-y-3">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Sección 2 · Requerimiento de Materia Prima (consolidado)</h4>
+                                <button type="button" id="btn-generar-nota-mp" onclick="generarNotaPedidoMP()" class="hidden bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center space-x-1.5">
+                                    <i data-lucide="send" class="w-3.5 h-3.5"></i><span>Generar Nota de Pedido de MP</span>
                                 </button>
                             </div>
+                            <table class="w-full text-sm text-left bg-white rounded-lg overflow-hidden border border-slate-200">
+                                <thead class="bg-slate-100 text-xs text-slate-600 uppercase border-b border-slate-200">
+                                    <tr><th class="p-3">Materia Prima / Insumo</th><th class="p-3 text-center">Cant. Total Necesaria</th><th class="p-3 text-center">Stock Disponible</th><th class="p-3 text-center">Estado</th></tr>
+                                </thead>
+                                <tbody id="tabla-detalle-materia-prima" class="divide-y divide-slate-100">
+                                    <tr><td colspan="4" class="p-4 text-center text-slate-400 text-xs">Agregue un producto a fabricar para calcular la materia prima necesaria.</td></tr>
+                                </tbody>
+                            </table>
                         </div>
-                        <table class="w-full text-sm text-left bg-white rounded-lg overflow-hidden border border-slate-200">
-                            <thead class="bg-slate-100 text-xs text-slate-600 uppercase border-b border-slate-200">
-                                <tr><th class="p-3">Maquinaria</th><th class="p-3">Hora inicio plan.</th><th class="p-3">Hora fin plan.</th><th class="p-3 text-center">Acción</th></tr>
-                            </thead>
-                            <tbody id="tabla-detalle-maquinaria-produccion" class="divide-y divide-slate-100"></tbody>
-                        </table>
+
+                        <!-- SECCIÓN 3: MAQUINARIA -->
+                        <div class="border border-slate-200 bg-slate-50/50 rounded-xl p-4 space-y-4">
+                            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Sección 3 · Maquinaria utilizada</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                                <div class="md:col-span-4">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Maquinaria</label>
+                                    <select id="prod-det-maquinaria" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white"></select>
+                                </div>
+                                <div class="md:col-span-3">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Hora inicio planificada</label>
+                                    <input id="prod-det-hora-inicio-plan" type="time" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
+                                </div>
+                                <div class="md:col-span-3">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Hora fin planificada</label>
+                                    <input id="prod-det-hora-fin-plan" type="time" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
+                                </div>
+                                <div class="md:col-span-2 flex items-end">
+                                    <button type="button" onclick="agregarMaquinariaProduccion()" class="w-full bg-slate-800 text-white rounded-lg p-2 text-sm font-semibold hover:bg-slate-900 transition flex items-center justify-center">
+                                        <i data-lucide="plus" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <table class="w-full text-sm text-left bg-white rounded-lg overflow-hidden border border-slate-200">
+                                <thead class="bg-slate-100 text-xs text-slate-600 uppercase border-b border-slate-200">
+                                    <tr><th class="p-3">Maquinaria</th><th class="p-3">Hora inicio plan.</th><th class="p-3">Hora fin plan.</th><th class="p-3 text-center">Acción</th></tr>
+                                </thead>
+                                <tbody id="tabla-detalle-maquinaria-produccion" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+
+                        <button onclick="registrarOrdenProduccion()" class="w-full sm:w-auto bg-red-600 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-red-700 flex items-center justify-center space-x-2">
+                            <i data-lucide="save" class="w-4 h-4"></i>
+                            <span>Registrar Orden de Producción</span>
+                        </button>
                     </div>
-
-                    <button onclick="registrarOrdenProduccion()" class="w-full sm:w-auto bg-red-600 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-red-700 flex items-center justify-center space-x-2">
-                        <i data-lucide="play" class="w-4 h-4"></i>
-                        <span>Registrar Orden de Producción & Descontar Materia Prima</span>
-                    </button>
                 </div>
 
-                <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-3">
-                    <h4 class="font-semibold text-slate-800 text-sm">Órdenes de Producción Registradas</h4>
-                    <div id="lista-ordenes-produccion" class="space-y-3"></div>
+                <!-- ============================================= -->
+                <!-- PANTALLA C: DETALLE / CONSULTA DE UNA OP (incluye seguimiento y cierre) -->
+                <!-- ============================================= -->
+                <div id="vista-detalle-orden" class="hidden space-y-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2.5 bg-blue-100 text-blue-600 rounded-xl"><i data-lucide="search" class="w-5 h-5"></i></div>
+                            <div>
+                                <h2 class="text-xl font-bold text-slate-900">Detalle de la Orden de Producción</h2>
+                                <p class="text-xs text-slate-500">Consulte el detalle, inicie la producción, cargue el avance y confirme el cierre.</p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="volverDesdeDetalleOrden()" class="text-sm font-semibold text-slate-500 hover:text-slate-700 flex items-center space-x-1">
+                            <i data-lucide="arrow-left" class="w-4 h-4"></i><span>Volver al listado</span>
+                        </button>
+                    </div>
+                    <div id="detalle-orden-contenido"></div>
                 </div>
+
             </section>
         </main>
     </div>

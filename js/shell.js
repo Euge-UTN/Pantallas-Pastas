@@ -30,16 +30,44 @@ const ROLES_POR_MODULO = {
 const MODULOS = [
     { id: 'inicio', nombre: 'Inicio', icono: 'home', grupo: null },
     { id: 'ventas', nombre: 'Ventas', icono: 'receipt-text', grupo: 'Módulo', submenu: [
-        { id: 'dashboard', nombre: 'Dashboard', icono: 'layout-dashboard' },
-        { id: 'registrar', nombre: 'Registrar Pedido', icono: 'square-plus' }
+        { id: 'presupuestos', nombre: 'Presupuestos', icono: 'file-text' },
+        { id: 'registrar-presupuesto', nombre: 'Registrar Presupuesto', icono: 'file-plus-2' },
+        { id: 'dashboard', nombre: 'Pedidos', icono: 'layout-dashboard' },
+        { id: 'registrar', nombre: 'Registrar Pedido', icono: 'square-plus' },
+        { id: 'comprobantes-venta', nombre: 'Comprobantes de Venta', icono: 'file-stack' }
     ] },
-    { id: 'cobranzas', nombre: 'Cobranzas', icono: 'hand-coins', grupo: 'Módulo' },
-    { id: 'compras', nombre: 'Compras', icono: 'shopping-basket', grupo: 'Módulo' },
-    { id: 'produccion', nombre: 'Producción', icono: 'chef-hat', grupo: 'Módulo' },
-    { id: 'mantenimiento', nombre: 'Mantenimiento', icono: 'wrench', grupo: 'Módulo' },
-    { id: 'clientes', nombre: 'Clientes', icono: 'users-round', grupo: 'Gestión' },
-    { id: 'proveedores', nombre: 'Proveedores', icono: 'warehouse', grupo: 'Gestión' },
-    { id: 'empleados', nombre: 'Empleados', icono: 'id-card', grupo: 'Gestión' }
+    { id: 'cobranzas', nombre: 'Cobranzas', icono: 'hand-coins', grupo: 'Módulo', submenu: [
+        { id: 'pagos', nombre: 'Comprobantes de pago', icono: 'wallet' },
+        { id: 'registrar-cobro', nombre: 'Registrar Cobro', icono: 'hand-coins' }
+    ] },
+    { id: 'compras', nombre: 'Compras', icono: 'shopping-basket', grupo: 'Módulo', submenu: [
+        { id: 'presupuestos', nombre: 'Presupuestos', icono: 'file-text' },
+        { id: 'registrar-presupuesto', nombre: 'Registrar Presupuesto', icono: 'file-plus-2' },
+        { id: 'ordenes-compra', nombre: 'Órdenes de Compra', icono: 'layout-dashboard' },
+        { id: 'registrar-orden-compra', nombre: 'Registrar Orden de Compra', icono: 'square-plus' }
+    ] },
+    { id: 'produccion', nombre: 'Producción', icono: 'chef-hat', grupo: 'Módulo', submenu: [
+        { id: 'historial', nombre: 'Órdenes de Producción', icono: 'layout-dashboard' },
+        { id: 'nueva-orden', nombre: 'Registrar Orden de Producción', icono: 'square-plus' }
+    ] },
+    { id: 'mantenimiento', nombre: 'Mantenimiento', icono: 'wrench', grupo: 'Módulo', submenu: [
+        { id: 'historial', nombre: 'Órdenes de Mantenimiento', icono: 'layout-dashboard' },
+        { id: 'registrar', nombre: 'Registrar Orden de Mantenimiento', icono: 'square-plus' },
+        { id: 'maquinaria', nombre: 'Maquinaria', icono: 'cog' },
+        { id: 'registrar-maquinaria', nombre: 'Registrar Maquinaria', icono: 'plus-circle' }
+    ] },
+    { id: 'clientes', nombre: 'Clientes', icono: 'users-round', grupo: 'Gestión', submenu: [
+        { id: 'historial', nombre: 'Historial', icono: 'layout-dashboard' },
+        { id: 'registrar', nombre: 'Registrar Cliente', icono: 'user-plus' }
+    ] },
+    { id: 'proveedores', nombre: 'Proveedores', icono: 'warehouse', grupo: 'Gestión', submenu: [
+        { id: 'historial', nombre: 'Historial', icono: 'layout-dashboard' },
+        { id: 'registrar', nombre: 'Registrar Proveedor', icono: 'user-plus' }
+    ] },
+    { id: 'empleados', nombre: 'Empleados', icono: 'id-card', grupo: 'Gestión', submenu: [
+        { id: 'historial', nombre: 'Historial', icono: 'layout-dashboard' },
+        { id: 'registrar', nombre: 'Registrar Empleado', icono: 'user-plus' }
+    ] }
 ];
 
 function urlDeModulo(id) { return `${id}.html`; }

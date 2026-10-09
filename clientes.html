@@ -15,7 +15,7 @@
 
         <main id="contenido-modulo" class="flex-1 overflow-y-auto bg-slate-50 p-8">
 <section id="sec-clientes" class="space-y-6">
-                <div id="vista-listado-clientes" class="space-y-6">
+                <div id="vista-historial" class="space-y-6">
                     <div class="flex justify-between items-center">
                         <div class="flex items-center space-x-3">
                             <div class="p-2.5 bg-sky-100 text-sky-600 rounded-xl"><i data-lucide="users-round" class="w-5 h-5"></i></div>
@@ -24,50 +24,141 @@
                                 <p class="text-sm text-slate-500">Listado general de clientes.</p>
                             </div>
                         </div>
-                        <button onclick="mostrarSubvistaClientes('cargar-cliente')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2 shadow-sm transition">
+                        <button onclick="irARegistrarCliente()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2 shadow-sm transition">
                             <i data-lucide="user-plus" class="w-4 h-4"></i>
-                            <span>Cargar Nuevo Cliente</span>
+                            <span>Registrar Cliente</span>
                         </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
+                            <div class="p-2.5 bg-sky-100 text-sky-600 rounded-lg"><i data-lucide="users-round" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-clientes-total" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Total Clientes</p></div>
+                        </div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
+                            <div class="p-2.5 bg-amber-100 text-amber-600 rounded-lg"><i data-lucide="store" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-clientes-mostrador" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Mostrador</p></div>
+                        </div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
+                            <div class="p-2.5 bg-emerald-100 text-emerald-600 rounded-lg"><i data-lucide="building-2" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-clientes-mayorista" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Mayoristas</p></div>
+                        </div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
+                            <div class="p-2.5 bg-violet-100 text-violet-600 rounded-lg"><i data-lucide="credit-card" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-clientes-limite-total" class="text-xl font-bold text-slate-900">$ 0</p><p class="text-xs text-slate-500">Límite Crédito Total</p></div>
+                        </div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
+                            <div class="p-2.5 bg-red-100 text-red-600 rounded-lg"><i data-lucide="mail-x" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-clientes-sin-email" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Sin Email</p></div>
+                        </div>
                     </div>
 
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center gap-3">
-                            <div class="relative flex-1 sm:max-w-xs">
-                                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
-                                <input type="text" id="buscar-cliente" oninput="aplicarFiltroClientes()" placeholder="Buscar por nombre o documento..." class="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-red-500">
-                            </div>
-                            <select id="filtro-cliente-tipo" onchange="aplicarFiltroClientes()" class="border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none bg-white">
-                                <option value="">Todos los tipos</option>
-                                <option value="Mostrador">Mostrador</option>
-                                <option value="Mayorista">Mayorista</option>
-                            </select>
+                        <div class="p-4 border-b border-slate-100">
+                            <h3 class="font-semibold text-slate-800">Listado de Clientes</h3>
                         </div>
-                        <table class="w-full text-xs text-left">
-                            <thead class="bg-slate-50 uppercase text-slate-500 border-b border-slate-200">
+                        <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-50 text-xs text-slate-500 border-b border-slate-200 uppercase">
                                 <tr>
-                                    <th class="p-3">Nombre / Razón Social</th>
-                                    <th class="p-3">CUIT / DNI</th>
-                                    <th class="p-3">Tipo Cliente</th>
-                                    <th class="p-3">Dirección Completa</th>
-                                    <th class="p-3">Teléfono</th>
-                                    <th class="p-3">Email</th>
-                                    <th class="p-3">Condición IVA</th>
-                                    <th class="p-3 text-right">Límite Crédito</th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>Nombre</span>
+                                            <button type="button" id="btn-orden-nombre" onclick="alternarOrdenClientes('nombre')" title="Ordenar de la A a la Z" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button>
+                                            <button type="button" onclick="togglePopoverColumna('pop-cli-nombre')" title="Buscar nombre" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-cli-nombre" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
+                                                <input type="text" id="buscar-cli-nombre" oninput="aplicarFiltroClientes()" placeholder="Buscar nombre..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>Apellido</span>
+                                            <button type="button" id="btn-orden-apellido" onclick="alternarOrdenClientes('apellido')" title="Ordenar de la A a la Z" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button>
+                                            <button type="button" onclick="togglePopoverColumna('pop-cli-apellido')" title="Buscar apellido" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-cli-apellido" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
+                                                <input type="text" id="buscar-cli-apellido" oninput="aplicarFiltroClientes()" placeholder="Buscar apellido..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">Razón Social</th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>Tipo Doc.</span>
+                                            <button type="button" id="btn-filtro-cli-tipo-doc" onclick="togglePopoverColumna('pop-cli-tipo-doc')" title="Filtrar por tipo de documento" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-cli-tipo-doc" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 min-w-[9rem] normal-case">
+                                                <button type="button" onclick="elegirFiltroCliTipoDoc('')" class="opcion-filtro-cli-tipo-doc block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="">Todos</button>
+                                                <button type="button" onclick="elegirFiltroCliTipoDoc('DNI')" class="opcion-filtro-cli-tipo-doc block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="DNI">DNI</button>
+                                                <button type="button" onclick="elegirFiltroCliTipoDoc('CUIT')" class="opcion-filtro-cli-tipo-doc block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="CUIT">CUIT</button>
+                                                <button type="button" onclick="elegirFiltroCliTipoDoc('CUIL')" class="opcion-filtro-cli-tipo-doc block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="CUIL">CUIL</button>
+                                                <button type="button" onclick="elegirFiltroCliTipoDoc('Pasaporte')" class="opcion-filtro-cli-tipo-doc block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Pasaporte">Pasaporte</button>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>N° Documento</span>
+                                            <button type="button" onclick="togglePopoverColumna('pop-cli-documento')" title="Buscar N° de documento" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-cli-documento" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
+                                                <input type="text" id="buscar-cli-documento" oninput="aplicarFiltroClientes()" placeholder="Buscar N° documento..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>Tipo Cliente</span>
+                                            <button type="button" id="btn-filtro-cli-tipo" onclick="togglePopoverColumna('pop-cli-tipo')" title="Filtrar por tipo de cliente" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-cli-tipo" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 min-w-[9rem] normal-case">
+                                                <button type="button" onclick="elegirFiltroCliTipo('')" class="opcion-filtro-cli-tipo block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="">Todos los tipos</button>
+                                                <button type="button" onclick="elegirFiltroCliTipo('Mostrador')" class="opcion-filtro-cli-tipo block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Mostrador">Mostrador</button>
+                                                <button type="button" onclick="elegirFiltroCliTipo('Mayorista')" class="opcion-filtro-cli-tipo block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Mayorista">Mayorista</button>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>Condición IVA</span>
+                                            <button type="button" id="btn-filtro-cli-iva" onclick="togglePopoverColumna('pop-cli-iva')" title="Filtrar por condición de IVA" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-cli-iva" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 min-w-[11rem] normal-case">
+                                                <button type="button" onclick="elegirFiltroCliIva('')" class="opcion-filtro-cli-iva block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="">Todas</button>
+                                                <button type="button" onclick="elegirFiltroCliIva('Responsable Inscripto')" class="opcion-filtro-cli-iva block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Responsable Inscripto">Responsable Inscripto</button>
+                                                <button type="button" onclick="elegirFiltroCliIva('Monotributo')" class="opcion-filtro-cli-iva block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Monotributo">Monotributo</button>
+                                                <button type="button" onclick="elegirFiltroCliIva('Consumidor Final')" class="opcion-filtro-cli-iva block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Consumidor Final">Consumidor Final</button>
+                                                <button type="button" onclick="elegirFiltroCliIva('Exento')" class="opcion-filtro-cli-iva block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Exento">Exento</button>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">Fecha Alta</th>
+                                    <th class="px-6 py-3 text-center">
+                                        <div class="flex items-center justify-center gap-1.5 popover-trigger">
+                                            <span>Cta. Cte.</span>
+                                            <button type="button" id="btn-filtro-cli-ctacte" onclick="togglePopoverColumna('pop-cli-ctacte')" title="Filtrar por cuenta corriente" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-cli-ctacte" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 min-w-[8rem] normal-case text-left">
+                                                <button type="button" onclick="elegirFiltroCliCtaCte('')" class="opcion-filtro-cli-ctacte block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="">Todos</button>
+                                                <button type="button" onclick="elegirFiltroCliCtaCte('si')" class="opcion-filtro-cli-ctacte block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="si">Sí</button>
+                                                <button type="button" onclick="elegirFiltroCliCtaCte('no')" class="opcion-filtro-cli-ctacte block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="no">No</button>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">Teléfono</th>
+                                    <th class="px-6 py-3">Email</th>
+                                    <th class="px-6 py-3 text-right">Límite Crédito</th>
+                                    <th class="px-6 py-3">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody id="tabla-lista-clientes" class="divide-y divide-slate-100">
-                            </tbody>
+                            <tbody id="tabla-lista-clientes" class="divide-y divide-slate-100"></tbody>
                         </table>
+                        </div>
                     </div>
                 </div>
 
-                <div id="vista-cargar-cliente" class="space-y-6 hidden">
+                <div id="vista-registrar" class="space-y-6 hidden">
                     <div class="flex items-center space-x-3">
-                        <button type="button" onclick="mostrarSubvistaClientes('listado')" class="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition flex items-center justify-center">
+                        <button type="button" onclick="volverAlHistorialClientes()" class="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition flex items-center justify-center">
                             <i data-lucide="arrow-left" class="w-5 h-5"></i>
                         </button>
                         <div>
-                            <h2 class="text-2xl font-bold text-slate-900">Cargar Nuevo Cliente</h2>
+                            <h2 id="titulo-form-cliente" class="text-2xl font-bold text-slate-900">Registrar Cliente</h2>
                             <p class="text-sm text-slate-500">Complete los datos generales y la ubicación geográfica del cliente.</p>
                         </div>
                     </div>
@@ -103,38 +194,43 @@
                             </div>
 
                             <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Provincia</label>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Provincia *</label>
                                 <select id="cli-provincia" onchange="cargarLocalidadesCascada('cli')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
-                                    <option value="">-- Seleccione Provincia --</option>
+                                    <option value="" disabled selected>Seleccioná una provincia</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Localidad</label>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Localidad *</label>
                                 <select id="cli-localidad" onchange="cargarCallesCascada('cli')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none" disabled>
-                                    <option value="">-- Seleccione Localidad --</option>
+                                    <option value="" disabled selected>Seleccioná una localidad</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Calle</label>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Calle *</label>
                                 <select id="cli-calle" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none" disabled>
-                                    <option value="">-- Seleccione Calle --</option>
+                                    <option value="" disabled selected>Seleccioná una calle</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Altura</label>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Altura *</label>
                                 <input type="text" id="cli-altura" placeholder="Ej: 450" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
                             </div>
 
                             <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Teléfono</label>
-                                <input type="text" id="cli-telefono" placeholder="(011) 4567-8900" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Teléfono *</label>
+                                <div id="cli-telefonos-wrap">
+                                    <div class="flex gap-2">
+                                        <input type="text" id="cli-telefono" placeholder="(011) 4567-8900" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                        <button type="button" onclick="agregarCampoTelefono('cli')" title="Agregar otro teléfono" class="shrink-0 w-9 h-9 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition"><i data-lucide="plus" class="w-4 h-4"></i></button>
+                                    </div>
+                                </div>
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Correo Electrónico (Email)</label>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Correo Electrónico *</label>
                                 <input type="email" id="cli-email" placeholder="contacto@cliente.com" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Condición Frente al IVA</label>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Condición Frente al IVA *</label>
                                 <select id="cli-iva" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
                                     <option>Responsable Inscripto</option>
                                     <option>Monotributo</option>
@@ -143,26 +239,50 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo de Cliente</label>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo de Cliente *</label>
                                 <select id="cli-tipo" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
                                     <option value="Mayorista">Mayorista (Restaurante / Hotel)</option>
                                     <option value="Mostrador">Consumidor Final (Mostrador)</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Límite de Crédito Permitido ($)</label>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha de Alta *</label>
+                                <input type="date" id="cli-fecha-alta" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div class="flex items-center gap-2 pt-6">
+                                <input type="checkbox" id="cli-cuenta-corriente" onchange="actualizarVisibilidadLimiteCliente()" class="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500">
+                                <label for="cli-cuenta-corriente" class="text-xs font-semibold text-slate-600">Tiene cuenta corriente habilitada</label>
+                            </div>
+                            <div id="wrap-cli-limite" class="hidden">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Límite de Crédito Permitido ($) *</label>
                                 <input type="number" id="cli-limite" placeholder="50000" value="50000" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
                             </div>
                         </div>
 
                         <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
-                            <button type="button" onclick="mostrarSubvistaClientes('listado')" class="bg-slate-100 text-slate-600 px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-200">Cancelar</button>
+                            <button type="button" onclick="volverAlHistorialClientes()" class="bg-slate-100 text-slate-600 px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-200">Cancelar</button>
                             <button type="button" onclick="guardarNuevoCliente()" class="bg-red-600 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-red-700 flex items-center space-x-2">
                                 <i data-lucide="save" class="w-4 h-4"></i>
-                                <span>Guardar Cliente</span>
+                                <span id="texto-btn-guardar-cliente">Guardar Cliente</span>
                             </button>
                         </div>
                     </div>
+                </div>
+
+                <!-- VISTA: DETALLE DE CLIENTE (solo lectura, abierta desde el listado) -->
+                <div id="vista-detalle" class="space-y-6 hidden">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <button type="button" onclick="volverAlHistorialClientes()" class="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition flex items-center justify-center">
+                                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                            </button>
+                            <h2 class="text-2xl font-bold text-slate-900">Detalle de Cliente</h2>
+                        </div>
+                        <button type="button" id="btn-editar-desde-detalle-cliente" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center space-x-2">
+                            <i data-lucide="pencil" class="w-4 h-4"></i><span>Editar</span>
+                        </button>
+                    </div>
+                    <div id="area-detalle-cliente" class="max-w-2xl bg-white border border-slate-200 p-8 rounded-xl shadow-lg space-y-4 text-sm"></div>
                 </div>
             </section>
         </main>

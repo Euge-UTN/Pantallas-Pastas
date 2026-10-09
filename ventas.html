@@ -20,7 +20,7 @@
                         <div class="flex items-center space-x-3">
                             <div class="p-2.5 bg-red-100 text-red-600 rounded-xl"><i data-lucide="layout-dashboard" class="w-5 h-5"></i></div>
                             <div>
-                                <h2 class="text-2xl font-bold text-slate-900">Dashboard de Ventas</h2>
+                                <h2 class="text-2xl font-bold text-slate-900">Pedidos</h2>
                                 <p class="text-sm text-slate-500">Estadísticas, pedidos recientes e historial completo de órdenes.</p>
                             </div>
                         </div>
@@ -49,7 +49,7 @@
                         </div>
                         <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
                             <div class="p-2.5 bg-red-100 text-red-600 rounded-lg"><i data-lucide="banknote" class="w-5 h-5"></i></div>
-                            <div><p id="kpi-pedidos-total" class="text-xl font-bold text-slate-900">$ 0</p><p class="text-xs text-slate-500">Facturado</p></div>
+                            <div><p id="kpi-pedidos-total" class="text-xl font-bold text-slate-900">$ 0</p><p class="text-xs text-slate-500">Total Comprobantes de Venta</p></div>
                         </div>
                         <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
                             <div class="p-2.5 bg-violet-100 text-violet-600 rounded-lg"><i data-lucide="trending-up" class="w-5 h-5"></i></div>
@@ -58,8 +58,13 @@
                     </div>
 
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div class="p-4 border-b border-slate-100">
-                            <h3 class="font-semibold text-slate-800">Historial de Pedidos</h3>
+                        <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center gap-3">
+                            <h3 class="font-semibold text-slate-800 sm:mr-auto">Historial de Pedidos</h3>
+                            <div class="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs shrink-0">
+                                <button type="button" onclick="elegirSegmentoPedidos('')" id="segmento-pedidos-" class="segmento-pedidos px-3 py-1.5 rounded-md font-semibold transition">Todos</button>
+                                <button type="button" onclick="elegirSegmentoPedidos('Evento')" id="segmento-pedidos-Evento" class="segmento-pedidos px-3 py-1.5 rounded-md font-semibold transition">Eventos</button>
+                                <button type="button" onclick="elegirSegmentoPedidos('Donacion')" id="segmento-pedidos-Donacion" class="segmento-pedidos px-3 py-1.5 rounded-md font-semibold transition">Donaciones</button>
+                            </div>
                         </div>
                         <div class="overflow-x-auto">
                         <table class="w-full text-sm text-left">
@@ -96,15 +101,6 @@
                                     </th>
                                     <th class="px-6 py-3">
                                         <div class="flex items-center gap-1.5 popover-trigger">
-                                            <span>N° Documento</span>
-                                            <button type="button" onclick="togglePopoverColumna('pop-documento')" title="Buscar N° de documento" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
-                                            <div id="pop-documento" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
-                                                <input type="text" id="buscar-documento" oninput="renderizarTablaPedidosRegistrados()" placeholder="Buscar N° documento..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
-                                            </div>
-                                        </div>
-                                    </th>
-                                    <th class="px-6 py-3">
-                                        <div class="flex items-center gap-1.5 popover-trigger">
                                             <span>Tipo Doc.</span>
                                             <button type="button" id="btn-filtro-tipo-doc" onclick="togglePopoverColumna('pop-tipo-doc')" title="Filtrar por tipo de documento" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button>
                                             <div id="pop-tipo-doc" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 min-w-[9rem] normal-case">
@@ -118,13 +114,21 @@
                                     </th>
                                     <th class="px-6 py-3">
                                         <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>N° Documento</span>
+                                            <button type="button" onclick="togglePopoverColumna('pop-documento')" title="Buscar N° de documento" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-documento" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
+                                                <input type="text" id="buscar-documento" oninput="renderizarTablaPedidosRegistrados()" placeholder="Buscar N° documento..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
                                             <span>Tipo Cliente</span>
                                             <button type="button" id="btn-filtro-tipo" onclick="togglePopoverColumna('pop-tipo')" title="Filtrar por tipo de cliente" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button>
                                             <div id="pop-tipo" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 min-w-[9rem] normal-case">
                                                 <button type="button" onclick="elegirFiltroTipoHistorial('')" class="opcion-filtro-tipo block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="">Todos los tipos</button>
                                                 <button type="button" onclick="elegirFiltroTipoHistorial('Mostrador')" class="opcion-filtro-tipo block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Mostrador">Mostrador</button>
                                                 <button type="button" onclick="elegirFiltroTipoHistorial('Mayorista')" class="opcion-filtro-tipo block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Mayorista">Mayorista</button>
-                                                <button type="button" onclick="elegirFiltroTipoHistorial('Evento')" class="opcion-filtro-tipo block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Evento">Evento</button>
                                             </div>
                                         </div>
                                     </th>
@@ -141,6 +145,7 @@
                                                 <button type="button" onclick="elegirFiltroEstadoHistorial('Listo')" class="opcion-filtro-estado block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Listo">Listo</button>
                                                 <button type="button" onclick="elegirFiltroEstadoHistorial('Entregado')" class="opcion-filtro-estado block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Entregado">Entregado</button>
                                                 <button type="button" onclick="elegirFiltroEstadoHistorial('Cancelado')" class="opcion-filtro-estado block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Cancelado">Cancelado</button>
+                                                <button type="button" onclick="elegirFiltroEstadoHistorial('Devuelto')" class="opcion-filtro-estado block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Devuelto">Devuelto</button>
                                             </div>
                                         </div>
                                     </th>
@@ -169,35 +174,17 @@
 
                             <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
                                 <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="user" class="w-4 h-4"></i><span>Cliente</span></h4>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo de Cliente *</label>
-                                        <select id="pedido-tipo-cliente" onchange="renderizarSelectClientePedido()" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
-                                            <option value="" disabled selected>Elegí un tipo de cliente</option>
-                                            <option value="Mostrador">Mostrador</option>
-                                            <option value="Mayorista">Mayorista</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Cliente *</label>
-                                        <div class="flex gap-2">
-                                            <div class="popover-trigger flex-1 min-w-0">
-                                                <button type="button" id="combo-cliente-btn" onclick="togglePopoverColumna('combo-cliente-panel')" disabled class="w-full flex items-center justify-between border border-slate-300 rounded-lg p-2.5 text-sm bg-white disabled:bg-slate-100 disabled:text-slate-400 focus:ring-2 focus:ring-red-500">
-                                                    <span id="combo-cliente-label" class="truncate text-slate-400">Elegí primero el tipo de cliente</span>
-                                                    <i data-lucide="chevron-down" class="w-4 h-4 shrink-0 text-slate-400"></i>
-                                                </button>
-                                                <div id="combo-cliente-panel" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg">
-                                                    <div class="p-2 border-b border-slate-100">
-                                                        <input type="text" id="combo-cliente-buscar" oninput="renderizarOpcionesComboCliente()" placeholder="Buscar por nombre o apellido..." class="w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
-                                                    </div>
-                                                    <div id="combo-cliente-opciones" class="max-h-48 overflow-y-auto py-1"></div>
-                                                </div>
-                                            </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Cliente *</label>
+                                    <div class="flex gap-2 relative">
+                                        <div class="flex-1 min-w-0 relative">
+                                            <input type="text" id="cliente-autocompletar" autocomplete="off" oninput="filtrarClientesAutocompletado()" onfocus="filtrarClientesAutocompletado()" placeholder="Empezá a escribir nombre o apellido..." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white outline-none focus:ring-2 focus:ring-red-500">
                                             <input type="hidden" id="select-cliente-pedido" value="">
-                                            <button type="button" onclick="abrirModalNuevoCliente()" title="Registrar un cliente nuevo" class="shrink-0 bg-slate-800 hover:bg-slate-900 text-white rounded-lg px-3 flex items-center justify-center">
-                                                <i data-lucide="user-plus" class="w-4 h-4"></i>
-                                            </button>
+                                            <div id="cliente-autocompletar-opciones" class="hidden absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-56 overflow-y-auto"></div>
                                         </div>
+                                        <button type="button" onclick="abrirModalNuevoCliente()" title="Registrar un cliente nuevo" class="shrink-0 bg-slate-800 hover:bg-slate-900 text-white rounded-lg px-3 flex items-center justify-center">
+                                            <i data-lucide="user-plus" class="w-4 h-4"></i>
+                                        </button>
                                     </div>
                                 </div>
                                 <div id="ficha-cliente-pedido" class="hidden bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-600"></div>
@@ -207,42 +194,34 @@
                                 <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="clipboard-list" class="w-4 h-4"></i><span>Datos del Pedido</span></h4>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Empleado que Registra *</label>
-                                        <div class="popover-trigger">
-                                            <button type="button" id="combo-empleado-btn" onclick="togglePopoverColumna('combo-empleado-panel')" class="w-full flex items-center justify-between border border-slate-300 rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-red-500">
-                                                <span id="combo-empleado-label" class="truncate text-slate-400">Elegí un empleado</span>
-                                                <i data-lucide="chevron-down" class="w-4 h-4 shrink-0 text-slate-400"></i>
-                                            </button>
-                                            <div id="combo-empleado-panel" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg">
-                                                <div class="p-2 border-b border-slate-100">
-                                                    <input type="text" id="combo-empleado-buscar" oninput="renderizarOpcionesComboEmpleado()" placeholder="Buscar por nombre o apellido..." class="w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
-                                                </div>
-                                                <div id="combo-empleado-opciones" class="max-h-48 overflow-y-auto py-1"></div>
-                                            </div>
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Registrado por</label>
+                                        <div id="pedido-empleado-display" class="w-full border border-slate-200 bg-slate-50 rounded-lg p-2.5 text-sm text-slate-600 flex items-center gap-2">
+                                            <i data-lucide="user-check" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                            <span id="pedido-empleado-nombre">-</span>
                                         </div>
                                         <input type="hidden" id="pedido-empleado" value="">
                                     </div>
-                                    <div>
-                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo de Pedido *</label>
-                                        <select id="select-tipo-operacion" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
-                                            <option value="" disabled selected>Elegí un tipo de pedido</option>
-                                            <option value="Mostrador">Mostrador</option>
-                                            <option value="Mayorista">Mayorista</option>
-                                            <option value="Evento">Evento</option>
-                                        </select>
+                                    <div class="flex items-center">
+                                        <label class="flex items-center gap-2 cursor-pointer select-none">
+                                            <input type="checkbox" id="pedido-es-evento" onchange="calcularTotalPedido()" class="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500">
+                                            <span class="text-sm font-semibold text-slate-700">Es para un evento</span>
+                                        </label>
                                     </div>
-                                    <div>
-                                        <label class="block text-xs font-semibold text-slate-600 mb-1">¿Es una Donación? *</label>
-                                        <select id="pedido-es-donacion" onchange="calcularTotalPedido()" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
-                                            <option value="" disabled selected>Elegí una opción</option>
-                                            <option value="Si">Sí</option>
-                                            <option value="No">No</option>
-                                        </select>
+                                    <div class="flex items-center">
+                                        <label class="flex items-center gap-2 cursor-pointer select-none">
+                                            <input type="checkbox" id="pedido-es-donacion" onchange="calcularTotalPedido()" class="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500">
+                                            <span class="text-sm font-semibold text-slate-700">Es una donación</span>
+                                        </label>
                                     </div>
                                     <div>
                                         <label class="block text-xs font-semibold text-slate-600 mb-1">Porcentaje de Bonificación (%)</label>
                                         <input type="number" id="pedido-bonificacion" value="0" min="0" max="100" onchange="calcularTotalPedido()" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed">
                                         <p id="nota-bonificacion-donacion" class="hidden text-[11px] text-slate-400 mt-1">No aplica: el pedido es una donación.</p>
+                                        <p id="nota-bonificacion-restringida" class="hidden text-[11px] text-slate-400 mt-1">Solo disponible para clientes Mayoristas.</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha estimada de entrega</label>
+                                        <input type="date" id="pedido-fecha-entrega-estimada" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
                                     </div>
                                 </div>
                                 <div>
@@ -254,39 +233,21 @@
                             <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
                                 <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="shopping-cart" class="w-4 h-4"></i><span>Productos</span></h4>
                                 <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
-                                    <div class="md:col-span-3">
-                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo de Producto *</label>
-                                        <select id="prod-tipo" onchange="renderizarProductosPorTipo()" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
-                                            <option value="" disabled selected>Elegí un tipo</option>
-                                            <option value="Pastas Rellenas">Pastas Rellenas</option>
-                                            <option value="Pastas Secas">Pastas Secas</option>
-                                            <option value="Salsas">Salsas</option>
-                                        </select>
-                                    </div>
-                                    <div class="md:col-span-3">
-                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Seleccionar Producto *</label>
-                                        <div class="popover-trigger">
-                                            <button type="button" id="combo-producto-btn" onclick="togglePopoverColumna('combo-producto-panel')" disabled class="w-full flex items-center justify-between border border-slate-300 rounded-lg p-2 text-sm bg-white disabled:bg-slate-100 disabled:text-slate-400">
-                                                <span id="combo-producto-label" class="truncate text-slate-400">Elegí primero un tipo</span>
-                                                <i data-lucide="chevron-down" class="w-4 h-4 shrink-0 text-slate-400"></i>
-                                            </button>
-                                            <div id="combo-producto-panel" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg">
-                                                <div class="p-2 border-b border-slate-100">
-                                                    <input type="text" id="combo-producto-buscar" oninput="renderizarOpcionesComboProducto()" placeholder="Buscar producto..." class="w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
-                                                </div>
-                                                <div id="combo-producto-opciones" class="max-h-48 overflow-y-auto py-1"></div>
-                                            </div>
-                                        </div>
+                                    <div class="md:col-span-5 relative">
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Producto *</label>
+                                        <input type="text" id="prod-autocompletar" autocomplete="off" oninput="filtrarProductosAutocompletado()" onfocus="filtrarProductosAutocompletado()" placeholder="Empezá a escribir para buscar..." class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white outline-none focus:ring-2 focus:ring-red-500">
                                         <input type="hidden" id="prod-select" value="">
+                                        <div id="prod-autocompletar-opciones" class="hidden absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-56 overflow-y-auto"></div>
+                                        <p id="prod-subtipo-detectado" class="text-[11px] text-slate-500 mt-1 h-4"></p>
                                     </div>
-                                    <div class="md:col-span-3">
+                                    <div class="md:col-span-2">
                                         <label class="block text-xs font-semibold text-slate-600 mb-1">Cantidad (Kg/Un) *</label>
                                         <input type="number" id="prod-cant" value="1" min="1" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
                                     </div>
-                                    <div class="md:col-span-3 flex items-end">
-                                        <button type="button" onclick="agregarProductoPedido()" class="w-full bg-slate-800 text-white rounded-lg p-2 text-sm font-semibold hover:bg-slate-900 transition flex items-center justify-center space-x-1">
+                                    <div class="md:col-span-3">
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">&nbsp;</label>
+                                        <button type="button" onclick="agregarProductoPedido()" title="Agregar producto" class="w-full bg-slate-800 text-white rounded-lg p-2 text-sm font-semibold hover:bg-slate-900 transition flex items-center justify-center">
                                             <i data-lucide="plus" class="w-4 h-4"></i>
-                                            <span>Agregar</span>
                                         </button>
                                     </div>
                                 </div>
@@ -294,8 +255,9 @@
                                 <table class="w-full text-sm text-left bg-white rounded-lg overflow-hidden border border-slate-200">
                                     <thead class="bg-slate-100 text-xs text-slate-600 uppercase border-b border-slate-200">
                                         <tr>
-                                            <th class="p-3">Producto</th>
                                             <th class="p-3">Tipo</th>
+                                            <th class="p-3">Subtipo</th>
+                                            <th class="p-3">Producto</th>
                                             <th class="p-3 text-center">Cant.</th>
                                             <th class="p-3 text-right">P. Unitario</th>
                                             <th class="p-3 text-right">Subtotal</th>
@@ -325,12 +287,273 @@
                                         <i data-lucide="check-circle" class="w-4 h-4"></i>
                                         <span>Confirmar Pedido</span>
                                     </button>
-                                    <button type="button" onclick="emitirPresupuestoDesdePedido()" id="btn-emitir-presupuesto" class="w-full bg-slate-100 border border-slate-300 text-slate-700 py-3 rounded-lg text-sm font-semibold hover:bg-slate-200 transition flex items-center justify-center space-x-2">
-                                        <i data-lucide="file-text" class="w-4 h-4 text-slate-500"></i>
-                                        <span>Emitir Presupuesto</span>
-                                    </button>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VISTA: LISTADO DE PRESUPUESTOS -->
+                <div id="vista-presupuestos" class="space-y-6 hidden">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2.5 bg-red-100 text-red-600 rounded-xl"><i data-lucide="file-text" class="w-5 h-5"></i></div>
+                            <div>
+                                <h2 class="text-2xl font-bold text-slate-900">Presupuestos</h2>
+                                <p class="text-sm text-slate-500">Presupuestos generados para clientes y eventos, previos a la confirmación del pedido.</p>
+                            </div>
+                        </div>
+                        <button onclick="irARegistrarPresupuesto()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2 shadow-sm transition">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Nuevo Presupuesto</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center gap-3">
+                            <h3 class="font-semibold text-slate-800 sm:mr-auto">Listado de Presupuestos</h3>
+                            <div class="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs shrink-0">
+                                <button type="button" onclick="elegirSegmentoPresupuestos('')" id="segmento-presupuestos-" class="segmento-presupuestos px-3 py-1.5 rounded-md font-semibold transition">Todos</button>
+                                <button type="button" onclick="elegirSegmentoPresupuestos('Evento')" id="segmento-presupuestos-Evento" class="segmento-presupuestos px-3 py-1.5 rounded-md font-semibold transition">Eventos</button>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-50 text-xs text-slate-500 border-b border-slate-200 uppercase">
+                                <tr>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>N° Presupuesto</span>
+                                            <button type="button" onclick="togglePopoverColumna('pop-num-presupuesto')" title="Buscar N° de presupuesto" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-num-presupuesto" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
+                                                <input type="text" id="buscar-num-presupuesto" oninput="renderizarTablaPresupuestos()" placeholder="Buscar N° presupuesto..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>Nombre</span>
+                                            <button type="button" id="btn-orden-nombre-presupuesto" onclick="alternarOrdenPresupuestos('nombre')" title="Ordenar de la A a la Z" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button>
+                                            <button type="button" onclick="togglePopoverColumna('pop-nombre-presupuesto')" title="Buscar nombre" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-nombre-presupuesto" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
+                                                <input type="text" id="buscar-nombre-presupuesto" oninput="renderizarTablaPresupuestos()" placeholder="Buscar nombre..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>Apellido</span>
+                                            <button type="button" id="btn-orden-apellido-presupuesto" onclick="alternarOrdenPresupuestos('apellido')" title="Ordenar de la A a la Z" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button>
+                                            <button type="button" onclick="togglePopoverColumna('pop-apellido-presupuesto')" title="Buscar apellido" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-apellido-presupuesto" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
+                                                <input type="text" id="buscar-apellido-presupuesto" oninput="renderizarTablaPresupuestos()" placeholder="Buscar apellido..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>Tipo Doc.</span>
+                                            <button type="button" id="btn-filtro-tipo-doc-presupuesto" onclick="togglePopoverColumna('pop-tipo-doc-presupuesto')" title="Filtrar por tipo de documento" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-tipo-doc-presupuesto" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 min-w-[9rem] normal-case">
+                                                <button type="button" onclick="elegirFiltroTipoDocPresupuestos('')" class="opcion-filtro-tipo-doc-presupuesto block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="">Todos</button>
+                                                <button type="button" onclick="elegirFiltroTipoDocPresupuestos('DNI')" class="opcion-filtro-tipo-doc-presupuesto block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="DNI">DNI</button>
+                                                <button type="button" onclick="elegirFiltroTipoDocPresupuestos('CUIT')" class="opcion-filtro-tipo-doc-presupuesto block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="CUIT">CUIT</button>
+                                                <button type="button" onclick="elegirFiltroTipoDocPresupuestos('CUIL')" class="opcion-filtro-tipo-doc-presupuesto block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="CUIL">CUIL</button>
+                                                <button type="button" onclick="elegirFiltroTipoDocPresupuestos('Pasaporte')" class="opcion-filtro-tipo-doc-presupuesto block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Pasaporte">Pasaporte</button>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>N° Documento</span>
+                                            <button type="button" onclick="togglePopoverColumna('pop-documento-presupuesto')" title="Buscar N° de documento" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-documento-presupuesto" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
+                                                <input type="text" id="buscar-documento-presupuesto" oninput="renderizarTablaPresupuestos()" placeholder="Buscar N° documento..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>Tipo Cliente</span>
+                                            <button type="button" id="btn-filtro-tipo-presupuesto" onclick="togglePopoverColumna('pop-tipo-presupuesto')" title="Filtrar por tipo de cliente" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-tipo-presupuesto" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 min-w-[9rem] normal-case">
+                                                <button type="button" onclick="elegirFiltroTipoPresupuestos('')" class="opcion-filtro-tipo-presupuesto block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="">Todos los tipos</button>
+                                                <button type="button" onclick="elegirFiltroTipoPresupuestos('Mostrador')" class="opcion-filtro-tipo-presupuesto block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Mostrador">Mostrador</button>
+                                                <button type="button" onclick="elegirFiltroTipoPresupuestos('Mayorista')" class="opcion-filtro-tipo-presupuesto block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Mayorista">Mayorista</button>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">Fecha</th>
+                                    <th class="px-6 py-3 text-right">Total</th>
+                                    <th class="px-6 py-3 text-center">
+                                        <div class="flex items-center justify-center gap-1.5 popover-trigger">
+                                            <span>Estado</span>
+                                            <button type="button" id="btn-filtro-estado-presupuesto" onclick="togglePopoverColumna('pop-estado-presupuesto')" title="Filtrar por estado" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-estado-presupuesto" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 min-w-[10rem] normal-case text-left">
+                                                <button type="button" onclick="elegirFiltroEstadoPresupuestos('')" class="opcion-filtro-estado-presupuesto block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="">Todos los estados</button>
+                                                <button type="button" onclick="elegirFiltroEstadoPresupuestos('Pendiente')" class="opcion-filtro-estado-presupuesto block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Pendiente">Pendiente</button>
+                                                <button type="button" onclick="elegirFiltroEstadoPresupuestos('Convertido')" class="opcion-filtro-estado-presupuesto block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Convertido">Convertido</button>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-presupuestos" class="divide-y divide-slate-200"></tbody>
+                        </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VISTA: REGISTRAR PRESUPUESTO -->
+                <div id="vista-registrar-presupuesto" class="space-y-6 hidden">
+                    <div class="flex items-center space-x-3">
+                        <button type="button" onclick="volverAPresupuestos()" class="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition flex items-center justify-center">
+                            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                        </button>
+                        <div>
+                            <h2 id="titulo-form-presupuesto" class="text-2xl font-bold text-slate-900">Registrar Presupuesto</h2>
+                            <p class="text-sm text-slate-500">Cargá un presupuesto estimado para un cliente o evento, sin confirmar todavía el pedido.</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 space-y-6">
+                            <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
+                                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="user" class="w-4 h-4"></i><span>Cliente</span></h4>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Cliente *</label>
+                                    <div class="flex gap-2">
+                                        <div class="flex-1 min-w-0 relative">
+                                            <input type="text" id="presup-cliente-autocompletar" autocomplete="off" oninput="filtrarClientesAutocompletadoPresupuesto()" onfocus="filtrarClientesAutocompletadoPresupuesto()" placeholder="Empezá a escribir nombre o apellido..." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white outline-none focus:ring-2 focus:ring-red-500">
+                                            <input type="hidden" id="select-presup-cliente" value="">
+                                            <div id="presup-cliente-autocompletar-opciones" class="hidden absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-56 overflow-y-auto"></div>
+                                        </div>
+                                        <button type="button" onclick="abrirModalNuevoCliente('presupuesto')" title="Registrar un cliente nuevo" class="shrink-0 bg-slate-800 hover:bg-slate-900 text-white rounded-lg px-3 flex items-center justify-center">
+                                            <i data-lucide="user-plus" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="ficha-cliente-presupuesto" class="hidden bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-600"></div>
+                            </div>
+
+                            <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
+                                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="clipboard-list" class="w-4 h-4"></i><span>Datos del Presupuesto</span></h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="flex items-center">
+                                        <label class="flex items-center gap-2 cursor-pointer select-none">
+                                            <input type="checkbox" id="presup-es-evento" onchange="calcularTotalPresupuesto()" class="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500">
+                                            <span class="text-sm font-semibold text-slate-700">Es para un evento</span>
+                                        </label>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Porcentaje de Bonificación (%)</label>
+                                        <input type="number" id="presup-bonificacion" value="0" min="0" max="100" onchange="calcularTotalPresupuesto()" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed">
+                                        <p id="nota-bonificacion-presupuesto-restringida" class="hidden text-[11px] text-slate-400 mt-1">Solo disponible para clientes Mayoristas.</p>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Observaciones</label>
+                                    <textarea id="presup-observaciones" rows="2" placeholder="Ej: Presupuesto válido por 15 días." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></textarea>
+                                </div>
+                            </div>
+
+                            <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
+                                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="shopping-cart" class="w-4 h-4"></i><span>Productos</span></h4>
+                                <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                                    <div class="md:col-span-5 relative">
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Producto *</label>
+                                        <input type="text" id="presup-prod-autocompletar" autocomplete="off" oninput="filtrarProductosAutocompletadoPresupuesto()" onfocus="filtrarProductosAutocompletadoPresupuesto()" placeholder="Empezá a escribir para buscar..." class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white outline-none focus:ring-2 focus:ring-red-500">
+                                        <input type="hidden" id="presup-prod-select" value="">
+                                        <div id="presup-prod-autocompletar-opciones" class="hidden absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-56 overflow-y-auto"></div>
+                                        <p id="presup-prod-subtipo-detectado" class="text-[11px] text-slate-500 mt-1 h-4"></p>
+                                    </div>
+                                    <div class="md:col-span-2">
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Cantidad (Kg/Un) *</label>
+                                        <input type="number" id="presup-prod-cant" value="1" min="1" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
+                                    </div>
+                                    <div class="md:col-span-3">
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">&nbsp;</label>
+                                        <button type="button" onclick="agregarProductoPresupuesto()" title="Agregar producto" class="w-full bg-slate-800 text-white rounded-lg p-2 text-sm font-semibold hover:bg-slate-900 transition flex items-center justify-center">
+                                            <i data-lucide="plus" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <table class="w-full text-sm text-left bg-white rounded-lg overflow-hidden border border-slate-200">
+                                    <thead class="bg-slate-100 text-xs text-slate-600 uppercase border-b border-slate-200">
+                                        <tr>
+                                            <th class="p-3">Tipo</th>
+                                            <th class="p-3">Subtipo</th>
+                                            <th class="p-3">Producto</th>
+                                            <th class="p-3 text-center">Cant.</th>
+                                            <th class="p-3 text-right">P. Unitario</th>
+                                            <th class="p-3 text-right">Subtotal</th>
+                                            <th class="p-3 text-center">Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabla-items-presupuesto" class="divide-y divide-slate-100"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4 sticky top-6">
+                                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Resumen</h4>
+                                <div class="space-y-1.5 text-sm">
+                                    <div class="flex justify-between"><span class="text-slate-500">Ítems</span><span id="cant-items-presupuesto" class="font-medium">0</span></div>
+                                    <div class="flex justify-between"><span class="text-slate-500">Subtotal</span><span id="subtotal-presupuesto-monto" class="font-medium">$ 0</span></div>
+                                    <div class="flex justify-between text-emerald-600"><span id="label-bonificacion-presupuesto">Bonificación</span><span id="bonificacion-presupuesto-monto">-$ 0</span></div>
+                                </div>
+                                <div class="pt-3 border-t border-slate-100 text-right">
+                                    <span class="text-xs text-slate-500 block">Total Presupuestado</span>
+                                    <span id="total-presupuesto-monto" class="text-2xl font-bold text-slate-900">$ 0</span>
+                                </div>
+                                <button type="button" onclick="guardarPresupuesto()" id="btn-guardar-presupuesto" class="w-full bg-red-600 text-white py-3 rounded-lg text-sm font-semibold hover:bg-red-700 transition flex items-center justify-center space-x-2">
+                                    <i data-lucide="check-circle" class="w-4 h-4"></i>
+                                    <span>Guardar Presupuesto</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODAL: DEVOLVER PEDIDO (se abre desde la fila del pedido en el Historial, ya precargado) -->
+                <div id="modal-devolucion" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div class="bg-white rounded-xl p-6 w-full max-w-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-slate-900 flex items-center space-x-2">
+                                <i data-lucide="undo-2" class="w-5 h-5 text-orange-600"></i>
+                                <span>Devolver Pedido <span id="devolucion-pedido-id"></span> — <span id="devolucion-pedido-cliente"></span></span>
+                            </h3>
+                            <button type="button" onclick="cerrarModalDevolucion()" class="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600"><i data-lucide="x" class="w-4 h-4"></i></button>
+                        </div>
+
+                        <table class="w-full text-sm text-left bg-white rounded-lg overflow-hidden border border-slate-200">
+                            <thead class="bg-slate-100 text-xs text-slate-600 uppercase border-b border-slate-200">
+                                <tr>
+                                    <th class="p-3">Producto</th>
+                                    <th class="p-3 text-center">Cant. Pedida</th>
+                                    <th class="p-3 text-center">Ya Devuelto</th>
+                                    <th class="p-3 text-center">Cant. a Devolver</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-items-devolucion" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Motivo de la devolución *</label>
+                            <textarea id="devolucion-motivo" rows="2" placeholder="Ej: Producto en mal estado." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></textarea>
+                        </div>
+                        <div class="flex justify-end gap-2">
+                            <button type="button" onclick="cerrarModalDevolucion()" class="px-4 py-2 text-sm font-semibold text-slate-500">Cerrar</button>
+                            <button type="button" onclick="registrarDevolucion()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2">
+                                <i data-lucide="undo-2" class="w-4 h-4"></i><span>Registrar Devolución</span>
+                            </button>
+                        </div>
+
+                        <div id="devolucion-historial" class="hidden pt-4 border-t border-slate-100 space-y-2">
+                            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Devoluciones ya registradas</h4>
+                            <div id="devolucion-historial-lista" class="space-y-2 text-xs text-slate-600"></div>
                         </div>
                     </div>
                 </div>
@@ -354,7 +577,7 @@
                 <div id="vista-presupuesto" class="space-y-6 hidden">
                     <div class="flex items-center justify-between no-print">
                         <div class="flex items-center space-x-3">
-                            <button type="button" onclick="volverAlListadoVentas()" class="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition flex items-center justify-center">
+                            <button type="button" onclick="volverAPresupuestos()" class="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition flex items-center justify-center">
                                 <i data-lucide="arrow-left" class="w-5 h-5"></i>
                             </button>
                             <h2 class="text-2xl font-bold text-slate-900">Presupuesto de Venta</h2>
@@ -364,7 +587,7 @@
                                 <i data-lucide="printer" class="w-4 h-4"></i>
                                 <span>Imprimir Presupuesto</span>
                             </button>
-                            <button type="button" onclick="volverAlListadoVentas()" class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-700 transition">
+                            <button type="button" onclick="volverAPresupuestos()" class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-700 transition">
                                 Volver al Listado
                             </button>
                         </div>
@@ -375,16 +598,22 @@
                             <div>
                                 <h1 class="text-2xl font-bold text-red-600">FÁBRICA DE PASTAS</h1>
                                 <p class="text-xs text-slate-500">Documento de Presupuesto Comercial</p>
-                                <p class="text-xs font-semibold text-slate-800 mt-2">Cliente: <span id="presupuesto-cliente-nombre">Consumidor Final</span></p>
+                                <p id="presupuesto-cliente-linea" class="text-xs font-semibold text-slate-800 mt-2">Cliente: <span id="presupuesto-cliente-nombre">Consumidor Final</span></p>
+                                <div class="flex items-center gap-2 mt-2">
+                                    <p id="presupuesto-estado-badge" class="inline-block px-2.5 py-1 text-xs font-semibold rounded-full"></p>
+                                    <p id="presupuesto-bonificacion-badge" class="hidden inline-block px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800"></p>
+                                </div>
                             </div>
                             <div class="text-right">
-                                <p class="text-sm font-bold text-slate-800">PRES-00094</p>
-                                <p class="text-xs text-slate-400">Fecha: 10/09/2026</p>
+                                <p id="presupuesto-numero" class="text-sm font-bold text-slate-800">PRES-00000</p>
+                                <p id="presupuesto-fecha" class="text-xs text-slate-400">Fecha: -</p>
                             </div>
                         </div>
                         <table class="w-full text-xs text-left">
                             <thead class="border-b border-slate-300 uppercase text-slate-500">
                                 <tr>
+                                    <th class="py-2">Tipo</th>
+                                    <th class="py-2">Subtipo</th>
                                     <th class="py-2">Producto</th>
                                     <th class="py-2 text-center">Cant.</th>
                                     <th class="py-2 text-right">P. Unitario</th>
@@ -397,6 +626,7 @@
                         <div class="border-t border-slate-200 pt-4 text-right">
                             <p id="presupuesto-total-monto" class="text-lg font-bold text-slate-900">Total: $ 0</p>
                         </div>
+                        <div id="presupuesto-generar-pedido-wrap" class="no-print flex justify-end gap-2"></div>
                     </div>
                 </div>
 
@@ -416,8 +646,161 @@
                     <div id="area-comprobante-venta" class="max-w-3xl mx-auto bg-white border border-slate-200 p-10 rounded-xl shadow-lg space-y-6"></div>
                 </div>
 
+                <!-- VISTA: COMPROBANTES DE VENTA (listado histórico, con estado de cobro) -->
+                <div id="vista-comprobantes-venta" class="space-y-6 hidden">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2.5 bg-amber-100 text-amber-600 rounded-xl"><i data-lucide="file-stack" class="w-5 h-5"></i></div>
+                            <div>
+                                <h2 class="text-2xl font-bold text-slate-900">Comprobantes de Venta</h2>
+                                <p class="text-sm text-slate-500">Comprobantes de venta emitidos y su estado de cobro.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
+                            <div class="p-2.5 bg-slate-100 text-slate-600 rounded-lg"><i data-lucide="file-stack" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-cv-total" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Comprobantes de Venta</p></div>
+                        </div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
+                            <div class="p-2.5 bg-amber-100 text-amber-600 rounded-lg"><i data-lucide="clock" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-cv-pendientes" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Pendientes</p></div>
+                        </div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
+                            <div class="p-2.5 bg-emerald-100 text-emerald-600 rounded-lg"><i data-lucide="check-check" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-cv-cobrados" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Cobradas</p></div>
+                        </div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
+                            <div class="p-2.5 bg-slate-100 text-slate-500 rounded-lg"><i data-lucide="x-circle" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-cv-anulados" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Anuladas</p></div>
+                        </div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
+                            <div class="p-2.5 bg-red-100 text-red-600 rounded-lg"><i data-lucide="banknote" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-cv-total-monto" class="text-xl font-bold text-slate-900">$ 0</p><p class="text-xs text-slate-500">Total Comprobantes de Venta</p></div>
+                        </div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
+                            <div class="p-2.5 bg-violet-100 text-violet-600 rounded-lg"><i data-lucide="hourglass" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-cv-pendiente-monto" class="text-xl font-bold text-slate-900">$ 0</p><p class="text-xs text-slate-500">Pendiente de Cobro</p></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center gap-3">
+                            <h3 class="font-semibold text-slate-800 sm:mr-auto">Listado de Comprobantes de Venta</h3>
+                            <div class="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs shrink-0">
+                                <button type="button" onclick="elegirSegmentoComprobantesVenta('')" id="segmento-cv-" class="segmento-cv px-3 py-1.5 rounded-md font-semibold transition">Todos</button>
+                                <button type="button" onclick="elegirSegmentoComprobantesVenta('Evento')" id="segmento-cv-Evento" class="segmento-cv px-3 py-1.5 rounded-md font-semibold transition">Eventos</button>
+                                <button type="button" onclick="elegirSegmentoComprobantesVenta('Donacion')" id="segmento-cv-Donacion" class="segmento-cv px-3 py-1.5 rounded-md font-semibold transition">Donaciones</button>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-50 text-xs text-slate-500 border-b border-slate-200 uppercase">
+                                <tr>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>N° Comprobante</span>
+                                            <button type="button" onclick="togglePopoverColumna('pop-num-cv')" title="Buscar N° de comprobante" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-num-cv" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
+                                                <input type="text" id="buscar-num-cv" oninput="renderizarTablaComprobantesVenta()" placeholder="Buscar N° comprobante..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>Nombre</span>
+                                            <button type="button" id="btn-orden-nombre-cv" onclick="alternarOrdenComprobantesVenta('nombre')" title="Ordenar de la A a la Z" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button>
+                                            <button type="button" onclick="togglePopoverColumna('pop-nombre-cv')" title="Buscar nombre" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-nombre-cv" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
+                                                <input type="text" id="buscar-nombre-cv" oninput="renderizarTablaComprobantesVenta()" placeholder="Buscar nombre..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>Apellido</span>
+                                            <button type="button" id="btn-orden-apellido-cv" onclick="alternarOrdenComprobantesVenta('apellido')" title="Ordenar de la A a la Z" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button>
+                                            <button type="button" onclick="togglePopoverColumna('pop-apellido-cv')" title="Buscar apellido" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-apellido-cv" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
+                                                <input type="text" id="buscar-apellido-cv" oninput="renderizarTablaComprobantesVenta()" placeholder="Buscar apellido..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>Tipo Doc.</span>
+                                            <button type="button" id="btn-filtro-tipo-doc-cv" onclick="togglePopoverColumna('pop-tipo-doc-cv')" title="Filtrar por tipo de documento" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-tipo-doc-cv" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 min-w-[9rem] normal-case">
+                                                <button type="button" onclick="elegirFiltroTipoDocComprobantesVenta('')" class="opcion-filtro-tipo-doc-cv block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="">Todos</button>
+                                                <button type="button" onclick="elegirFiltroTipoDocComprobantesVenta('DNI')" class="opcion-filtro-tipo-doc-cv block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="DNI">DNI</button>
+                                                <button type="button" onclick="elegirFiltroTipoDocComprobantesVenta('CUIT')" class="opcion-filtro-tipo-doc-cv block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="CUIT">CUIT</button>
+                                                <button type="button" onclick="elegirFiltroTipoDocComprobantesVenta('CUIL')" class="opcion-filtro-tipo-doc-cv block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="CUIL">CUIL</button>
+                                                <button type="button" onclick="elegirFiltroTipoDocComprobantesVenta('Pasaporte')" class="opcion-filtro-tipo-doc-cv block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Pasaporte">Pasaporte</button>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>N° Documento</span>
+                                            <button type="button" onclick="togglePopoverColumna('pop-documento-cv')" title="Buscar N° de documento" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-documento-cv" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
+                                                <input type="text" id="buscar-documento-cv" oninput="renderizarTablaComprobantesVenta()" placeholder="Buscar N° documento..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>Tipo Cliente</span>
+                                            <button type="button" id="btn-filtro-tipo-cv" onclick="togglePopoverColumna('pop-tipo-cv')" title="Filtrar por tipo de cliente" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-tipo-cv" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 min-w-[9rem] normal-case">
+                                                <button type="button" onclick="elegirFiltroTipoComprobantesVenta('')" class="opcion-filtro-tipo-cv block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="">Todos los tipos</button>
+                                                <button type="button" onclick="elegirFiltroTipoComprobantesVenta('Mostrador')" class="opcion-filtro-tipo-cv block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Mostrador">Mostrador</button>
+                                                <button type="button" onclick="elegirFiltroTipoComprobantesVenta('Mayorista')" class="opcion-filtro-tipo-cv block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Mayorista">Mayorista</button>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">Fecha</th>
+                                    <th class="px-6 py-3 text-right">Total</th>
+                                    <th class="px-6 py-3 text-center">
+                                        <div class="flex items-center justify-center gap-1.5 popover-trigger">
+                                            <span>Estado</span>
+                                            <button type="button" id="btn-filtro-estado-cv" onclick="togglePopoverColumna('pop-estado-cv')" title="Filtrar por estado" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-estado-cv" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 min-w-[10rem] normal-case text-left">
+                                                <button type="button" onclick="elegirFiltroEstadoComprobantesVenta('')" class="opcion-filtro-estado-cv block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="">Todos los estados</button>
+                                                <button type="button" onclick="elegirFiltroEstadoComprobantesVenta('Pendiente')" class="opcion-filtro-estado-cv block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Pendiente">Pendiente</button>
+                                                <button type="button" onclick="elegirFiltroEstadoComprobantesVenta('Cobrada')" class="opcion-filtro-estado-cv block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Cobrada">Cobrada</button>
+                                                <button type="button" onclick="elegirFiltroEstadoComprobantesVenta('Anulada')" class="opcion-filtro-estado-cv block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Anulada">Anulada</button>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-comprobantes-venta" class="divide-y divide-slate-200"></tbody>
+                        </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VISTA: COMPROBANTE DE VENTA (solo lectura, abierta desde el listado de Comprobantes de Venta) -->
+                <div id="vista-comprobante-venta-detalle" class="space-y-6 hidden">
+                    <div class="flex items-center justify-between no-print">
+                        <div class="flex items-center space-x-3">
+                            <button type="button" onclick="volverAComprobantesVenta()" class="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition flex items-center justify-center">
+                                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                            </button>
+                            <h2 class="text-2xl font-bold text-slate-900">Comprobante de Venta</h2>
+                        </div>
+                        <button onclick="window.print()" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-800 flex items-center space-x-2">
+                            <i data-lucide="printer" class="w-4 h-4"></i><span>Imprimir</span>
+                        </button>
+                    </div>
+                    <div id="area-comprobante-venta-detalle" class="max-w-3xl mx-auto bg-white border border-slate-200 p-10 rounded-xl shadow-lg space-y-6"></div>
+                </div>
+
                 <!-- MODAL: NUEVO CLIENTE RÁPIDO (desde el registro de pedido) -->
-                <div id="modal-nuevo-cliente-pedido" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 no-print">
+                <div id="modal-nuevo-cliente-pedido" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 no-print">
                     <div class="bg-white rounded-xl p-6 w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto">
                         <div class="flex items-center justify-between">
                             <h3 class="font-bold text-slate-900 flex items-center space-x-2"><i data-lucide="user-plus" class="w-5 h-5 text-red-600"></i><span>Registrar Cliente Nuevo</span></h3>
@@ -457,6 +840,28 @@
                                     <label class="block text-xs font-semibold text-slate-600 mb-1">N° Documento *</label>
                                     <input type="text" id="mcli-numero-documento" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
                                 </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Provincia</label>
+                                <select id="mcli-provincia" onchange="cargarLocalidadesCascada('mcli')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                    <option value="" disabled selected>Seleccioná una provincia</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Localidad</label>
+                                <select id="mcli-localidad" onchange="cargarCallesCascada('mcli')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none" disabled>
+                                    <option value="" disabled selected>Seleccioná una localidad</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Calle</label>
+                                <select id="mcli-calle" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none" disabled>
+                                    <option value="" disabled selected>Seleccioná una calle</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Altura</label>
+                                <input type="text" id="mcli-altura" placeholder="Ej: 450" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Teléfono</label>
