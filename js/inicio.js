@@ -22,7 +22,6 @@ const CATALOGO_ACCESOS_INICIO = [
     { id: 'produccion-orden', modulo: 'produccion', nombre: 'Orden de Producción', descripcion: 'Planificar una nueva producción.', icono: 'chef-hat', color: 'blue', href: 'produccion.html', porDefecto: true },
     { id: 'mantenimiento-orden', modulo: 'mantenimiento', nombre: 'Orden de Mantenimiento', descripcion: 'Registrar un mantenimiento.', icono: 'wrench', color: 'violet', href: 'mantenimiento.html', porDefecto: true },
     { id: 'compras-orden', modulo: 'compras', nombre: 'Orden de Compra', descripcion: 'Generar un pedido a proveedores.', icono: 'shopping-basket', color: 'emerald', href: 'compras.html', porDefecto: true },
-    { id: 'empleados-nuevo', modulo: 'empleados', nombre: 'Nuevo Empleado', descripcion: 'Registrar personal nuevo.', icono: 'id-card', color: 'rose', href: 'empleados.html', porDefecto: true },
     { id: 'proveedores-nuevo', modulo: 'proveedores', nombre: 'Nuevo Proveedor', descripcion: 'Dar de alta un proveedor.', icono: 'warehouse', color: 'indigo', href: 'proveedores.html', porDefecto: true },
 
     { id: 'ventas-dashboard', modulo: 'ventas', nombre: 'Dashboard de Ventas', descripcion: 'Ver estadísticas e historial de pedidos.', icono: 'layout-dashboard', color: 'red', href: 'ventas.html#dashboard', porDefecto: false },
@@ -71,7 +70,9 @@ function renderizarStatsInicio() {
         stats.push(tarjetaStatInicio({ icono: 'banknote', color: 'red', valor: `$ ${pedidosFacturables.reduce((a, p) => a + p.total, 0).toLocaleString()}`, label: 'Facturado Total' }));
     }
     if ((ROLES_POR_MODULO.cobranzas || []).includes(rol)) {
-        stats.push(tarjetaStatInicio({ icono: 'wallet', color: 'emerald', valor: `$ ${totalCajaAcumulado.toLocaleString()}`, label: 'Caja del Día' }));
+        const hoy = new Date().toISOString().slice(0, 10);
+        const cajaHoy = totalesCobradosPorMedio(hoy).reduce((acc, m) => acc + m.total, 0);
+        stats.push(tarjetaStatInicio({ icono: 'wallet', color: 'emerald', valor: `$ ${cajaHoy.toLocaleString()}`, label: 'Caja del Día' }));
     }
     if ((ROLES_POR_MODULO.clientes || []).includes(rol)) {
         stats.push(tarjetaStatInicio({ icono: 'users-round', color: 'sky', valor: listaClientes.length, label: 'Clientes Registrados' }));
@@ -91,6 +92,65 @@ function renderizarStatsInicio() {
     }
 
     document.getElementById('grid-stats-inicio').innerHTML = stats.join('') || `<p class="text-sm text-slate-400 col-span-full">No hay estadísticas disponibles para tu rol.</p>`;
+}
+
+// ---------- Gráficos de Ventas (Chart.js) — solo visibles para roles con acceso al módulo de Ventas ----------
+let graficoVentasPeriodo = null;
+let graficoPedidosEstado = null;
+let graficoProductosTop = null;
+
+function renderizarGraficosInicio() {
+    const seccion = document.getElementById('seccion-graficos-inicio');
+    const rol = usuarioInternoActual.rol;
+    if (!(ROLES_POR_MODULO.ventas || []).includes(rol) || typeof Chart === 'undefined') {
+        seccion.classList.add('hidden');
+        return;
+    }
+    seccion.classList.remove('hidden');
+
+    // Ventas de los últimos 30 días (suma de totales por día, incluye días sin ventas).
+    const dias = [];
+    for (let i = 29; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        dias.push(d.toISOString().slice(0, 10));
+    }
+    const totalesPorDia = dias.map(fecha =>
+        listaPedidos.filter(p => p.fecha === fecha && p.estado !== 'Cancelado').reduce((acc, p) => acc + p.total, 0)
+    );
+    if (graficoVentasPeriodo) graficoVentasPeriodo.destroy();
+    graficoVentasPeriodo = new Chart(document.getElementById('grafico-ventas-periodo'), {
+        type: 'line',
+        data: {
+            labels: dias.map(f => new Date(f + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })),
+            datasets: [{ label: 'Facturado', data: totalesPorDia, borderColor: '#dc2626', backgroundColor: 'rgba(220,38,38,0.1)', fill: true, tension: 0.3, pointRadius: 0 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { maxTicksLimit: 8 } }, y: { ticks: { callback: v => `$ ${v.toLocaleString()}` } } } }
+    });
+
+    // Pedidos por estado (incluye Cancelado).
+    const estadosConCancelado = [...ESTADOS_PEDIDO, 'Cancelado'];
+    const coloresEstado = { 'Pendiente': '#f59e0b', 'En preparación': '#3b82f6', 'Listo': '#6366f1', 'Entregado': '#10b981', 'Cancelado': '#94a3b8' };
+    const conteoPorEstado = estadosConCancelado.map(e => listaPedidos.filter(p => p.estado === e).length);
+    if (graficoPedidosEstado) graficoPedidosEstado.destroy();
+    graficoPedidosEstado = new Chart(document.getElementById('grafico-pedidos-estado'), {
+        type: 'doughnut',
+        data: { labels: estadosConCancelado, datasets: [{ data: conteoPorEstado, backgroundColor: estadosConCancelado.map(e => coloresEstado[e]) }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } } }
+    });
+
+    // Top 5 productos más vendidos (suma de cantidad por nombre de producto, en todos los pedidos no cancelados).
+    const cantidadPorProducto = {};
+    listaPedidos.filter(p => p.estado !== 'Cancelado').forEach(p => {
+        (p.detalle || []).forEach(i => { cantidadPorProducto[i.nombre] = (cantidadPorProducto[i.nombre] || 0) + i.cantidad; });
+    });
+    const topProductos = Object.entries(cantidadPorProducto).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    if (graficoProductosTop) graficoProductosTop.destroy();
+    graficoProductosTop = new Chart(document.getElementById('grafico-productos-top'), {
+        type: 'bar',
+        data: { labels: topProductos.map(p => p[0]), datasets: [{ label: 'Unidades vendidas', data: topProductos.map(p => p[1]), backgroundColor: '#dc2626', borderRadius: 4 }] },
+        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } }
+    });
 }
 
 function tarjetaAccesoInicio(acceso) {
@@ -174,6 +234,7 @@ function agregarAccesoPersonalizado(id) {
 function initPaginaInicio() {
     document.getElementById('inicio-saludo').innerText = `¡Hola, ${usuarioInternoActual.nombre.split(' ')[0]}!`;
     renderizarStatsInicio();
+    renderizarGraficosInicio();
     renderizarAccesosRapidosInicio();
     lucide.createIcons();
 }

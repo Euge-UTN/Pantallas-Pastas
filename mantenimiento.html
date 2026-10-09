@@ -15,141 +15,382 @@
 
         <main id="contenido-modulo" class="flex-1 overflow-y-auto bg-slate-50 p-8">
 <section id="sec-mantenimiento" class="space-y-6">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-3">
-                        <div class="p-2.5 bg-emerald-100 text-emerald-600 rounded-xl"><i data-lucide="wrench" class="w-5 h-5"></i></div>
-                        <div>
-                            <h2 class="text-2xl font-bold text-slate-900">Mantenimiento</h2>
-                            <p class="text-sm text-slate-500">Maquinaria de la fábrica y órdenes de mantenimiento preventivo y correctivo.</p>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div class="bg-white rounded-xl border border-slate-200 p-4 flex items-center space-x-3">
-                        <div class="p-2.5 bg-emerald-100 text-emerald-600 rounded-lg"><i data-lucide="cog" class="w-5 h-5"></i></div>
-                        <div><p id="kpi-maquinas-operativas" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Máquinas operativas</p></div>
-                    </div>
-                    <div class="bg-white rounded-xl border border-slate-200 p-4 flex items-center space-x-3">
-                        <div class="p-2.5 bg-amber-100 text-amber-600 rounded-lg"><i data-lucide="wrench" class="w-5 h-5"></i></div>
-                        <div><p id="kpi-ordenes-mant" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Órdenes registradas</p></div>
-                    </div>
-                    <div class="bg-white rounded-xl border border-slate-200 p-4 flex items-center space-x-3">
-                        <div class="p-2.5 bg-red-100 text-red-600 rounded-lg"><i data-lucide="alert-octagon" class="w-5 h-5"></i></div>
-                        <div><p id="kpi-maquinas-baja" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Fuera de servicio</p></div>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-5">
-                    <h3 class="font-semibold text-lg text-slate-800 flex items-center space-x-2"><i data-lucide="clipboard-list" class="w-5 h-5 text-red-500"></i><span>Registrar Orden de Mantenimiento</span></h3>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo de Mantenimiento *</label>
-                            <select id="mant-tipo" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
-                                <option>Preventivo</option>
-                                <option>Correctivo</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Empleado responsable *</label>
-                            <select id="mant-empleado" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha de emisión</label>
-                            <input id="mant-fecha-emision" type="date" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">Observaciones generales de la orden</label>
-                        <textarea id="mant-observaciones" rows="2" placeholder="Ej: Mantenimiento programado de fin de mes." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></textarea>
-                    </div>
-
-                    <div class="border border-slate-200 bg-slate-50/50 rounded-xl p-4 space-y-4">
-                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Detalle: Máquinas intervenidas en esta orden</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
-                            <div class="md:col-span-3">
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Maquinaria</label>
-                                <select id="mant-det-maquinaria" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white"></select>
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha inicio</label>
-                                <input id="mant-det-fecha-inicio" type="date" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
-                            </div>
-                            <div class="md:col-span-1">
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Hora in.</label>
-                                <input id="mant-det-hora-inicio" type="time" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha fin</label>
-                                <input id="mant-det-fecha-fin" type="date" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
-                            </div>
-                            <div class="md:col-span-1">
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Hora fin</label>
-                                <input id="mant-det-hora-fin" type="time" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Tareas realizadas</label>
-                                <input id="mant-det-tareas" type="text" placeholder="Ej: Lubricación de rodillos" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
-                            </div>
-                            <div class="md:col-span-1 flex items-end">
-                                <button type="button" onclick="agregarDetalleMantenimiento()" class="w-full bg-slate-800 text-white rounded-lg p-2 text-sm font-semibold hover:bg-slate-900 transition flex items-center justify-center">
-                                    <i data-lucide="plus" class="w-4 h-4"></i>
-                                </button>
+                <!-- ============================================= -->
+                <!-- HISTORIAL: listado de Órdenes de Mantenimiento -->
+                <!-- ============================================= -->
+                <div id="vista-historial" class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2.5 bg-emerald-100 text-emerald-600 rounded-xl"><i data-lucide="wrench" class="w-5 h-5"></i></div>
+                            <div>
+                                <h2 class="text-2xl font-bold text-slate-900">Órdenes de Mantenimiento</h2>
+                                <p class="text-sm text-slate-500">Mantenimiento preventivo y correctivo de la maquinaria de la fábrica.</p>
                             </div>
                         </div>
+                        <button onclick="irARegistrarMantenimiento()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2 shadow-sm transition">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Registrar Orden de Mantenimiento</span>
+                        </button>
+                    </div>
 
-                        <table class="w-full text-sm text-left bg-white rounded-lg overflow-hidden border border-slate-200">
-                            <thead class="bg-slate-100 text-xs text-slate-600 uppercase border-b border-slate-200">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
+                            <div class="p-2.5 bg-slate-100 text-slate-600 rounded-lg"><i data-lucide="clipboard-list" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-mant-total-ordenes" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Total órdenes</p></div>
+                        </div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
+                            <div class="p-2.5 bg-amber-100 text-amber-600 rounded-lg"><i data-lucide="clock" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-mant-pendientes" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Pendientes</p></div>
+                        </div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
+                            <div class="p-2.5 bg-blue-100 text-blue-600 rounded-lg"><i data-lucide="wrench" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-mant-en-proceso" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">En proceso</p></div>
+                        </div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
+                            <div class="p-2.5 bg-emerald-100 text-emerald-600 rounded-lg"><i data-lucide="check-check" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-mant-finalizadas" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Finalizadas</p></div>
+                        </div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
+                            <div class="p-2.5 bg-orange-100 text-orange-600 rounded-lg"><i data-lucide="pause-circle" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-mant-suspendidas" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Suspendidas</p></div>
+                        </div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
+                            <div class="p-2.5 bg-red-100 text-red-600 rounded-lg"><i data-lucide="alert-triangle" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-mant-maq-reparacion" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Máquinas en reparación</p></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-slate-100">
+                            <h3 class="font-semibold text-slate-800">Listado de Órdenes de Mantenimiento</h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-50 text-xs text-slate-500 border-b border-slate-200 uppercase">
                                 <tr>
-                                    <th class="p-3">Maquinaria</th><th class="p-3">Inicio</th><th class="p-3">Fin</th><th class="p-3">Tareas realizadas</th><th class="p-3 text-center">Acción</th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>Código</span>
+                                            <button type="button" onclick="togglePopoverColumna('pop-mant-codigo')" title="Buscar código" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-mant-codigo" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
+                                                <input type="text" id="buscar-mant-codigo" oninput="renderizarHistorialMantenimiento()" placeholder="Buscar código..." class="w-36 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>Tipo</span>
+                                            <button type="button" id="btn-filtro-mant-tipo" onclick="togglePopoverColumna('pop-mant-tipo')" title="Filtrar por tipo" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-mant-tipo" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 min-w-[9rem] normal-case">
+                                                <button type="button" onclick="elegirFiltroMantTipo('')" class="opcion-filtro-mant-tipo block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="">Todos</button>
+                                                <button type="button" onclick="elegirFiltroMantTipo('Preventivo')" class="opcion-filtro-mant-tipo block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Preventivo">Preventivo</button>
+                                                <button type="button" onclick="elegirFiltroMantTipo('Correctivo')" class="opcion-filtro-mant-tipo block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Correctivo">Correctivo</button>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">Responsable</th>
+                                    <th class="px-6 py-3">Maquinaria(s)</th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>Fecha Emisión</span>
+                                            <button type="button" id="btn-orden-mant-fecha" onclick="alternarOrdenMantenimiento()" title="Ordenar por fecha" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3 text-center">
+                                        <div class="flex items-center justify-center gap-1.5 popover-trigger">
+                                            <span>Estado</span>
+                                            <button type="button" id="btn-filtro-mant-estado" onclick="togglePopoverColumna('pop-mant-estado')" title="Filtrar por estado" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-mant-estado" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 min-w-[9rem] normal-case text-left">
+                                                <button type="button" onclick="elegirFiltroMantEstado('')" class="opcion-filtro-mant-estado block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="">Todos</button>
+                                                <button type="button" onclick="elegirFiltroMantEstado('Pendiente')" class="opcion-filtro-mant-estado block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Pendiente">Pendiente</button>
+                                                <button type="button" onclick="elegirFiltroMantEstado('En proceso')" class="opcion-filtro-mant-estado block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="En proceso">En proceso</button>
+                                                <button type="button" onclick="elegirFiltroMantEstado('Suspendida')" class="opcion-filtro-mant-estado block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Suspendida">Suspendida</button>
+                                                <button type="button" onclick="elegirFiltroMantEstado('Finalizada')" class="opcion-filtro-mant-estado block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Finalizada">Finalizada</button>
+                                                <button type="button" onclick="elegirFiltroMantEstado('Cancelada')" class="opcion-filtro-mant-estado block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Cancelada">Cancelada</button>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3 text-center">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody id="tabla-detalle-mantenimiento" class="divide-y divide-slate-100"></tbody>
+                            <tbody id="tabla-ordenes-mantenimiento" class="divide-y divide-slate-100"></tbody>
                         </table>
+                        </div>
                     </div>
-
-                    <button onclick="registrarOrdenMantenimiento()" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2">
-                        <i data-lucide="clipboard-check" class="w-4 h-4"></i><span>Registrar Orden de Mantenimiento</span>
-                    </button>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-3">
-                        <h4 class="font-semibold text-slate-800 text-sm">Historial de Órdenes de Mantenimiento</h4>
-                        <div id="lista-ordenes-mantenimiento" class="space-y-3"></div>
+                <!-- ============================================= -->
+                <!-- MAQUINARIA: listado general -->
+                <!-- ============================================= -->
+                <div id="vista-maquinaria" class="hidden space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2.5 bg-violet-100 text-violet-600 rounded-xl"><i data-lucide="cog" class="w-5 h-5"></i></div>
+                            <div>
+                                <h2 class="text-2xl font-bold text-slate-900">Maquinaria</h2>
+                                <p class="text-sm text-slate-500">Catálogo de maquinaria utilizada en los procesos productivos.</p>
+                            </div>
+                        </div>
+                        <button onclick="irARegistrarMaquinaria()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2 shadow-sm transition">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Registrar Maquinaria</span>
+                        </button>
                     </div>
 
-                    <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
-                        <div class="flex items-center justify-between">
-                            <h3 class="font-semibold text-slate-800">Maquinaria</h3>
-                            <button onclick="mostrarFormMaquinaria()" class="text-xs font-semibold text-red-600 hover:underline flex items-center space-x-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i><span>Nueva</span></button>
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-slate-100">
+                            <h3 class="font-semibold text-slate-800">Listado de Maquinaria</h3>
                         </div>
-                        <div id="lista-maquinaria" class="space-y-2"></div>
-                        <div id="form-nueva-maquinaria" class="hidden space-y-2 pt-3 border-t border-slate-100">
-                            <input id="maq-nombre" type="text" placeholder="Nombre de la máquina *" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none">
-                            <input id="maq-descripcion" type="text" placeholder="Descripción breve" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none">
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Fecha de adquisición</label>
-                                    <input id="maq-fecha-adquisicion" type="date" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none">
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Unidad de tiempo</label>
-                                    <select id="maq-unidad-tiempo" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none">
-                                        <option>Horas</option><option>Días</option><option>Turnos</option>
-                                    </select>
-                                </div>
+                        <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-50 text-xs text-slate-500 border-b border-slate-200 uppercase">
+                                <tr>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>Nombre</span>
+                                            <button type="button" id="btn-orden-maq-nombre" onclick="alternarOrdenMaquinaria()" title="Ordenar de la A a la Z" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button>
+                                            <button type="button" onclick="togglePopoverColumna('pop-maq-nombre')" title="Buscar nombre" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-maq-nombre" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
+                                                <input type="text" id="buscar-maq-nombre" oninput="renderizarTablaMaquinaria()" placeholder="Buscar nombre..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>Marca</span>
+                                            <button type="button" onclick="togglePopoverColumna('pop-maq-marca')" title="Buscar marca" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-maq-marca" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
+                                                <input type="text" id="buscar-maq-marca" oninput="renderizarTablaMaquinaria()" placeholder="Buscar marca..." class="w-36 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">Modelo</th>
+                                    <th class="px-6 py-3">Descripción</th>
+                                    <th class="px-6 py-3">Fecha Adquisición</th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>Unidad Tiempo</span>
+                                            <button type="button" id="btn-filtro-maq-unidad" onclick="togglePopoverColumna('pop-maq-unidad')" title="Filtrar por unidad de tiempo" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-maq-unidad" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 min-w-[8rem] normal-case">
+                                                <button type="button" onclick="elegirFiltroMaqUnidad('')" class="opcion-filtro-maq-unidad block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="">Todas</button>
+                                                <button type="button" onclick="elegirFiltroMaqUnidad('Horas')" class="opcion-filtro-maq-unidad block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Horas">Horas</button>
+                                                <button type="button" onclick="elegirFiltroMaqUnidad('Días')" class="opcion-filtro-maq-unidad block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Días">Días</button>
+                                                <button type="button" onclick="elegirFiltroMaqUnidad('Turnos')" class="opcion-filtro-maq-unidad block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Turnos">Turnos</button>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3 text-center">
+                                        <div class="flex items-center justify-center gap-1.5 popover-trigger">
+                                            <span>Estado</span>
+                                            <button type="button" id="btn-filtro-maq-estado" onclick="togglePopoverColumna('pop-maq-estado')" title="Filtrar por estado" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-maq-estado" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 min-w-[10rem] normal-case text-left">
+                                                <button type="button" onclick="elegirFiltroMaqEstado('')" class="opcion-filtro-maq-estado block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="">Todos</button>
+                                                <button type="button" onclick="elegirFiltroMaqEstado('Operativa')" class="opcion-filtro-maq-estado block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Operativa">Operativa</button>
+                                                <button type="button" onclick="elegirFiltroMaqEstado('En reparación')" class="opcion-filtro-maq-estado block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="En reparación">En reparación</button>
+                                                <button type="button" onclick="elegirFiltroMaqEstado('Fuera de servicio')" class="opcion-filtro-maq-estado block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Fuera de servicio">Fuera de servicio</button>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-maquinaria" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================= -->
+                <!-- REGISTRAR MAQUINARIA -->
+                <!-- ============================================= -->
+                <div id="vista-registrar-maquinaria" class="hidden space-y-6">
+                    <div class="flex items-center space-x-3">
+                        <button type="button" onclick="volverAMaquinaria()" class="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition flex items-center justify-center">
+                            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                        </button>
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900">Registrar Maquinaria</h2>
+                            <p class="text-sm text-slate-500">Alta de un nuevo equipo en el catálogo de maquinaria.</p>
+                        </div>
+                    </div>
+
+                    <div class="max-w-2xl bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre *</label>
+                                <input id="maq-nombre" type="text" placeholder="Ej: Sobadora Industrial" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
                             </div>
                             <div>
-                                <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Estado</label>
-                                <select id="maq-estado" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Marca *</label>
+                                <input id="maq-marca" type="text" placeholder="Ej: Imperia" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Modelo *</label>
+                                <input id="maq-modelo" type="text" placeholder="Ej: IM-450" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha de adquisición *</label>
+                                <input id="maq-fecha-adquisicion" type="date" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Descripción</label>
+                                <input id="maq-descripcion" type="text" placeholder="Descripción breve" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Estado</label>
+                                <select id="maq-estado" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
                                     <option>Operativa</option><option>En reparación</option><option>Fuera de servicio</option>
                                 </select>
                             </div>
-                            <button onclick="guardarMaquinaria()" class="w-full bg-slate-800 hover:bg-slate-900 text-white rounded-lg p-2 text-sm font-semibold">Guardar máquina</button>
+                        </div>
+                        <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                            <button type="button" onclick="volverAMaquinaria()" class="bg-slate-100 text-slate-600 px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-200">Cancelar</button>
+                            <button onclick="guardarMaquinaria()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2">
+                                <i data-lucide="save" class="w-4 h-4"></i><span>Guardar máquina</span>
+                            </button>
                         </div>
                     </div>
+                </div>
+
+                <!-- ============================================= -->
+                <!-- HISTORIAL DE MANTENIMIENTOS DE UNA MÁQUINA (solo lectura, abierta desde el listado de Maquinaria) -->
+                <!-- ============================================= -->
+                <div id="vista-historial-maquina" class="hidden space-y-6">
+                    <div class="flex items-center space-x-3">
+                        <button type="button" onclick="volverDesdeHistorialMaquina()" class="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition flex items-center justify-center">
+                            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                        </button>
+                        <div>
+                            <h2 id="historial-maquina-titulo" class="text-2xl font-bold text-slate-900">Historial de Mantenimientos</h2>
+                            <p class="text-sm text-slate-500">Órdenes de mantenimiento registradas para esta máquina.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-50 text-xs text-slate-500 border-b border-slate-200 uppercase">
+                                <tr>
+                                    <th class="px-6 py-3">Código</th>
+                                    <th class="px-6 py-3">Tipo</th>
+                                    <th class="px-6 py-3">Fecha Emisión</th>
+                                    <th class="px-6 py-3 text-center">Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-historial-maquina" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================= -->
+                <!-- REGISTRAR ORDEN DE MANTENIMIENTO -->
+                <!-- ============================================= -->
+                <div id="vista-registrar" class="hidden space-y-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2.5 bg-red-100 text-red-600 rounded-xl"><i data-lucide="clipboard-list" class="w-5 h-5"></i></div>
+                            <div>
+                                <h2 class="text-xl font-bold text-slate-900">Registrar Orden de Mantenimiento</h2>
+                                <p class="text-xs text-slate-500">Código: <span class="font-semibold text-slate-600">se asigna automáticamente al registrar</span></p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="volverAlHistorialMantenimiento()" class="text-sm font-semibold text-slate-500 hover:text-slate-700 flex items-center space-x-1">
+                            <i data-lucide="arrow-left" class="w-4 h-4"></i><span>Volver al historial</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-5">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo de Mantenimiento *</label>
+                                <select id="mant-tipo" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                    <option>Preventivo</option>
+                                    <option>Correctivo</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Empleado responsable *</label>
+                                <select id="mant-empleado" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha de emisión</label>
+                                <input id="mant-fecha-emision" type="date" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Observaciones generales de la orden</label>
+                            <textarea id="mant-observaciones" rows="2" placeholder="Ej: Mantenimiento programado de fin de mes." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></textarea>
+                        </div>
+
+                        <div class="border border-slate-200 bg-slate-50/50 rounded-xl p-4 space-y-4">
+                            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Detalle: Máquinas intervenidas en esta orden</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                                <div class="md:col-span-3">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Maquinaria</label>
+                                    <select id="mant-det-maquinaria" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white"></select>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha inicio</label>
+                                    <input id="mant-det-fecha-inicio" type="date" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
+                                </div>
+                                <div class="md:col-span-1">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Hora in.</label>
+                                    <input id="mant-det-hora-inicio" type="time" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha fin</label>
+                                    <input id="mant-det-fecha-fin" type="date" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
+                                </div>
+                                <div class="md:col-span-1">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Hora fin</label>
+                                    <input id="mant-det-hora-fin" type="time" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Tareas realizadas</label>
+                                    <input id="mant-det-tareas" type="text" placeholder="Ej: Lubricación de rodillos" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
+                                </div>
+                                <div class="md:col-span-1 flex items-end">
+                                    <button type="button" onclick="agregarDetalleMantenimiento()" class="w-full bg-slate-800 text-white rounded-lg p-2 text-sm font-semibold hover:bg-slate-900 transition flex items-center justify-center">
+                                        <i data-lucide="plus" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <table class="w-full text-sm text-left bg-white rounded-lg overflow-hidden border border-slate-200">
+                                <thead class="bg-slate-100 text-xs text-slate-600 uppercase border-b border-slate-200">
+                                    <tr>
+                                        <th class="p-3">Maquinaria</th><th class="p-3">Inicio</th><th class="p-3">Fin</th><th class="p-3">Tareas realizadas</th><th class="p-3 text-center">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-detalle-mantenimiento" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+
+                        <button onclick="registrarOrdenMantenimiento()" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2">
+                            <i data-lucide="clipboard-check" class="w-4 h-4"></i><span>Registrar Orden de Mantenimiento</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ============================================= -->
+                <!-- DETALLE / IMPRESIÓN DE LA ORDEN (incluye el flujo de estados) -->
+                <!-- ============================================= -->
+                <div id="vista-orden-mantenimiento" class="hidden space-y-6">
+                    <div class="flex items-center justify-between no-print">
+                        <div class="flex items-center space-x-3">
+                            <button type="button" onclick="volverDesdeOrdenMantenimiento()" class="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition flex items-center justify-center">
+                                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                            </button>
+                            <h2 class="text-2xl font-bold text-slate-900">Orden de Mantenimiento</h2>
+                        </div>
+                        <button onclick="window.print()" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-800 flex items-center space-x-2">
+                            <i data-lucide="printer" class="w-4 h-4"></i><span>Imprimir</span>
+                        </button>
+                    </div>
+                    <div id="area-orden-mantenimiento" class="max-w-3xl mx-auto bg-white border border-slate-200 p-10 rounded-xl shadow-lg space-y-6"></div>
+                    <div id="area-acciones-orden-mantenimiento" class="max-w-3xl mx-auto no-print"></div>
                 </div>
             </section>
         </main>

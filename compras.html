@@ -15,101 +15,573 @@
 
         <main id="contenido-modulo" class="flex-1 overflow-y-auto bg-slate-50 p-8">
 <section id="sec-compras" class="space-y-6">
-                <div class="flex items-center space-x-3">
-                    <div class="p-2.5 bg-blue-100 text-blue-600 rounded-xl"><i data-lucide="shopping-basket" class="w-5 h-5"></i></div>
-                    <div>
-                        <h2 class="text-2xl font-bold text-slate-900">Compras</h2>
-                        <p class="text-sm text-slate-500">Gestión de órdenes de compra con múltiples insumos por proveedor.</p>
+
+                <!-- VISTA: ÓRDENES DE COMPRA (listado) -->
+                <div id="vista-ordenes-compra" class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2.5 bg-blue-100 text-blue-600 rounded-xl"><i data-lucide="shopping-basket" class="w-5 h-5"></i></div>
+                            <div>
+                                <h2 class="text-2xl font-bold text-slate-900">Órdenes de Compra</h2>
+                                <p class="text-sm text-slate-500">Compras a proveedores: generadas desde un presupuesto o emitidas directamente.</p>
+                            </div>
+                        </div>
+                        <button onclick="irARegistrarOrdenCompra()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2 shadow-sm transition">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Nueva Orden de Compra</span>
+                        </button>
                     </div>
-                </div>
 
-                <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
-                    <h3 class="font-semibold text-lg text-slate-800">Generar Nueva Orden de Compra</h3>
-
-                    <!-- Proveedor -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Seleccionar Proveedor *</label>
-                            <select id="compra-proveedor" class="select-proveedor-dinamico w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
-                            </select>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
+                            <div class="p-2.5 bg-blue-100 text-blue-600 rounded-lg"><i data-lucide="clipboard-list" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-oc-total-ordenes" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Total de Órdenes</p></div>
+                        </div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
+                            <div class="p-2.5 bg-amber-100 text-amber-600 rounded-lg"><i data-lucide="clock" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-oc-enviadas" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Pendientes de Recepción</p></div>
+                        </div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
+                            <div class="p-2.5 bg-indigo-100 text-indigo-600 rounded-lg"><i data-lucide="truck" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-oc-proveedores" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Proveedores Activos</p></div>
+                        </div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
+                            <div class="p-2.5 bg-red-100 text-red-600 rounded-lg"><i data-lucide="banknote" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-oc-monto-total" class="text-xl font-bold text-slate-900">$ 0</p><p class="text-xs text-slate-500">Monto Total Comprado</p></div>
+                        </div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
+                            <div class="p-2.5 bg-emerald-100 text-emerald-600 rounded-lg"><i data-lucide="trending-up" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-oc-ticket-promedio" class="text-xl font-bold text-slate-900">$ 0</p><p class="text-xs text-slate-500">Ticket Promedio</p></div>
                         </div>
                     </div>
 
-                    <!-- Agregar Productos al Detalle -->
-                    <div class="border border-slate-200 bg-slate-50/50 rounded-xl p-4 space-y-4">
-                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Añadir Insumos / Productos a la Orden</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
-                            <div class="md:col-span-5">
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Materia Prima / Insumo</label>
-                                <select id="compra-insumo-select" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
-                                    <option value="Harina 0000 (Bolsa 50kg)|25000">Harina 0000 (Bolsa 50kg) - $25.000</option>
-                                    <option value="Huevos Frescos (Cajón 30 dzn)|18000">Huevos Frescos (Cajón 30 dzn) - $18.000</option>
-                                    <option value="Ricotta Fresca (Balde 10kg)|14000">Ricotta Fresca (Balde 10kg) - $14.000</option>
-                                    <option value="Queso Mozzarella (Bloque 5kg)|22000">Queso Mozzarella (Bloque 5kg) - $22.000</option>
-                                    <option value="Cajas para Ravioles (Pack x100)|8500">Cajas para Ravioles (Pack x100) - $8.500</option>
-                                </select>
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-slate-100">
+                            <h3 class="font-semibold text-slate-800">Listado de Órdenes de Compra</h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-50 text-xs text-slate-500 border-b border-slate-200 uppercase">
+                                <tr>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>N° Orden</span>
+                                            <button type="button" onclick="togglePopoverColumna('pop-num-oc')" title="Buscar N° de orden" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-num-oc" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
+                                                <input type="text" id="buscar-num-oc" oninput="renderizarTablaOrdenesCompra()" placeholder="Buscar N° orden..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>Nombre</span>
+                                            <button type="button" id="btn-orden-nombre-oc" onclick="alternarOrdenOC('nombre')" title="Ordenar de la A a la Z" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button>
+                                            <button type="button" onclick="togglePopoverColumna('pop-nombre-oc')" title="Buscar nombre" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-nombre-oc" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
+                                                <input type="text" id="buscar-nombre-oc" oninput="renderizarTablaOrdenesCompra()" placeholder="Buscar nombre..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>Apellido</span>
+                                            <button type="button" id="btn-orden-apellido-oc" onclick="alternarOrdenOC('apellido')" title="Ordenar de la A a la Z" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button>
+                                            <button type="button" onclick="togglePopoverColumna('pop-apellido-oc')" title="Buscar apellido" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-apellido-oc" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
+                                                <input type="text" id="buscar-apellido-oc" oninput="renderizarTablaOrdenesCompra()" placeholder="Buscar apellido..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>Tipo Doc.</span>
+                                            <button type="button" id="btn-filtro-tipo-doc-oc" onclick="togglePopoverColumna('pop-tipo-doc-oc')" title="Filtrar por tipo de documento" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-tipo-doc-oc" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 min-w-[9rem] normal-case">
+                                                <button type="button" onclick="elegirFiltroTipoDocOC('')" class="opcion-filtro-tipo-doc-oc block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="">Todos</button>
+                                                <button type="button" onclick="elegirFiltroTipoDocOC('DNI')" class="opcion-filtro-tipo-doc-oc block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="DNI">DNI</button>
+                                                <button type="button" onclick="elegirFiltroTipoDocOC('CUIT')" class="opcion-filtro-tipo-doc-oc block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="CUIT">CUIT</button>
+                                                <button type="button" onclick="elegirFiltroTipoDocOC('CUIL')" class="opcion-filtro-tipo-doc-oc block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="CUIL">CUIL</button>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>N° Documento</span>
+                                            <button type="button" onclick="togglePopoverColumna('pop-documento-oc')" title="Buscar N° de documento" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-documento-oc" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
+                                                <input type="text" id="buscar-documento-oc" oninput="renderizarTablaOrdenesCompra()" placeholder="Buscar N° documento..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">Fecha</th>
+                                    <th class="px-6 py-3 text-right">Total</th>
+                                    <th class="px-6 py-3 text-center">
+                                        <div class="flex items-center justify-center gap-1.5 popover-trigger">
+                                            <span>Estado</span>
+                                            <button type="button" id="btn-filtro-estado-oc" onclick="togglePopoverColumna('pop-estado-oc')" title="Filtrar por estado" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-estado-oc" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 min-w-[10rem] normal-case text-left">
+                                                <button type="button" onclick="elegirFiltroEstadoOC('')" class="opcion-filtro-estado-oc block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="">Todos los estados</button>
+                                                <button type="button" onclick="elegirFiltroEstadoOC('Enviada')" class="opcion-filtro-estado-oc block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Enviada">Enviada</button>
+                                                <button type="button" onclick="elegirFiltroEstadoOC('Recibida')" class="opcion-filtro-estado-oc block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Recibida">Recibida</button>
+                                                <button type="button" onclick="elegirFiltroEstadoOC('Cancelada')" class="opcion-filtro-estado-oc block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Cancelada">Cancelada</button>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-ordenes-compra" class="divide-y divide-slate-200"></tbody>
+                        </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VISTA: REGISTRAR ORDEN DE COMPRA -->
+                <div id="vista-registrar-orden-compra" class="space-y-6 hidden">
+                    <div class="flex items-center space-x-3">
+                        <button type="button" onclick="volverAlListadoCompras()" class="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition flex items-center justify-center">
+                            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                        </button>
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900">Registrar Orden de Compra</h2>
+                            <p class="text-sm text-slate-500">Elegí el proveedor, opcionalmente un presupuesto previo, y cargá las materias primas.</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 space-y-6">
+                            <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
+                                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="truck" class="w-4 h-4"></i><span>Proveedor</span></h4>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Proveedor *</label>
+                                    <div class="flex gap-2">
+                                        <div class="relative flex-1">
+                                            <input type="text" id="oc-proveedor-autocompletar" autocomplete="off" oninput="filtrarProveedoresAutocompletadoOC()" onfocus="filtrarProveedoresAutocompletadoOC()" placeholder="Empezá a escribir razón social o apellido..." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white outline-none focus:ring-2 focus:ring-red-500">
+                                            <input type="hidden" id="select-oc-proveedor" value="">
+                                            <div id="oc-proveedor-autocompletar-opciones" class="hidden absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-56 overflow-y-auto"></div>
+                                        </div>
+                                        <button type="button" onclick="abrirModalNuevoProveedor('oc')" title="Agregar proveedor" class="shrink-0 w-9 h-9 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition"><i data-lucide="plus" class="w-4 h-4"></i></button>
+                                    </div>
+                                </div>
+                                <div id="ficha-proveedor-oc" class="hidden bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-600"></div>
+                                <div id="oc-presupuesto-previo-wrap" class="hidden">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Generar desde presupuesto previo (opcional)</label>
+                                    <select id="oc-presupuesto-previo" onchange="cargarPresupuestoEnOC()" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></select>
+                                </div>
                             </div>
-                            <div class="md:col-span-3">
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Cantidad Unidades</label>
-                                <input type="number" id="compra-insumo-cant" value="1" min="1" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
+
+                            <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
+                                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="clipboard-list" class="w-4 h-4"></i><span>Datos de la Orden</span></h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Condición de Pago *</label>
+                                        <select id="oc-condicion-pago" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                            <option value="" disabled selected>Elegí una opción</option>
+                                            <option value="Contado">Contado</option>
+                                            <option value="Cuenta Corriente">Cuenta Corriente</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Observaciones</label>
+                                    <textarea id="oc-observaciones" rows="2" placeholder="Ej: Entregar en la puerta de depósito." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></textarea>
+                                </div>
                             </div>
-                            <div class="md:col-span-4 flex items-end">
-                                <button type="button" onclick="agregarInsumoCompra()" class="w-full bg-slate-800 text-white rounded-lg p-2 text-sm font-semibold hover:bg-slate-900 transition flex items-center justify-center space-x-1">
-                                    <i data-lucide="plus" class="w-4 h-4"></i>
-                                    <span>Agregar Insumo</span>
+
+                            <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
+                                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="package" class="w-4 h-4"></i><span>Materias Primas</span></h4>
+                                <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                                    <div class="md:col-span-5 relative">
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Materia Prima *</label>
+                                        <input type="text" id="oc-mp-autocompletar" autocomplete="off" oninput="filtrarMateriaPrimaAutocompletadoOC()" onfocus="filtrarMateriaPrimaAutocompletadoOC()" placeholder="Empezá a escribir para buscar..." class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white outline-none focus:ring-2 focus:ring-red-500">
+                                        <input type="hidden" id="oc-mp-select" value="">
+                                        <div id="oc-mp-autocompletar-opciones" class="hidden absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-56 overflow-y-auto"></div>
+                                    </div>
+                                    <div class="md:col-span-2">
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Cantidad *</label>
+                                        <input type="number" id="oc-mp-cant" value="1" min="1" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
+                                    </div>
+                                    <div class="md:col-span-3">
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">&nbsp;</label>
+                                        <button type="button" onclick="agregarMateriaPrimaOC()" title="Agregar materia prima" class="w-full bg-slate-800 text-white rounded-lg p-2 text-sm font-semibold hover:bg-slate-900 transition flex items-center justify-center">
+                                            <i data-lucide="plus" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <table class="w-full text-sm text-left bg-white rounded-lg overflow-hidden border border-slate-200">
+                                    <thead class="bg-slate-100 text-xs text-slate-600 uppercase border-b border-slate-200">
+                                        <tr>
+                                            <th class="p-3">Tipo</th>
+                                            <th class="p-3">Marca</th>
+                                            <th class="p-3">Producto</th>
+                                            <th class="p-3 text-center">Cant.</th>
+                                            <th class="p-3 text-right">P. Unitario</th>
+                                            <th class="p-3 text-right">Subtotal</th>
+                                            <th class="p-3 text-center">Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabla-items-oc" class="divide-y divide-slate-100"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4 sticky top-6">
+                                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Resumen</h4>
+                                <div class="space-y-1.5 text-sm">
+                                    <div class="flex justify-between"><span class="text-slate-500">Ítems</span><span id="cant-items-oc" class="font-medium">0</span></div>
+                                </div>
+                                <div class="pt-3 border-t border-slate-100 text-right">
+                                    <span class="text-xs text-slate-500 block">Total Estimado</span>
+                                    <span id="total-oc-monto" class="text-2xl font-bold text-slate-900">$ 0</span>
+                                </div>
+                                <button type="button" onclick="confirmarOrdenCompra()" class="w-full bg-red-600 text-white py-3 rounded-lg text-sm font-semibold hover:bg-red-700 transition flex items-center justify-center space-x-2">
+                                    <i data-lucide="check-circle" class="w-4 h-4"></i>
+                                    <span>Confirmar Orden de Compra</span>
                                 </button>
                             </div>
                         </div>
+                    </div>
+                </div>
 
-                        <!-- Tabla de Items Agregados -->
-                        <table class="w-full text-sm text-left bg-white rounded-lg overflow-hidden border border-slate-200">
-                            <thead class="bg-slate-100 text-xs text-slate-600 uppercase border-b border-slate-200">
-                                <tr>
-                                    <th class="p-3">Insumo / Descripción</th>
-                                    <th class="p-3 text-center">Cant.</th>
-                                    <th class="p-3 text-right">Precio Est.</th>
-                                    <th class="p-3 text-right">Subtotal</th>
-                                    <th class="p-3 text-center">Acción</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabla-items-compra" class="divide-y divide-slate-100">
-                            </tbody>
-                        </table>
+                <!-- VISTA: DETALLE DE ORDEN DE COMPRA -->
+                <div id="vista-detalle-orden-compra" class="space-y-6 hidden">
+                    <div class="flex items-center justify-between no-print">
+                        <div class="flex items-center space-x-3">
+                            <button type="button" onclick="volverAlListadoCompras()" class="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition flex items-center justify-center">
+                                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                            </button>
+                            <h2 class="text-2xl font-bold text-slate-900">Detalle de Orden de Compra</h2>
+                        </div>
+                        <button onclick="window.print()" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-800 flex items-center space-x-2">
+                            <i data-lucide="printer" class="w-4 h-4"></i><span>Imprimir</span>
+                        </button>
+                    </div>
+                    <div id="area-detalle-orden-compra" class="max-w-3xl mx-auto bg-white border border-slate-200 p-10 rounded-xl shadow-lg space-y-6"></div>
+                </div>
+
+                <!-- VISTA: LISTADO DE PRESUPUESTOS DE PROVEEDORES -->
+                <div id="vista-presupuestos-proveedor" class="space-y-6 hidden">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2.5 bg-blue-100 text-blue-600 rounded-xl"><i data-lucide="file-text" class="w-5 h-5"></i></div>
+                            <div>
+                                <h2 class="text-2xl font-bold text-slate-900">Presupuestos de Proveedores</h2>
+                                <p class="text-sm text-slate-500">Cotizaciones de materia prima previas a confirmar la orden de compra.</p>
+                            </div>
+                        </div>
+                        <button onclick="irARegistrarPresupuestoProveedor()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2 shadow-sm transition">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Nuevo Presupuesto</span>
+                        </button>
                     </div>
 
-                    <!-- Total Orden Compra -->
-                    <div class="flex justify-between items-center pt-2 border-t border-slate-100">
-                        <span class="text-xs text-slate-400">Total de Insumos: <span id="compra-cant-items">0</span></span>
-                        <div class="text-right">
-                            <span class="text-xs text-slate-500 block">Total Estimado Orden</span>
-                            <span id="compra-total-monto" class="text-2xl font-bold text-slate-900">$ 0</span>
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-slate-100">
+                            <h3 class="font-semibold text-slate-800">Listado de Presupuestos</h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-50 text-xs text-slate-500 border-b border-slate-200 uppercase">
+                                <tr>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>N° Presupuesto</span>
+                                            <button type="button" onclick="togglePopoverColumna('pop-num-presupuesto-proveedor')" title="Buscar N° de presupuesto" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-num-presupuesto-proveedor" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
+                                                <input type="text" id="buscar-num-presupuesto-proveedor" oninput="renderizarTablaPresupuestosProveedor()" placeholder="Buscar N° presupuesto..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>Nombre</span>
+                                            <button type="button" id="btn-orden-nombre-presupuesto-proveedor" onclick="alternarOrdenPresupuestoProveedor('nombre')" title="Ordenar de la A a la Z" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button>
+                                            <button type="button" onclick="togglePopoverColumna('pop-nombre-presupuesto-proveedor')" title="Buscar nombre" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-nombre-presupuesto-proveedor" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
+                                                <input type="text" id="buscar-nombre-presupuesto-proveedor" oninput="renderizarTablaPresupuestosProveedor()" placeholder="Buscar nombre..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>Apellido</span>
+                                            <button type="button" id="btn-orden-apellido-presupuesto-proveedor" onclick="alternarOrdenPresupuestoProveedor('apellido')" title="Ordenar de la A a la Z" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button>
+                                            <button type="button" onclick="togglePopoverColumna('pop-apellido-presupuesto-proveedor')" title="Buscar apellido" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-apellido-presupuesto-proveedor" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
+                                                <input type="text" id="buscar-apellido-presupuesto-proveedor" oninput="renderizarTablaPresupuestosProveedor()" placeholder="Buscar apellido..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">Fecha</th>
+                                    <th class="px-6 py-3 text-right">Total Estimado</th>
+                                    <th class="px-6 py-3 text-center">
+                                        <div class="flex items-center justify-center gap-1.5 popover-trigger">
+                                            <span>Estado</span>
+                                            <button type="button" id="btn-filtro-estado-presupuesto-proveedor" onclick="togglePopoverColumna('pop-estado-presupuesto-proveedor')" title="Filtrar por estado" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-estado-presupuesto-proveedor" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 min-w-[10rem] normal-case text-left">
+                                                <button type="button" onclick="elegirFiltroEstadoPresupuestoProveedor('')" class="opcion-filtro-estado-presupuesto-proveedor block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="">Todos los estados</button>
+                                                <button type="button" onclick="elegirFiltroEstadoPresupuestoProveedor('Pendiente')" class="opcion-filtro-estado-presupuesto-proveedor block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Pendiente">Pendiente</button>
+                                                <button type="button" onclick="elegirFiltroEstadoPresupuestoProveedor('Convertido')" class="opcion-filtro-estado-presupuesto-proveedor block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Convertido">Convertido</button>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-presupuestos-proveedor" class="divide-y divide-slate-200"></tbody>
+                        </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VISTA: REGISTRAR PRESUPUESTO DE PROVEEDOR -->
+                <div id="vista-registrar-presupuesto-proveedor" class="space-y-6 hidden">
+                    <div class="flex items-center space-x-3">
+                        <button type="button" onclick="volverAPresupuestosProveedor()" class="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition flex items-center justify-center">
+                            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                        </button>
+                        <div>
+                            <h2 id="titulo-form-presupuesto-proveedor" class="text-2xl font-bold text-slate-900">Registrar Presupuesto de Proveedor</h2>
+                            <p class="text-sm text-slate-500">Cargá una cotización de materia prima de un proveedor, sin confirmar todavía la orden de compra.</p>
                         </div>
                     </div>
 
-                    <div class="flex justify-end pt-2">
-                        <button onclick="generarOrdenCompra()" class="bg-red-600 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-red-700 flex items-center space-x-2">
-                            <i data-lucide="file-plus" class="w-4 h-4"></i>
-                            <span>Emitir Orden de Compra</span>
-                        </button>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 space-y-6">
+                            <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
+                                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="truck" class="w-4 h-4"></i><span>Proveedor</span></h4>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Proveedor *</label>
+                                    <div class="flex gap-2">
+                                        <div class="relative flex-1">
+                                            <input type="text" id="presup-prov-autocompletar" autocomplete="off" oninput="filtrarProveedoresAutocompletadoPresupuesto()" onfocus="filtrarProveedoresAutocompletadoPresupuesto()" placeholder="Empezá a escribir razón social o apellido..." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white outline-none focus:ring-2 focus:ring-red-500">
+                                            <input type="hidden" id="select-presup-proveedor" value="">
+                                            <div id="presup-prov-autocompletar-opciones" class="hidden absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-56 overflow-y-auto"></div>
+                                        </div>
+                                        <button type="button" onclick="abrirModalNuevoProveedor('presupuesto')" title="Agregar proveedor" class="shrink-0 w-9 h-9 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition"><i data-lucide="plus" class="w-4 h-4"></i></button>
+                                    </div>
+                                </div>
+                                <div id="ficha-proveedor-presupuesto" class="hidden bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-600"></div>
+                            </div>
+
+                            <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
+                                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="clipboard-list" class="w-4 h-4"></i><span>Datos del Presupuesto</span></h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Condición de Entrega</label>
+                                        <input type="text" id="presup-condicion-entrega" placeholder="Ej: Entrega en fábrica" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha de Vencimiento</label>
+                                        <input type="date" id="presup-fecha-vencimiento" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Observaciones</label>
+                                    <textarea id="presup-proveedor-observaciones" rows="2" placeholder="Ej: Presupuesto válido por 15 días." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></textarea>
+                                </div>
+                            </div>
+
+                            <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
+                                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="package" class="w-4 h-4"></i><span>Materias Primas</span></h4>
+                                <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                                    <div class="md:col-span-5 relative">
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Materia Prima *</label>
+                                        <input type="text" id="presup-mp-autocompletar" autocomplete="off" oninput="filtrarMateriaPrimaAutocompletadoPresupuesto()" onfocus="filtrarMateriaPrimaAutocompletadoPresupuesto()" placeholder="Empezá a escribir para buscar..." class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white outline-none focus:ring-2 focus:ring-red-500">
+                                        <input type="hidden" id="presup-mp-select" value="">
+                                        <div id="presup-mp-autocompletar-opciones" class="hidden absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-56 overflow-y-auto"></div>
+                                    </div>
+                                    <div class="md:col-span-2">
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Cantidad *</label>
+                                        <input type="number" id="presup-mp-cant" value="1" min="1" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
+                                    </div>
+                                    <div class="md:col-span-3">
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">&nbsp;</label>
+                                        <button type="button" onclick="agregarMateriaPrimaPresupuesto()" title="Agregar materia prima" class="w-full bg-slate-800 text-white rounded-lg p-2 text-sm font-semibold hover:bg-slate-900 transition flex items-center justify-center">
+                                            <i data-lucide="plus" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <table class="w-full text-sm text-left bg-white rounded-lg overflow-hidden border border-slate-200">
+                                    <thead class="bg-slate-100 text-xs text-slate-600 uppercase border-b border-slate-200">
+                                        <tr>
+                                            <th class="p-3">Tipo</th>
+                                            <th class="p-3">Marca</th>
+                                            <th class="p-3">Producto</th>
+                                            <th class="p-3 text-right">P. Unitario</th>
+                                            <th class="p-3 text-center">Cant.</th>
+                                            <th class="p-3 text-right">Subtotal</th>
+                                            <th class="p-3 text-center">Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabla-items-presupuesto-proveedor" class="divide-y divide-slate-100"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4 sticky top-6">
+                                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Resumen</h4>
+                                <div class="space-y-1.5 text-sm">
+                                    <div class="flex justify-between"><span class="text-slate-500">Ítems</span><span id="cant-items-presupuesto-proveedor" class="font-medium">0</span></div>
+                                </div>
+                                <div class="pt-3 border-t border-slate-100 text-right">
+                                    <span class="text-xs text-slate-500 block">Total Estimado</span>
+                                    <span id="total-presupuesto-proveedor-monto" class="text-2xl font-bold text-slate-900">$ 0</span>
+                                </div>
+                                <button type="button" onclick="guardarPresupuestoProveedor()" id="btn-guardar-presupuesto-proveedor" class="w-full bg-red-600 text-white py-3 rounded-lg text-sm font-semibold hover:bg-red-700 transition flex items-center justify-center space-x-2">
+                                    <i data-lucide="check-circle" class="w-4 h-4"></i>
+                                    <span>Guardar Presupuesto</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-                    <h4 class="font-semibold text-slate-800 mb-3 text-sm">Historial de Ordenes de Compra Emitidas</h4>
-                    <table class="w-full text-xs text-left">
-                        <thead class="bg-slate-50 uppercase text-slate-500 border-b">
-                            <tr>
-                                <th class="p-3">N° Orden</th>
-                                <th class="p-3">Proveedor</th>
-                                <th class="p-3">Detalle Insumos</th>
-                                <th class="p-3 text-right">Total $</th>
-                                <th class="p-3 text-center">Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabla-historial-compras" class="divide-y divide-slate-100">
-                        </tbody>
-                    </table>
+                <!-- VISTA: VER PRESUPUESTO DE PROVEEDOR (misma estética que la vista de Presupuesto de Ventas) -->
+                <div id="vista-presupuesto-proveedor-detalle" class="space-y-6 hidden">
+                    <div class="flex items-center justify-between no-print">
+                        <div class="flex items-center space-x-3">
+                            <button type="button" onclick="volverAPresupuestosProveedor()" class="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition flex items-center justify-center">
+                                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                            </button>
+                            <h2 class="text-2xl font-bold text-slate-900">Presupuesto de Proveedor</h2>
+                        </div>
+                        <div class="flex space-x-3">
+                            <button onclick="window.print()" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-800 flex items-center space-x-2">
+                                <i data-lucide="printer" class="w-4 h-4"></i>
+                                <span>Imprimir Presupuesto</span>
+                            </button>
+                            <button type="button" onclick="volverAPresupuestosProveedor()" class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-700 transition">
+                                Volver al Listado
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="area-presupuesto-proveedor" class="max-w-3xl mx-auto bg-white border border-slate-200 p-10 rounded-xl shadow-lg space-y-6">
+                        <div class="flex justify-between items-start border-b border-slate-200 pb-4">
+                            <div>
+                                <h1 class="text-2xl font-bold text-red-600">FÁBRICA DE PASTAS</h1>
+                                <p class="text-xs text-slate-500">Documento de Presupuesto de Proveedor</p>
+                                <p id="presupuesto-proveedor-linea" class="text-xs font-semibold text-slate-800 mt-2">Proveedor: -</p>
+                                <div class="flex items-center gap-2 mt-2">
+                                    <p id="presupuesto-proveedor-estado-badge" class="inline-block px-2.5 py-1 text-xs font-semibold rounded-full"></p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p id="presupuesto-proveedor-numero" class="text-sm font-bold text-slate-800">PRES-PROV-00000</p>
+                                <p id="presupuesto-proveedor-fecha" class="text-xs text-slate-400">Fecha: -</p>
+                                <p class="text-xs text-slate-400">Condición de entrega: <span id="presupuesto-proveedor-condicion-entrega">-</span></p>
+                            </div>
+                        </div>
+                        <table class="w-full text-xs text-left">
+                            <thead class="border-b border-slate-300 uppercase text-slate-500">
+                                <tr>
+                                    <th class="py-2">Tipo</th>
+                                    <th class="py-2">Marca</th>
+                                    <th class="py-2">Producto</th>
+                                    <th class="py-2 text-right">P. Unitario</th>
+                                    <th class="py-2 text-center">Cant.</th>
+                                    <th class="py-2 text-right">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody id="presupuesto-proveedor-detalle-body" class="divide-y divide-slate-100">
+                            </tbody>
+                        </table>
+                        <div class="border-t border-slate-200 pt-4 text-right">
+                            <p id="presupuesto-proveedor-total-monto" class="text-lg font-bold text-slate-900">Total Estimado: $ 0</p>
+                        </div>
+                        <div id="presupuesto-proveedor-generar-oc-wrap" class="no-print flex justify-end gap-2"></div>
+                    </div>
                 </div>
+
+                <!-- MODAL: AGREGAR PROVEEDOR RÁPIDO (desde Registrar Presupuesto u Registrar Orden de Compra) -->
+                <div id="modal-nuevo-proveedor" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 no-print">
+                    <div class="bg-white rounded-xl p-6 w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-slate-900 flex items-center space-x-2"><i data-lucide="truck" class="w-5 h-5 text-red-600"></i><span>Registrar Proveedor Nuevo</span></h3>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre *</label>
+                                <input type="text" id="mprov-razon-social" placeholder="Ej: Lácteos La Serenísima" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo Doc. *</label>
+                                    <select id="mprov-tipo-documento" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                        <option value="CUIT">CUIT</option>
+                                        <option value="DNI">DNI</option>
+                                        <option value="CUIL">CUIL</option>
+                                        <option value="Pasaporte">Pasaporte</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">N° Documento *</label>
+                                    <input type="text" id="mprov-numero-documento" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Provincia *</label>
+                                <select id="mprov-provincia" onchange="cargarLocalidadesCascada('mprov')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                    <option value="" disabled selected>Seleccioná una provincia</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Localidad *</label>
+                                <select id="mprov-localidad" onchange="cargarCallesCascada('mprov')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none" disabled>
+                                    <option value="" disabled selected>Seleccioná una localidad</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Calle *</label>
+                                <select id="mprov-calle" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none" disabled>
+                                    <option value="" disabled selected>Seleccioná una calle</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Altura *</label>
+                                <input type="text" id="mprov-altura" placeholder="Ej: 1234" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Teléfono *</label>
+                                <input type="text" id="mprov-telefono" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Correo Electrónico *</label>
+                                <input type="email" id="mprov-email" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Condición Frente al IVA *</label>
+                                <select id="mprov-iva" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                    <option>Responsable Inscripto</option>
+                                    <option>Monotributo</option>
+                                    <option>Exento</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Rubro *</label>
+                                <input type="text" id="mprov-rubro" placeholder="Ej: Harinas, Quesos, Embalajes" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha de Alta *</label>
+                                <input type="date" id="mprov-fecha-alta" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Tiempo de Entrega Estimado *</label>
+                                <input type="text" id="mprov-tiempo-entrega" placeholder="Ej: 3 días hábiles" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                        </div>
+                        <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                            <button type="button" onclick="cerrarModalNuevoProveedor()" class="px-4 py-2 text-sm font-semibold text-slate-500">Cancelar</button>
+                            <button type="button" onclick="guardarProveedorDesdeCompras()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">Guardar y Seleccionar</button>
+                        </div>
+                    </div>
+                </div>
+
             </section>
         </main>
     </div>
