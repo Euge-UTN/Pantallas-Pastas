@@ -195,6 +195,7 @@ function resetFormularioProveedor() {
     document.getElementById('prov-apellido').value = '';
     document.getElementById('prov-numero-documento').value = '';
     document.getElementById('prov-altura').value = '';
+    document.getElementById('prov-cp').value = '';
     document.getElementById('prov-telefono').value = '';
     limpiarCamposTelefono('prov');
     document.getElementById('prov-email').value = '';

@@ -4,7 +4,7 @@
 // Mismo patrón que Ventas (Presupuesto -> Pedido), aplicado a Proveedores / Materias Primas.
 // ==========================================
 
-const SUBVISTAS_COMPRAS = ['ordenes-compra', 'registrar-orden-compra', 'detalle-orden-compra', 'presupuestos-proveedor', 'registrar-presupuesto-proveedor', 'presupuesto-proveedor-detalle'];
+const SUBVISTAS_COMPRAS = ['ordenes-compra', 'registrar-orden-compra', 'detalle-orden-compra', 'presupuestos-proveedor', 'registrar-presupuesto-proveedor', 'presupuesto-proveedor-detalle', 'remitos', 'registrar-remito', 'detalle-remito'];
 function mostrarSubvistaCompras(subvista) {
     SUBVISTAS_COMPRAS.forEach(v => document.getElementById(`vista-${v}`).classList.add('hidden'));
     const vistaDestino = document.getElementById(`vista-${subvista}`);
@@ -26,6 +26,12 @@ function irASubvistaDesdeHashCompras() {
             precargarNotaPedidoMPPendiente();
         }
         mostrarSubvistaCompras('registrar-presupuesto-proveedor');
+    } else if (hash === 'remitos') {
+        renderizarTablaRemitos();
+        mostrarSubvistaCompras('remitos');
+    } else if (hash === 'registrar-remito') {
+        resetFormularioRemito();
+        mostrarSubvistaCompras('registrar-remito');
     } else {
         renderizarTablaOrdenesCompra();
         mostrarSubvistaCompras('ordenes-compra');
@@ -59,7 +65,7 @@ let destinoModalNuevoProveedor = 'oc'; // 'oc' | 'presupuesto' — a qué autoco
 
 function abrirModalNuevoProveedor(destino = 'oc') {
     destinoModalNuevoProveedor = destino;
-    ['mprov-razon-social', 'mprov-numero-documento', 'mprov-altura', 'mprov-telefono', 'mprov-email', 'mprov-rubro', 'mprov-tiempo-entrega'].forEach(id => document.getElementById(id).value = '');
+    ['mprov-razon-social', 'mprov-numero-documento', 'mprov-altura', 'mprov-cp', 'mprov-telefono', 'mprov-email', 'mprov-rubro', 'mprov-tiempo-entrega'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('mprov-tipo-documento').selectedIndex = 0;
     document.getElementById('mprov-iva').selectedIndex = 0;
     document.getElementById('mprov-fecha-alta').value = new Date().toISOString().slice(0, 10);
@@ -102,6 +108,8 @@ function guardarProveedorDesdeCompras() {
     const idx = listaProveedores.indexOf(nuevo);
     if (destinoModalNuevoProveedor === 'presupuesto') {
         elegirProveedorPresupuesto(idx);
+    } else if (destinoModalNuevoProveedor === 'remito') {
+        elegirProveedorRemito(idx);
     } else {
         elegirProveedorOC(idx);
     }
@@ -971,12 +979,377 @@ function generarOrdenCompraDesdePresupuesto(id) {
     lucide.createIcons();
 }
 
+// ==========================================
+// REMITOS DE PROVEEDORES
+// Un remito siempre está asociado a una Orden de Compra ya emitida (confirma qué mercadería llegó).
+// ==========================================
+let itemsRemitoActual = [];
+let proveedorSeleccionadoRemito = null;
+let ordenCompraSeleccionadaRemito = null;
+let ordenRemitosDireccion = null;
+
+function irARemitos() {
+    if (window.location.hash !== '#remitos') window.location.hash = 'remitos'; else irASubvistaDesdeHashCompras();
+}
+
+function irARegistrarRemito() {
+    resetFormularioRemito();
+    mostrarSubvistaCompras('registrar-remito');
+    if (window.location.hash !== '#registrar-remito') window.location.hash = 'registrar-remito';
+}
+
+function volverARemitos() {
+    irARemitos();
+}
+
+function filtrarProveedoresAutocompletadoRemito() {
+    const input = document.getElementById('remito-proveedor-autocompletar');
+    const cont = document.getElementById('remito-proveedor-autocompletar-opciones');
+    const termino = normalizarTexto(input.value).trim();
+
+    document.getElementById('select-remito-proveedor').value = '';
+    proveedorSeleccionadoRemito = null;
+    document.getElementById('ficha-proveedor-remito').classList.add('hidden');
+    document.getElementById('remito-oc-wrap').classList.add('hidden');
+    itemsRemitoActual = [];
+    renderizarTablaItemsRemito();
+
+    if (!termino) { cont.classList.add('hidden'); cont.innerHTML = ''; return; }
+
+    const filtrados = listaProveedores.filter(p => p.estado_activo && (normalizarTexto(`${p.nombre} ${p.apellido}`).includes(termino) || normalizarTexto(p.razon_social).includes(termino) || normalizarTexto(p.numero_documento).includes(termino)));
+    if (!filtrados.length) {
+        cont.innerHTML = `<p class="px-3 py-2 text-xs text-slate-400">Sin resultados.</p>`;
+        cont.classList.remove('hidden');
+        return;
+    }
+    cont.innerHTML = filtrados.map(p => {
+        const idx = listaProveedores.indexOf(p);
+        return `<button type="button" onmousedown="event.preventDefault(); elegirProveedorRemito(${idx})" class="block w-full text-left px-3 py-2 text-sm hover:bg-slate-100">
+            <span class="block truncate">${p.nombreMostrado}</span>
+            <span class="block text-[11px] text-slate-400">${p.rubro || '-'} · ${p.documentoCompleto}</span>
+        </button>`;
+    }).join('');
+    cont.classList.remove('hidden');
+}
+
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('#remito-proveedor-autocompletar') && !e.target.closest('#remito-proveedor-autocompletar-opciones')) {
+        document.getElementById('remito-proveedor-autocompletar-opciones')?.classList.add('hidden');
+    }
+});
+
+function elegirProveedorRemito(idx) {
+    proveedorSeleccionadoRemito = listaProveedores[idx];
+    document.getElementById('remito-proveedor-autocompletar').value = proveedorSeleccionadoRemito.nombreMostrado;
+    document.getElementById('select-remito-proveedor').value = idx;
+    document.getElementById('remito-proveedor-autocompletar-opciones').classList.add('hidden');
+    document.getElementById('ficha-proveedor-remito').innerHTML = `
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
+            <p><b class="text-slate-700">Rubro:</b> ${proveedorSeleccionadoRemito.rubro || '-'}</p>
+            <p><b class="text-slate-700">Documento:</b> ${proveedorSeleccionadoRemito.documentoCompleto}</p>
+        </div>`;
+    document.getElementById('ficha-proveedor-remito').classList.remove('hidden');
+    poblarOrdenesCompraRemito();
+}
+
+// Solo se puede remitir contra una Orden de Compra de ese proveedor que no esté Cancelada.
+function poblarOrdenesCompraRemito() {
+    const wrap = document.getElementById('remito-oc-wrap');
+    const select = document.getElementById('remito-orden-compra');
+    const vacio = document.getElementById('remito-oc-vacio');
+    const ordenes = listaOrdenesCompra.filter(oc => oc.proveedorObj === proveedorSeleccionadoRemito && oc.estado !== 'Cancelada');
+
+    ordenCompraSeleccionadaRemito = null;
+    itemsRemitoActual = [];
+    renderizarTablaItemsRemito();
+    wrap.classList.remove('hidden');
+
+    if (!ordenes.length) {
+        select.innerHTML = '';
+        vacio.classList.remove('hidden');
+        return;
+    }
+    vacio.classList.add('hidden');
+    select.innerHTML = `<option value="" disabled selected>Elegí una orden de compra</option>` +
+        ordenes.map(oc => `<option value="${oc.id}">OC-${String(oc.id).padStart(3, '0')} — $ ${oc.total.toLocaleString()} (${oc.estado})</option>`).join('');
+}
+
+// Precarga el detalle de materias primas desde la Orden de Compra elegida (editable: lo recibido puede diferir de lo pedido).
+function cargarOrdenCompraEnRemito() {
+    const idOC = parseInt(document.getElementById('remito-orden-compra').value);
+    const oc = listaOrdenesCompra.find(o => o.id === idOC);
+    if (!oc) { ordenCompraSeleccionadaRemito = null; itemsRemitoActual = []; renderizarTablaItemsRemito(); return; }
+    ordenCompraSeleccionadaRemito = oc;
+    itemsRemitoActual = oc.detalle.map(i => ({ id: Date.now() + Math.random(), clave: i.clave, tipo: i.tipo, marca: i.marca, nombre: i.nombre, cantidad: i.cantidad }));
+    renderizarTablaItemsRemito();
+}
+
+function filtrarMateriaPrimaAutocompletadoRemito() {
+    const input = document.getElementById('remito-mp-autocompletar');
+    const cont = document.getElementById('remito-mp-autocompletar-opciones');
+    const termino = normalizarTexto(input.value).trim();
+
+    document.getElementById('remito-mp-select').value = '';
+    if (!termino) { cont.classList.add('hidden'); cont.innerHTML = ''; return; }
+
+    const filtrados = CATALOGO_MATERIAS_PRIMAS.filter(m => normalizarTexto(m.nombre).includes(termino) || normalizarTexto(m.tipo).includes(termino) || normalizarTexto(m.marca).includes(termino));
+    if (!filtrados.length) {
+        cont.innerHTML = `<p class="px-3 py-2 text-xs text-slate-400">Sin resultados.</p>`;
+        cont.classList.remove('hidden');
+        return;
+    }
+    cont.innerHTML = filtrados.map(m => {
+        const idx = CATALOGO_MATERIAS_PRIMAS.indexOf(m);
+        return `<button type="button" onmousedown="event.preventDefault(); elegirMateriaPrimaRemito(${idx})" class="block w-full text-left px-3 py-2 text-sm hover:bg-slate-100">
+            <span class="block truncate">${m.nombre}</span>
+            <span class="block text-[11px] text-slate-400">${m.tipo} · ${m.marca}</span>
+        </button>`;
+    }).join('');
+    cont.classList.remove('hidden');
+}
+
+function elegirMateriaPrimaRemito(idx) {
+    const m = CATALOGO_MATERIAS_PRIMAS[idx];
+    document.getElementById('remito-mp-autocompletar').value = m.nombre;
+    document.getElementById('remito-mp-select').value = idx;
+    document.getElementById('remito-mp-autocompletar-opciones').classList.add('hidden');
+}
+
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('#remito-mp-autocompletar') && !e.target.closest('#remito-mp-autocompletar-opciones')) {
+        document.getElementById('remito-mp-autocompletar-opciones')?.classList.add('hidden');
+    }
+});
+
+function agregarMateriaPrimaRemito() {
+    const idx = parseInt(document.getElementById('remito-mp-select').value);
+    const cantidad = parseFloat(document.getElementById('remito-mp-cant').value);
+
+    if (isNaN(idx)) return alert('Elegí una materia prima de la lista de sugerencias.');
+    if (!cantidad || cantidad <= 0) return alert('Ingrese una cantidad válida.');
+
+    const m = CATALOGO_MATERIAS_PRIMAS[idx];
+    const itemExistente = itemsRemitoActual.find(item => item.clave === m.clave);
+    if (itemExistente) {
+        itemExistente.cantidad += cantidad;
+    } else {
+        itemsRemitoActual.push({ id: Date.now(), clave: m.clave, tipo: m.tipo, marca: m.marca, nombre: m.nombre, cantidad });
+    }
+    document.getElementById('remito-mp-autocompletar').value = '';
+    document.getElementById('remito-mp-select').value = '';
+    document.getElementById('remito-mp-cant').value = 1;
+    renderizarTablaItemsRemito();
+}
+
+function eliminarItemRemito(id) {
+    itemsRemitoActual = itemsRemitoActual.filter(item => item.id !== id);
+    renderizarTablaItemsRemito();
+}
+
+function actualizarCantidadItemRemito(id, nuevaCantidad) {
+    const cantidad = parseFloat(nuevaCantidad);
+    const item = itemsRemitoActual.find(i => i.id === id);
+    if (!item) return;
+    if (!cantidad || cantidad <= 0) { renderizarTablaItemsRemito(); return; }
+    item.cantidad = cantidad;
+    renderizarTablaItemsRemito();
+}
+
+function renderizarTablaItemsRemito() {
+    const tbody = document.getElementById('tabla-items-remito');
+    tbody.innerHTML = '';
+    itemsRemitoActual.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="p-3 text-slate-500">${item.tipo}</td>
+            <td class="p-3 text-slate-500">${item.marca}</td>
+            <td class="p-3 font-medium text-slate-800">${item.nombre}</td>
+            <td class="p-3 text-center">
+                <input type="number" min="0.01" step="0.01" value="${item.cantidad}" onchange="actualizarCantidadItemRemito(${item.id}, this.value)" class="w-20 text-center border border-slate-300 rounded-md p-1 text-sm outline-none focus:ring-2 focus:ring-red-500">
+            </td>
+            <td class="p-3 text-center">
+                <button type="button" onclick="eliminarItemRemito(${item.id})" class="text-red-500 hover:text-red-700">
+                    <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+    lucide.createIcons();
+    document.getElementById('cant-items-remito').innerText = itemsRemitoActual.length;
+}
+
+function resetFormularioRemito() {
+    itemsRemitoActual = [];
+    proveedorSeleccionadoRemito = null;
+    ordenCompraSeleccionadaRemito = null;
+    document.getElementById('remito-proveedor-autocompletar').value = '';
+    document.getElementById('select-remito-proveedor').value = '';
+    document.getElementById('ficha-proveedor-remito').classList.add('hidden');
+    document.getElementById('remito-oc-wrap').classList.add('hidden');
+    document.getElementById('remito-orden-compra').innerHTML = '';
+    const ahora = new Date();
+    document.getElementById('remito-fecha-entrega').value = ahora.toISOString().slice(0, 10);
+    document.getElementById('remito-hora-entrega').value = ahora.toTimeString().slice(0, 5);
+    document.getElementById('remito-firma-recepcion').value = '';
+    document.getElementById('remito-observaciones').value = '';
+    document.getElementById('remito-mp-autocompletar').value = '';
+    document.getElementById('remito-mp-select').value = '';
+    document.getElementById('remito-mp-cant').value = 1;
+    renderizarTablaItemsRemito();
+    lucide.createIcons();
+}
+
+function confirmarRemito() {
+    const fechaEntrega = document.getElementById('remito-fecha-entrega').value;
+    const horaEntrega = document.getElementById('remito-hora-entrega').value;
+    const firmaRecepcion = document.getElementById('remito-firma-recepcion').value.trim();
+    const observaciones = document.getElementById('remito-observaciones').value.trim();
+
+    if (!proveedorSeleccionadoRemito) return alert('Buscá y seleccioná el proveedor.');
+    if (!ordenCompraSeleccionadaRemito) return alert('Elegí la orden de compra que remite.');
+    if (!itemsRemitoActual.length) return alert('Agregá al menos una materia prima recibida.');
+    if (!fechaEntrega) return alert('Seleccioná la Fecha de Entrega.');
+    if (!horaEntrega) return alert('Seleccioná la Hora de Entrega.');
+    if (!firmaRecepcion) return alert('Completá la Firma de Recepción.');
+
+    const ahora = new Date();
+    const remito = {
+        id_remito_proveedor: numRemitoContador++,
+        id_proveedor: proveedorSeleccionadoRemito.numero_documento,
+        proveedorObj: proveedorSeleccionadoRemito,
+        proveedor: proveedorSeleccionadoRemito.nombreMostrado,
+        id_orden_compra_proveedor: ordenCompraSeleccionadaRemito.id,
+        fecha_emision: ahora.toISOString().slice(0, 10),
+        hora_emision: ahora.toTimeString().slice(0, 5),
+        fecha_entrega: fechaEntrega,
+        hora_entrega: horaEntrega,
+        firma_recepcion: firmaRecepcion,
+        observaciones,
+        detalle: itemsRemitoActual.map(i => ({ clave: i.clave, tipo: i.tipo, marca: i.marca, nombre: i.nombre, cantidad: i.cantidad }))
+    };
+    listaRemitos.unshift(remito);
+    guardarDatos();
+    alert(`¡Remito REM-${String(remito.id_remito_proveedor).padStart(4, '0')} registrado con éxito!`);
+    volverARemitos();
+}
+
+function alternarOrdenRemitos() {
+    ordenRemitosDireccion = ordenRemitosDireccion === null ? 'asc' : ordenRemitosDireccion === 'asc' ? 'desc' : null;
+    renderizarTablaRemitos();
+}
+
+function actualizarIconoOrdenRemitos() {
+    const boton = document.getElementById('btn-orden-proveedor-remito');
+    if (!boton) return;
+    const icono = ordenRemitosDireccion === 'asc' ? 'arrow-up' : ordenRemitosDireccion === 'desc' ? 'arrow-down' : 'arrow-up-down';
+    boton.className = `normal-case transition ${ordenRemitosDireccion ? 'text-red-600' : 'text-slate-400 hover:text-slate-700'}`;
+    boton.innerHTML = `<i data-lucide="${icono}" class="w-3.5 h-3.5"></i>`;
+    lucide.createIcons();
+}
+
+function renderizarTablaRemitos() {
+    const tbody = document.getElementById('tabla-remitos');
+    if (!tbody) return;
+    const terminoNum = normalizarTexto(document.getElementById('buscar-num-remito')?.value || '').trim();
+    const terminoProveedor = normalizarTexto(document.getElementById('buscar-proveedor-remito')?.value || '').trim();
+
+    let filtrados = listaRemitos.filter(r =>
+        (!terminoNum || String(r.id_remito_proveedor).includes(terminoNum)) &&
+        (!terminoProveedor || normalizarTexto(r.proveedor).includes(terminoProveedor))
+    );
+
+    if (ordenRemitosDireccion) {
+        filtrados = [...filtrados].sort((a, b) => {
+            const cmp = (a.proveedor || '').localeCompare(b.proveedor || '', 'es');
+            return ordenRemitosDireccion === 'asc' ? cmp : -cmp;
+        });
+    }
+    actualizarIconoOrdenRemitos();
+
+    tbody.innerHTML = '';
+    if (!filtrados.length) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">No se encontraron remitos con ese criterio.</td></tr>`;
+        return;
+    }
+    filtrados.forEach(r => {
+        const fechaEmisionFormateada = r.fecha_emision ? new Date(r.fecha_emision + 'T00:00:00').toLocaleDateString('es-AR') : '-';
+        const fechaEntregaFormateada = r.fecha_entrega ? new Date(r.fecha_entrega + 'T00:00:00').toLocaleDateString('es-AR') : '-';
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50';
+        tr.innerHTML = `
+            <td class="px-6 py-3 font-semibold text-slate-900 font-mono whitespace-nowrap">REM-${String(r.id_remito_proveedor).padStart(4, '0')}</td>
+            <td class="px-6 py-3 font-semibold text-slate-800">${r.proveedor}</td>
+            <td class="px-6 py-3 font-mono text-slate-500 whitespace-nowrap">OC-${String(r.id_orden_compra_proveedor).padStart(3, '0')}</td>
+            <td class="px-6 py-3 text-slate-500 whitespace-nowrap">${fechaEmisionFormateada}</td>
+            <td class="px-6 py-3 text-slate-500 whitespace-nowrap">${fechaEntregaFormateada}</td>
+            <td class="px-6 py-3 text-slate-600">${r.firma_recepcion || '-'}</td>
+            <td class="px-6 py-3">
+                <button onclick="verDetalleRemito(${r.id_remito_proveedor})" title="Visualizar" class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition"><i data-lucide="eye" class="w-4 h-4"></i></button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+    lucide.createIcons();
+}
+
+function verDetalleRemito(id) {
+    const r = listaRemitos.find(x => x.id_remito_proveedor === id);
+    if (!r) return;
+    const fechaEmisionFormateada = r.fecha_emision ? new Date(r.fecha_emision + 'T00:00:00').toLocaleDateString('es-AR') : '-';
+    const fechaEntregaFormateada = r.fecha_entrega ? new Date(r.fecha_entrega + 'T00:00:00').toLocaleDateString('es-AR') : '-';
+    const filas = r.detalle.map(d => `
+        <tr class="border-b border-slate-100">
+            <td class="py-2 text-slate-500">${d.tipo}</td>
+            <td class="py-2 text-slate-500">${d.marca}</td>
+            <td class="py-2 font-medium text-slate-800">${d.nombre}</td>
+            <td class="py-2 text-center">${d.cantidad}</td>
+        </tr>`).join('');
+
+    document.getElementById('area-detalle-remito').innerHTML = `
+        <div class="flex justify-between items-start border-b border-slate-200 pb-4">
+            <div>
+                <h1 class="text-2xl font-bold text-red-600">FÁBRICA DE PASTAS</h1>
+                <p class="text-xs text-slate-500">Remito de Proveedor</p>
+                <p class="text-sm font-bold text-slate-800 mt-2">REM-${String(r.id_remito_proveedor).padStart(4, '0')}</p>
+            </div>
+            <div class="text-right text-xs text-slate-500 space-y-0.5">
+                <p><b class="text-slate-700">Fecha de Emisión:</b> ${fechaEmisionFormateada} ${r.hora_emision || ''}</p>
+                <p><b class="text-slate-700">Fecha de Entrega:</b> ${fechaEntregaFormateada} ${r.hora_entrega || ''}</p>
+                <p><b class="text-slate-700">Orden de Compra:</b> OC-${String(r.id_orden_compra_proveedor).padStart(3, '0')}</p>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600">
+            <p><b class="text-slate-700">Proveedor:</b> ${r.proveedor}</p>
+            <p><b class="text-slate-700">Documento:</b> ${r.proveedorObj ? r.proveedorObj.documentoCompleto : '-'}</p>
+            <p class="sm:col-span-2"><b class="text-slate-700">Domicilio:</b> ${r.proveedorObj ? r.proveedorObj.direccionCompleta : '-'}</p>
+            <p><b class="text-slate-700">Firma de Recepción:</b> ${r.firma_recepcion || '-'}</p>
+        </div>
+        ${r.observaciones ? `
+        <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
+            <b>Observaciones:</b> ${r.observaciones}
+        </div>` : ''}
+        <div>
+            <h3 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Materias Primas Recibidas</h3>
+            <table class="w-full text-xs text-left">
+                <thead class="border-b border-slate-300 uppercase text-slate-500">
+                    <tr><th class="py-2">Tipo</th><th class="py-2">Marca</th><th class="py-2">Producto</th><th class="py-2 text-center">Cantidad</th></tr>
+                </thead>
+                <tbody>${filas}</tbody>
+            </table>
+        </div>`;
+    mostrarSubvistaCompras('detalle-remito');
+    lucide.createIcons();
+}
+
 function initPaginaCompras() {
     inicializarCombosUbicacion();
     renderizarTablaOrdenesCompra();
     renderizarTablaPresupuestosProveedor();
+    renderizarTablaRemitos();
     resetFormularioOC();
     resetFormularioPresupuestoProveedor();
+    resetFormularioRemito();
     irASubvistaDesdeHashCompras();
     window.addEventListener('hashchange', irASubvistaDesdeHashCompras);
 }

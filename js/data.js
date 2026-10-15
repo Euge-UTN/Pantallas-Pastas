@@ -46,6 +46,21 @@ function precargarTelefonosAdicionales(prefijo, telefonos) {
     });
 }
 
+// Muestra/oculta y marca como obligatorio el Límite de Crédito según si el cliente tiene cuenta corriente habilitada.
+// Prefijo genérico para poder reusarla en cualquier formulario de alta de cliente (Clientes, el modal rápido de Ventas, etc.).
+function actualizarVisibilidadLimiteCliente(prefijo = 'cli') {
+    const tieneCtaCte = document.getElementById(`${prefijo}-cuenta-corriente`).checked;
+    document.getElementById(`wrap-${prefijo}-limite`).classList.toggle('hidden', !tieneCtaCte);
+    if (!tieneCtaCte) document.getElementById(`${prefijo}-limite`).value = 0;
+    else if (!parseFloat(document.getElementById(`${prefijo}-limite`).value)) document.getElementById(`${prefijo}-limite`).value = 50000;
+}
+
+// Redondea una cantidad a un máximo de 2 decimales (sin ceros de relleno), usado en las grillas de materia
+// prima y maquinaria de Producción para evitar números largos tras sumas/restas de stock.
+function formatearCantidad(n) {
+    return (Math.round((Number(n) || 0) * 100) / 100).toString();
+}
+
 // Badge con el teléfono principal + "+N" si hay adicionales, usado en las tablas de Clientes/Proveedores/Empleados.
 function badgeTelefonos(persona) {
     const completos = persona.telefonosCompletos;
@@ -91,7 +106,20 @@ document.addEventListener('click', (e) => {
 // ---------- Modelo geográfico (datos de referencia, no se persisten) ----------
 class Provincia { constructor(id_provincia, nombre) { this.id_provincia = id_provincia; this.nombre = nombre; } }
 class Localidad { constructor(id_localidad, nombre, id_provincia) { this.id_localidad = id_localidad; this.nombre = nombre; this.id_provincia = id_provincia; } }
-class Calle { constructor(id_calle, nombre, id_localidad) { this.id_calle = id_calle; this.nombre = nombre; this.id_localidad = id_localidad; } }
+class Calle { constructor(id_calle, nombre, id_localidad, codigo_postal) { this.id_calle = id_calle; this.nombre = nombre; this.id_localidad = id_localidad; this.codigo_postal = codigo_postal || ''; } }
+
+// Arma un domicilio legible (calle, altura, localidad, provincia y CP) a partir de una calleObj + altura sueltas.
+// Compartida entre Persona.direccionCompleta y cualquier domicilio "suelto" que no pertenezca a una Persona
+// (ej. el domicilio de entrega propio de un Pedido, cuando difiere del domicilio registrado del cliente).
+function direccionDesdeCalle(calleObj, altura) {
+    if (!calleObj) return altura || '-';
+    const loc = dbLocalidades.find(l => l.id_localidad === calleObj.id_localidad);
+    const prov = loc ? dbProvincias.find(p => p.id_provincia === loc.id_provincia) : null;
+    const nomLoc = loc ? loc.nombre : '';
+    const nomProv = prov ? prov.nombre : '';
+    const cp = calleObj.codigo_postal ? ` — CP ${calleObj.codigo_postal}` : '';
+    return `${calleObj.nombre} ${altura || ''}, ${nomLoc} (${nomProv})${cp}`.trim();
+}
 
 const dbProvincias = [
     new Provincia(1, 'Buenos Aires'),
@@ -105,11 +133,11 @@ const dbLocalidades = [
     new Localidad(104, 'Córdoba Capital', 3)
 ];
 const dbCalles = [
-    new Calle(1001, 'Av. Villegas', 101),
-    new Calle(1002, 'Calle 9 de Julio', 101),
-    new Calle(1003, 'Calle 7', 102),
-    new Calle(1004, 'Av. Pellegrini', 103),
-    new Calle(1005, 'Av. Colón', 104)
+    new Calle(1001, 'Av. Villegas', 101, '6400'),
+    new Calle(1002, 'Calle 9 de Julio', 101, '6400'),
+    new Calle(1003, 'Calle 7', 102, '1900'),
+    new Calle(1004, 'Av. Pellegrini', 103, '2000'),
+    new Calle(1005, 'Av. Colón', 104, '5000')
 ];
 
 // ---------- Modelo de personas (Cliente / Proveedor / Empleado) ----------
@@ -140,12 +168,7 @@ class Persona {
     }
 
     get direccionCompleta() {
-        if (!this.calleObj) return this.altura || '-';
-        const loc = dbLocalidades.find(l => l.id_localidad === this.calleObj.id_localidad);
-        const prov = loc ? dbProvincias.find(p => p.id_provincia === loc.id_provincia) : null;
-        const nomLoc = loc ? loc.nombre : '';
-        const nomProv = prov ? prov.nombre : '';
-        return `${this.calleObj.nombre} ${this.altura || ''}, ${nomLoc} (${nomProv})`.trim();
+        return direccionDesdeCalle(this.calleObj, this.altura);
     }
 }
 
@@ -427,8 +450,18 @@ function pedidoEstaCobrado(idPedido) {
     return comprobanteVentaEstaCobrado(comprobante.id_comprobante_venta_cliente);
 }
 
+// Suma de los cobros vigentes (no anulados) asociados a un Comprobante de Venta. Permite cobros parciales
+// (ej. una seña) sin perder noción de cuánto falta cobrar todavía.
+function totalCobradoComprobanteVenta(idComprobanteVenta) {
+    return listaComprobantesPago
+        .filter(cp => cp.id_comprobante_venta_cliente === idComprobanteVenta && !cp.es_anulado)
+        .reduce((acc, cp) => acc + cp.importe, 0);
+}
+
 function comprobanteVentaEstaCobrado(idComprobanteVenta) {
-    return listaComprobantesPago.some(cp => cp.id_comprobante_venta_cliente === idComprobanteVenta && !cp.es_anulado);
+    const cv = listaComprobantesVenta.find(c => c.id_comprobante_venta_cliente === idComprobanteVenta);
+    if (!cv) return false;
+    return totalCobradoComprobanteVenta(idComprobanteVenta) >= cv.total;
 }
 
 // Estado de un Comprobante de Venta para el listado de Ventas > Comprobantes de Venta.
@@ -454,7 +487,7 @@ function totalesCobradosPorMedio(fecha) {
     }));
 }
 
-function registrarComprobantePago({ comprobanteVenta, idMedioPago, condicionPago, importe, observaciones }) {
+function registrarComprobantePago({ comprobanteVenta, idMedioPago, condicionPago, importe, observaciones, fechaPago, horaPago }) {
     const ahora = new Date();
     const comprobantePago = {
         id_comprobante_pago_cliente: numComprobantePagoContador++,
@@ -465,8 +498,8 @@ function registrarComprobantePago({ comprobanteVenta, idMedioPago, condicionPago
         esEvento: !!comprobanteVenta.esEvento,
         esDonacion: !!comprobanteVenta.esDonacion,
         id_medio_pago: idMedioPago,
-        fecha_pago: ahora.toISOString().slice(0, 10),
-        hora_pago: ahora.toTimeString().slice(0, 5),
+        fecha_pago: fechaPago || ahora.toISOString().slice(0, 10),
+        hora_pago: horaPago || ahora.toTimeString().slice(0, 5),
         condicion_pago: condicionPago,
         importe,
         observaciones: observaciones || '',
@@ -771,11 +804,24 @@ function crearDatosIniciales() {
           total: 36000 }
     ];
 
-    // Órdenes de Producción: datos de prueba para visualizar Historial y Seguimiento (2 En Proceso ya descontaron stock, 2 Planificadas no).
+    // Remitos de Proveedores: mercadería ya recibida contra una Orden de Compra (las Órdenes "Enviada" todavía no tienen remito).
+    const remitos = [
+        { id_remito_proveedor: 2, id_proveedor: proveedores[4].numero_documento, proveedorObj: proveedores[4], proveedor: proveedores[4].nombreMostrado,
+          id_orden_compra_proveedor: 104, fecha_emision: '2026-10-01', hora_emision: '16:05', fecha_entrega: '2026-10-02', hora_entrega: '10:30',
+          firma_recepcion: 'Carlos Gómez', observaciones: '',
+          detalle: [{ clave: 'condimentos', tipo: 'Condimentos', marca: 'Condimentos Córdoba', nombre: 'Surtido de Especias (Caja 20kg)', cantidad: 2 }] },
+
+        { id_remito_proveedor: 1, id_proveedor: proveedores[1].numero_documento, proveedorObj: proveedores[1], proveedor: proveedores[1].nombreMostrado,
+          id_orden_compra_proveedor: 101, fecha_emision: '2026-09-10', hora_emision: '15:25', fecha_entrega: '2026-09-11', hora_entrega: '09:00',
+          firma_recepcion: 'Laura Rodríguez', observaciones: 'Entrega completa, sin faltantes.',
+          detalle: [{ clave: 'huevos', tipo: 'Huevos', marca: 'Avícola Sur', nombre: 'Huevos Frescos (Cajón 30 dzn)', cantidad: 2 }] }
+    ];
+
+    // Órdenes de Producción: datos de prueba para visualizar Historial y Seguimiento (toda OP arranca "En Proceso" y ya descontó stock).
     const ordenesProduccion = [
         { id_orden_produccion: 4, id_orden_pedido_cliente: 1044, id_empleado: 'Laura Rodríguez',
           fecha_emision: '2026-10-07', hora_emision: '09:00', fecha_inicio: '2026-10-09', hora_inicio: '08:00', fecha_fin: '2026-10-09', hora_fin: '12:00',
-          estado: 'Planificada', observaciones: '', stockDescontado: false,
+          estado: 'En Proceso', observaciones: '', stockDescontado: true,
           detalleProductos: [{ id_receta: 2, nombre_producto: 'Tallarines al Huevo', nombre_receta: 'Receta Tallarines al Huevo', cantidad_planificada: 2, cantidad_real: null, numero_lote_proyectado: 'LOT-4', numero_lote_definitivo: null, fecha_vencimiento: null }],
           detalleMateriaPrima: [{ clave_mp: 'harina', nombre: 'Harina 0000', cantidad_planificada: 1.2 }, { clave_mp: 'huevos', nombre: 'Huevos Frescos', cantidad_planificada: 0.2 }],
           detalleMaquinaria: [{ id_maquinaria: 3, nombre_maquinaria: 'Amasadora Doble Brazo', hora_inicio_planificada: '08:00', hora_fin_planificada: '09:30' }] },
@@ -796,7 +842,7 @@ function crearDatosIniciales() {
 
         { id_orden_produccion: 1, id_orden_pedido_cliente: null, id_empleado: 'Laura Rodríguez',
           fecha_emision: '2026-10-04', hora_emision: '14:00', fecha_inicio: '2026-10-09', hora_inicio: '08:00', fecha_fin: '2026-10-09', hora_fin: '11:00',
-          estado: 'Planificada', observaciones: '', stockDescontado: false,
+          estado: 'En Proceso', observaciones: '', stockDescontado: true,
           detalleProductos: [{ id_receta: 3, nombre_producto: 'Ñoquis de Papa', nombre_receta: 'Receta Ñoquis de Papa', cantidad_planificada: 15, cantidad_real: null, numero_lote_proyectado: 'LOT-1', numero_lote_definitivo: null, fecha_vencimiento: null }],
           detalleMateriaPrima: [{ clave_mp: 'harina', nombre: 'Harina 0000', cantidad_planificada: 4.5 }],
           detalleMaquinaria: [{ id_maquinaria: 2, nombre_maquinaria: 'Envasadora al Vacío', hora_inicio_planificada: '10:00', hora_fin_planificada: '11:00' }] }
@@ -827,17 +873,17 @@ function crearDatosIniciales() {
 
     return {
         clientes, proveedores, empleados, maquinaria, recetas, pedidos, comprobantesVenta, comprobantesPago,
-        presupuestos, presupuestosProveedor,
+        presupuestos, presupuestosProveedor, remitos,
         ordenesProduccion, ordenesMantenimiento, ordenesCompra,
         stockMateriaPrima: {
-            harina: { nombre: 'Harina 0000', cantidad_actual: 95.1, unidad_medida: 'kg' },
-            huevos: { nombre: 'Huevos Frescos', cantidad_actual: 80, unidad_medida: 'dzn' },
+            harina: { nombre: 'Harina 0000', cantidad_actual: 89.4, unidad_medida: 'kg' },
+            huevos: { nombre: 'Huevos Frescos', cantidad_actual: 79.8, unidad_medida: 'dzn' },
             ricotta: { nombre: 'Ricotta Fresca', cantidad_actual: 47, unidad_medida: 'kg' }
         },
         cajaDiaria: 0,
         contadores: {
             recibo: 1, ordenCompra: 106, lote: 5, pedido: 1051, empleado: 7, maquinaria: 5, ordenMant: 6, ordenProduccion: 5,
-            comprobanteVenta: contadorComprobanteVenta, comprobantePago: contadorComprobantePago, presupuesto: 8, presupuestoProveedor: 7
+            comprobanteVenta: contadorComprobanteVenta, comprobantePago: contadorComprobantePago, presupuesto: 8, presupuestoProveedor: 7, remito: 3
         }
     };
 }
@@ -887,6 +933,11 @@ function cargarDatos() {
             resto.proveedorObj = datos.proveedores.find(p => p.numero_documento === proveedorDocumento) || null;
             return resto;
         });
+        datos.remitos = (datos.remitos || []).map(r => {
+            const { proveedorDocumento, ...resto } = r;
+            resto.proveedorObj = datos.proveedores.find(p => p.numero_documento === proveedorDocumento) || null;
+            return resto;
+        });
         datos.maquinaria = datos.maquinaria || [];
         datos.recetas = (datos.recetas || []).map(r => Object.setPrototypeOf(r, Receta.prototype));
         datos.ordenesProduccion = datos.ordenesProduccion || [];
@@ -895,6 +946,7 @@ function cargarDatos() {
         datos.contadores = datos.contadores || crearDatosIniciales().contadores;
         datos.contadores.presupuesto = datos.contadores.presupuesto || 1;
         datos.contadores.presupuestoProveedor = datos.contadores.presupuestoProveedor || 1;
+        datos.contadores.remito = datos.contadores.remito || 1;
         return datos;
     } catch (e) {
         console.error('No se pudo leer la base de la sesión, se reinicia con datos de ejemplo.', e);
@@ -918,6 +970,7 @@ let listaOrdenesProduccion = DATOS.ordenesProduccion;
 let listaOrdenesMantenimiento = DATOS.ordenesMantenimiento;
 let listaOrdenesCompra = DATOS.ordenesCompra;
 let listaPresupuestosProveedor = DATOS.presupuestosProveedor;
+let listaRemitos = DATOS.remitos;
 let stockMateriaPrima = DATOS.stockMateriaPrima;
 let totalCajaAcumulado = DATOS.cajaDiaria;
 
@@ -933,6 +986,7 @@ let numComprobanteVentaContador = DATOS.contadores.comprobanteVenta;
 let numComprobantePagoContador = DATOS.contadores.comprobantePago;
 let numPresupuestoContador = DATOS.contadores.presupuesto;
 let numPresupuestoProveedorContador = DATOS.contadores.presupuestoProveedor;
+let numRemitoContador = DATOS.contadores.remito;
 
 function guardarDatos() {
     const serializado = {
@@ -950,7 +1004,8 @@ function guardarDatos() {
             pedido: numPedidoContador, empleado: numEmpleadoContador, maquinaria: numMaquinariaContador,
             ordenMant: numOrdenMantContador, ordenProduccion: numOrdenProduccionContador,
             comprobanteVenta: numComprobanteVentaContador, comprobantePago: numComprobantePagoContador,
-            presupuesto: numPresupuestoContador, presupuestoProveedor: numPresupuestoProveedorContador
+            presupuesto: numPresupuestoContador, presupuestoProveedor: numPresupuestoProveedorContador,
+            remito: numRemitoContador
         },
         ordenesCompra: listaOrdenesCompra.map(oc => {
             const { proveedorObj, ...resto } = oc;
@@ -958,6 +1013,10 @@ function guardarDatos() {
         }),
         presupuestosProveedor: listaPresupuestosProveedor.map(pr => {
             const { proveedorObj, ...resto } = pr;
+            return { ...resto, proveedorDocumento: proveedorObj ? proveedorObj.numero_documento : null };
+        }),
+        remitos: listaRemitos.map(r => {
+            const { proveedorObj, ...resto } = r;
             return { ...resto, proveedorDocumento: proveedorObj ? proveedorObj.numero_documento : null };
         }),
         pedidos: listaPedidos.map(p => {
@@ -984,7 +1043,7 @@ function guardarDatos() {
 // UTILIDADES GEOGRÁFICAS COMPARTIDAS (Clientes / Proveedores / Empleados)
 // ==========================================
 function inicializarCombosUbicacion() {
-    const prefijos = ['cli', 'prov', 'emp', 'mcli', 'mprov'];
+    const prefijos = ['cli', 'prov', 'emp', 'mcli', 'mprov', 'pedEntrega'];
     prefijos.forEach(prefijo => {
         const selectProv = document.getElementById(`${prefijo}-provincia`);
         if (selectProv) {
@@ -1049,6 +1108,15 @@ function obtenerCalleSeleccionada(prefijo) {
     return dbCalles.find(c => c.id_calle === idCalle) || null;
 }
 
+// El Código Postal depende directamente de la Calle elegida (no se tipea a mano): se autocompleta, de solo
+// lectura, apenas se selecciona la calle. Usado en todos los formularios de alta/edición con domicilio.
+function actualizarCodigoPostal(prefijo) {
+    const campo = document.getElementById(`${prefijo}-cp`);
+    if (!campo) return;
+    const calle = obtenerCalleSeleccionada(prefijo);
+    campo.value = calle ? calle.codigo_postal : '';
+}
+
 // Reconstruye la cascada Provincia -> Localidad -> Calle a partir de una calleObj guardada (usado al editar un registro existente).
 function precargarUbicacionCascada(prefijo, calleObj) {
     if (!calleObj) return;
@@ -1059,6 +1127,7 @@ function precargarUbicacionCascada(prefijo, calleObj) {
     document.getElementById(`${prefijo}-localidad`).value = localidad.id_localidad;
     cargarCallesCascada(prefijo);
     document.getElementById(`${prefijo}-calle`).value = calleObj.id_calle;
+    actualizarCodigoPostal(prefijo);
 }
 
 // ==========================================

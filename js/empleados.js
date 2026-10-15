@@ -309,6 +309,7 @@ function resetFormularioEmpleado() {
     document.getElementById('emp-numero-documento').value = '';
     document.getElementById('emp-fecha-nacimiento').value = '';
     document.getElementById('emp-altura').value = '';
+    document.getElementById('emp-cp').value = '';
     document.getElementById('emp-telefono').value = '';
     limpiarCamposTelefono('emp');
     document.getElementById('emp-email').value = '';

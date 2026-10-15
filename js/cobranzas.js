@@ -49,8 +49,13 @@ function resetFormularioCobro() {
     document.getElementById('btn-elegir-comprobante-cobro-texto').textContent = 'Elegí primero el cliente';
     document.getElementById('ficha-cv-cobro').classList.add('hidden');
     document.getElementById('cobro-monto').value = '';
+    document.getElementById('cobro-monto').disabled = true;
+    document.getElementById('nota-saldo-cobro').classList.add('hidden');
     document.getElementById('cobro-medio').selectedIndex = 0;
     document.getElementById('cobro-condicion').selectedIndex = 0;
+    const ahora = new Date();
+    document.getElementById('cobro-fecha').value = ahora.toISOString().slice(0, 10);
+    document.getElementById('cobro-hora').value = ahora.toTimeString().slice(0, 5);
     document.getElementById('cobro-observaciones').value = '';
     aplicarRestriccionCondicionPagoCobro();
 }
@@ -174,8 +179,10 @@ function seleccionarComprobanteVentaCobro() {
     const inputMonto = document.getElementById('cobro-monto');
     const textoBoton = document.getElementById('btn-elegir-comprobante-cobro-texto');
 
+    const notaSaldo = document.getElementById('nota-saldo-cobro');
     if (isNaN(idComprobante)) {
-        ficha.classList.add('hidden'); inputMonto.value = ''; comprobanteVentaSeleccionadoCobro = null;
+        ficha.classList.add('hidden'); inputMonto.value = ''; inputMonto.disabled = true; comprobanteVentaSeleccionadoCobro = null;
+        notaSaldo.classList.add('hidden');
         if (textoBoton) textoBoton.textContent = comprobantesClienteCobroActual.length ? 'Elegí un comprobante' : 'Elegí primero el cliente';
         return;
     }
@@ -183,6 +190,8 @@ function seleccionarComprobanteVentaCobro() {
     const cv = listaComprobantesVenta.find(c => c.id_comprobante_venta_cliente === idComprobante);
     comprobanteVentaSeleccionadoCobro = cv;
     const fechaFormateada = cv.fecha_emision ? new Date(cv.fecha_emision + 'T00:00:00').toLocaleDateString('es-AR') : '-';
+    const yaCobrado = totalCobradoComprobanteVenta(cv.id_comprobante_venta_cliente);
+    const saldoPendiente = cv.total - yaCobrado;
 
     if (textoBoton) textoBoton.textContent = `CV-${String(cv.id_comprobante_venta_cliente).padStart(5, '0')} — $ ${cv.total.toLocaleString()}`;
 
@@ -191,10 +200,15 @@ function seleccionarComprobanteVentaCobro() {
             <p><b class="text-slate-700">Fecha de Emisión:</b> ${fechaFormateada}</p>
             <p><b class="text-slate-700">Condición de Venta:</b> ${cv.condicion_venta}</p>
             <p><b class="text-slate-700">Pedido Asociado:</b> PED-${cv.id_orden_pedido_cliente}</p>
-            <p><b class="text-slate-700">Total a Cobrar:</b> $ ${cv.total.toLocaleString()}</p>
+            <p><b class="text-slate-700">Total del Comprobante:</b> $ ${cv.total.toLocaleString()}</p>
+            ${yaCobrado > 0 ? `<p class="sm:col-span-2"><b class="text-slate-700">Ya cobrado (seña/pagos parciales):</b> $ ${yaCobrado.toLocaleString()}</p>` : ''}
         </div>`;
     ficha.classList.remove('hidden');
-    inputMonto.value = `$ ${cv.total.toLocaleString()}`;
+    inputMonto.disabled = false;
+    inputMonto.max = saldoPendiente;
+    inputMonto.value = saldoPendiente;
+    notaSaldo.textContent = `Saldo pendiente: $ ${saldoPendiente.toLocaleString()}. Podés cobrar un monto parcial (ej. una seña) si no se paga el total.`;
+    notaSaldo.classList.remove('hidden');
 }
 
 // Precarga cliente + comprobante de venta cuando se llega desde el ícono "Registrar cobro" de la fila de Comprobantes de Venta.
@@ -214,15 +228,23 @@ function registrarCobroDesdeComprobanteVenta(idComprobanteVenta) {
 function procesarCobroYComprobante() {
     const idMedioPago = parseInt(document.getElementById('cobro-medio').value);
     const condicionPago = document.getElementById('cobro-condicion').value;
+    const monto = parseFloat(document.getElementById('cobro-monto').value) || 0;
+    const fechaPago = document.getElementById('cobro-fecha').value;
+    const horaPago = document.getElementById('cobro-hora').value;
     const observaciones = document.getElementById('cobro-observaciones').value.trim();
 
     if (!clienteSeleccionadoCobro) return alert('Buscá y seleccioná el cliente.');
     if (!comprobanteVentaSeleccionadoCobro) return alert('Seleccioná el comprobante de venta a cobrar.');
     if (!idMedioPago) return alert('Seleccioná el medio de pago.');
     if (!condicionPago) return alert('Seleccioná la condición de pago.');
+    if (!fechaPago) return alert('Seleccioná la Fecha de Emisión.');
+    if (!horaPago) return alert('Seleccioná la Hora de Emisión.');
+    const saldoPendiente = comprobanteVentaSeleccionadoCobro.total - totalCobradoComprobanteVenta(comprobanteVentaSeleccionadoCobro.id_comprobante_venta_cliente);
+    if (monto <= 0) return alert('Ingresá el monto a cobrar.');
+    if (monto > saldoPendiente) return alert(`El monto no puede superar el saldo pendiente ($ ${saldoPendiente.toLocaleString()}).`);
 
     const comprobantePago = registrarComprobantePago({
-        comprobanteVenta: comprobanteVentaSeleccionadoCobro, idMedioPago, condicionPago, importe: comprobanteVentaSeleccionadoCobro.total, observaciones
+        comprobanteVenta: comprobanteVentaSeleccionadoCobro, idMedioPago, condicionPago, importe: monto, observaciones, fechaPago, horaPago
     });
 
     guardarDatos();
