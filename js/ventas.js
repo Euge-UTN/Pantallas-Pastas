@@ -301,13 +301,32 @@ function mostrarFichaClientePedido() {
     ficha.classList.remove('hidden');
 }
 
+// Domicilio de Entrega del pedido: por defecto usa el domicilio registrado del cliente; "Cargar otro domicilio"
+// habilita una cascada propia (prefijo "pedEntrega") que se guarda aparte, solo para esa orden.
+function actualizarOpcionDomicilioPedido() {
+    const esNuevo = document.getElementById('pedido-domicilio-opcion-nuevo').checked;
+    document.getElementById('pedido-domicilio-nuevo-wrap').classList.toggle('hidden', !esNuevo);
+}
+
+function resetDomicilioEntregaPedido() {
+    document.getElementById('pedido-domicilio-opcion-cliente').checked = true;
+    document.getElementById('pedido-domicilio-nuevo-wrap').classList.add('hidden');
+    document.getElementById('pedEntrega-provincia').selectedIndex = 0;
+    cargarLocalidadesCascada('pedEntrega');
+    document.getElementById('pedEntrega-altura').value = '';
+    document.getElementById('pedEntrega-cp').value = '';
+}
+
 let destinoModalNuevoCliente = 'pedido'; // 'pedido' | 'presupuesto' — a qué formulario vuelve el cliente recién creado
 
 function abrirModalNuevoCliente(destino = 'pedido') {
     destinoModalNuevoCliente = destino;
     document.getElementById('mcli-tipo-cliente').selectedIndex = 0;
-    ['mcli-nombre', 'mcli-apellido', 'mcli-razon-social', 'mcli-numero-documento', 'mcli-telefono', 'mcli-email', 'mcli-altura'].forEach(id => document.getElementById(id).value = '');
+    ['mcli-nombre', 'mcli-apellido', 'mcli-razon-social', 'mcli-numero-documento', 'mcli-telefono', 'mcli-email', 'mcli-altura', 'mcli-cp'].forEach(id => document.getElementById(id).value = '');
+    limpiarCamposTelefono('mcli');
+    document.getElementById('mcli-cuenta-corriente').checked = false;
     document.getElementById('mcli-limite').value = 0;
+    actualizarVisibilidadLimiteCliente('mcli');
     document.getElementById('mcli-provincia').selectedIndex = 0;
     cargarLocalidadesCascada('mcli');
     document.getElementById('modal-nuevo-cliente-pedido').classList.remove('hidden');
@@ -325,16 +344,26 @@ function guardarClienteDesdePedido() {
     const tipoDocumento = document.getElementById('mcli-tipo-documento').value;
     const numeroDocumento = document.getElementById('mcli-numero-documento').value.trim();
     const calleObj = obtenerCalleSeleccionada('mcli');
+    const provincia = document.getElementById('mcli-provincia').value;
+    const localidad = document.getElementById('mcli-localidad').value;
     const altura = document.getElementById('mcli-altura').value.trim();
     const telefono = document.getElementById('mcli-telefono').value.trim();
+    const telefonosAdicionales = obtenerTelefonosAdicionales('mcli');
     const email = document.getElementById('mcli-email').value.trim();
     const iva = document.getElementById('mcli-iva').value;
+    const cuentaCorriente = document.getElementById('mcli-cuenta-corriente').checked;
     const limite = parseFloat(document.getElementById('mcli-limite').value) || 0;
 
     if (!tipoCliente) return alert('Seleccioná el tipo de cliente.');
     if (!nombre || !apellido || !numeroDocumento) return alert('Completá Nombre, Apellido y Número de Documento.');
+    if (!provincia || !localidad || !calleObj || !altura) return alert('Completá Provincia, Localidad, Calle y Altura.');
+    if (!telefono) return alert('Completá el Teléfono.');
+    if (!email) return alert('Completá el Email.');
+    if (!iva) return alert('Seleccioná la Condición Frente al IVA.');
+    if (cuentaCorriente && limite <= 0) return alert('Indicá el Límite de Crédito Permitido para la cuenta corriente.');
 
-    const nuevo = new Cliente(nombre, apellido, tipoDocumento, numeroDocumento, calleObj, altura, telefono, email, iva, tipoCliente, limite, razonSocial);
+    const fechaAlta = new Date().toISOString().slice(0, 10);
+    const nuevo = new Cliente(nombre, apellido, tipoDocumento, numeroDocumento, calleObj, altura, telefono, email, iva, tipoCliente, limite, razonSocial, fechaAlta, cuentaCorriente, telefonosAdicionales);
     listaClientes.unshift(nuevo);
     renderizarClientesUI();
     guardarDatos();
@@ -534,6 +563,7 @@ function resetFormularioPedido() {
     document.getElementById('pedido-bonificacion').value = 0;
     document.getElementById('pedido-observaciones').value = '';
     document.getElementById('pedido-fecha-entrega-estimada').value = '';
+    resetDomicilioEntregaPedido();
     document.getElementById('prod-autocompletar').value = '';
     document.getElementById('prod-select').value = '';
     document.getElementById('prod-subtipo-detectado').textContent = '';
@@ -561,9 +591,22 @@ function confirmarPedido() {
     const fechaEntregaEstimada = document.getElementById('pedido-fecha-entrega-estimada').value || null;
     const detalle = itemsPedidoActual.map(i => ({ ...i }));
 
+    // Domicilio de Entrega: "cliente" reusa el domicilio registrado del cliente; "nuevo" guarda uno propio de la orden.
+    const esDomicilioNuevo = document.getElementById('pedido-domicilio-opcion-nuevo').checked;
+    let calleEntregaObj, alturaEntrega;
+    if (esDomicilioNuevo) {
+        calleEntregaObj = obtenerCalleSeleccionada('pedEntrega');
+        alturaEntrega = document.getElementById('pedEntrega-altura').value.trim();
+        if (!calleEntregaObj || !alturaEntrega) { alert('Completá Provincia, Localidad, Calle y Altura del domicilio de entrega, o elegí "Usar domicilio del cliente".'); return; }
+    } else {
+        calleEntregaObj = clienteSeleccionadoPedido.calleObj;
+        alturaEntrega = clienteSeleccionadoPedido.altura;
+    }
+    const idCalleEntrega = calleEntregaObj ? calleEntregaObj.id_calle : null;
+
     if (pedidoEnEdicionId) {
         const pedido = listaPedidos.find(p => p.id === pedidoEnEdicionId);
-        Object.assign(pedido, { clienteObj: clienteSeleccionadoPedido, cliente: clienteSeleccionadoPedido.nombreMostrado, empleado, tipo, esEvento, esDonacion, bonificacion, observaciones, fechaEntregaEstimada, detalle, total });
+        Object.assign(pedido, { clienteObj: clienteSeleccionadoPedido, cliente: clienteSeleccionadoPedido.nombreMostrado, empleado, tipo, esEvento, esDonacion, bonificacion, observaciones, fechaEntregaEstimada, detalle, total, calleEntregaObj, alturaEntrega, id_calle_entrega: idCalleEntrega });
         actualizarComprobanteVenta(pedido);
         alert(`¡Pedido PED-${pedido.id} actualizado con éxito! El comprobante de venta asociado se actualizó.`);
     } else {
@@ -571,6 +614,7 @@ function confirmarPedido() {
         const nuevoPedido = {
             id: numPedidoContador++, clienteObj: clienteSeleccionadoPedido, cliente: clienteSeleccionadoPedido.nombreMostrado,
             empleado, tipo, esEvento, esDonacion, bonificacion, observaciones, fechaEntregaEstimada, detalle, total, estado: 'Pendiente',
+            calleEntregaObj, alturaEntrega, id_calle_entrega: idCalleEntrega,
             fecha: ahora.toISOString().slice(0, 10), hora: ahora.toTimeString().slice(0, 5)
         };
         listaPedidos.unshift(nuevoPedido);
@@ -669,7 +713,7 @@ function renderizarTablaPedidosRegistrados() {
             <td class="px-6 py-4">
                 <div class="flex items-center justify-start gap-1.5">
                     <button onclick="verDetallePedido(${p.id})" title="Ver detalle" class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition"><i data-lucide="eye" class="w-4 h-4"></i></button>
-                    ${comprobanteVisible ? `<button onclick="verComprobanteVenta(${p.id})" title="Ver comprobante de venta" class="p-2 rounded-lg text-indigo-600 hover:bg-indigo-50 transition"><i data-lucide="file-check-2" class="w-4 h-4"></i></button>` : ''}
+                    ${comprobanteVisible ? `<button onclick="verComprobanteVenta(${p.id})" title="Generar comprobante de venta" class="p-2 rounded-lg text-indigo-600 hover:bg-indigo-50 transition"><i data-lucide="file-check-2" class="w-4 h-4"></i></button>` : ''}
                     ${p.estado === 'Pendiente' ? `<button onclick="editarPedido(${p.id})" title="Editar pedido" class="p-2 rounded-lg text-amber-600 hover:bg-amber-50 transition"><i data-lucide="pencil" class="w-4 h-4"></i></button>` : ''}
                     ${(p.estado === 'Pendiente' && !p.idOrdenProduccionGenerada) ? `<button onclick="generarOrdenProduccionDesdePedido(${p.id})" title="Generar orden de producción" class="p-2 rounded-lg text-teal-600 hover:bg-teal-50 transition"><i data-lucide="factory" class="w-4 h-4"></i></button>` : ''}
                     ${siguiente ? `<button onclick="avanzarEstadoPedido(${p.id})" title="Marcar ${siguiente}" class="p-2 rounded-lg text-blue-600 hover:bg-blue-50 transition"><i data-lucide="arrow-right-circle" class="w-4 h-4"></i></button>` : ''}
@@ -778,6 +822,16 @@ function avanzarEstadoPedido(id) {
     const pedido = listaPedidos.find(p => p.id === id);
     if (pedido.estado === 'Cancelado' || pedido.estado === 'Entregado') return;
     const siguiente = ESTADOS_PEDIDO[ESTADOS_PEDIDO.indexOf(pedido.estado) + 1];
+    // Todo pedido de Evento exige una seña mínima del 50% del total antes de poder marcarse como Entregado.
+    if (siguiente === 'Entregado' && pedido.esEvento) {
+        const cv = obtenerComprobanteVentaPorPedido(id);
+        const cobrado = cv ? totalCobradoComprobanteVenta(cv.id_comprobante_venta_cliente) : 0;
+        const senaMinima = pedido.total * 0.5;
+        if (cobrado < senaMinima) {
+            alert(`Este pedido es un Evento y requiere una seña mínima del 50% ($ ${senaMinima.toLocaleString()}) antes de poder marcarlo como Entregado. Cobrado hasta ahora: $ ${cobrado.toLocaleString()}.`);
+            return;
+        }
+    }
     if (siguiente) {
         pedido.estado = siguiente;
         if (siguiente === 'Entregado') {
@@ -817,6 +871,17 @@ function editarPedido(id) {
     document.getElementById('pedido-bonificacion').value = pedido.bonificacion || 0;
     document.getElementById('pedido-observaciones').value = pedido.observaciones || '';
     document.getElementById('pedido-fecha-entrega-estimada').value = pedido.fechaEntregaEstimada || '';
+
+    const esDomicilioPropio = pedido.calleEntregaObj && (!pedido.clienteObj || pedido.calleEntregaObj.id_calle !== pedido.clienteObj.calleObj?.id_calle || pedido.alturaEntrega !== pedido.clienteObj.altura);
+    if (esDomicilioPropio) {
+        document.getElementById('pedido-domicilio-opcion-nuevo').checked = true;
+        document.getElementById('pedido-domicilio-nuevo-wrap').classList.remove('hidden');
+        precargarUbicacionCascada('pedEntrega', pedido.calleEntregaObj);
+        document.getElementById('pedEntrega-altura').value = pedido.alturaEntrega || '';
+    } else {
+        resetDomicilioEntregaPedido();
+    }
+
     document.getElementById('prod-autocompletar').value = '';
     document.getElementById('prod-select').value = '';
     document.getElementById('prod-subtipo-detectado').textContent = '';
@@ -842,6 +907,18 @@ function verDetallePedido(id) {
     // El comprobante de venta solo puede verse cuando la orden de pedido llegó a "Listo" o "Entregado".
     const comprobanteVenta = obtenerComprobanteVentaPorPedido(p.id);
     const comprobanteVisible = comprobanteVenta && !comprobanteVenta.es_anulado && (p.estado === 'Listo' || p.estado === 'Entregado');
+
+    // Seña (solo para pedidos de Evento): 50% mínimo del total antes de poder entregar.
+    let bloqueSena = '';
+    if (p.esEvento) {
+        const cobrado = comprobanteVenta ? totalCobradoComprobanteVenta(comprobanteVenta.id_comprobante_venta_cliente) : 0;
+        const senaMinima = p.total * 0.5;
+        const senaCubierta = cobrado >= senaMinima;
+        bloqueSena = `
+        <div class="${senaCubierta ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-amber-50 border-amber-200 text-amber-800'} border rounded-lg p-3 text-xs">
+            <b>Seña de Evento (50% mínimo):</b> ${senaCubierta ? 'Cubierta' : 'Pendiente'} — cobrado $ ${cobrado.toLocaleString()} de $ ${senaMinima.toLocaleString()} requeridos.
+        </div>`;
+    }
 
     const filas = (p.detalle || []).map(i => `
         <tr class="border-b border-slate-100">
@@ -877,11 +954,13 @@ function verDetallePedido(id) {
                 <h3 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5"><i data-lucide="user" class="w-3.5 h-3.5"></i>Cliente</h3>
                 ${c ? `
                 <p><b class="text-slate-700">Nombre y Apellido:</b> ${c.nombre} ${c.apellido}</p>
-                <p><b class="text-slate-700">Domicilio:</b> ${c.direccionCompleta}</p>
+                <p><b class="text-slate-700">Domicilio de Entrega:</b> ${direccionDesdeCalle(p.calleEntregaObj || c.calleObj, p.alturaEntrega || c.altura)}</p>
                 <p><b class="text-slate-700">Teléfono:</b> ${c.telefono || '-'}</p>
                 ` : `<p>${p.cliente}</p>`}
             </div>
         </div>
+
+        ${bloqueSena}
 
         ${p.observaciones ? `
         <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
@@ -920,7 +999,7 @@ function verDetallePedido(id) {
         ${comprobanteVisible ? `
         <div class="no-print flex justify-end">
             <button type="button" onclick="verComprobanteVenta(${p.id})" class="text-xs font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1.5">
-                <i data-lucide="file-check-2" class="w-3.5 h-3.5"></i><span>Ver Comprobante de Venta</span>
+                <i data-lucide="file-check-2" class="w-3.5 h-3.5"></i><span>Generar Comprobante de Venta</span>
             </button>
         </div>` : ''}
     `;
@@ -946,6 +1025,7 @@ let presupuestoEnEdicionId = null;
 let ordenPresupuestoCampo = null;
 let ordenPresupuestoDireccion = null;
 let filtroPresupuestoTipoSeleccionado = '';
+let filtroPresupuestoTipoEventoSeleccionado = ''; // '' | 'Evento' | 'Normal' — filtra por la columna "Tipo de Presupuesto"
 let filtroPresupuestoTipoDocSeleccionado = '';
 let segmentoPresupuestoSeleccionado = ''; // '' | 'Evento' — filtro externo a la tabla, fuera de la columna Tipo Cliente
 let filtroPresupuestoEstadoSeleccionado = '';
@@ -1231,6 +1311,7 @@ function renderizarTablaPresupuestos() {
             (!filtroPresupuestoTipoDocSeleccionado || tipoDocumento === filtroPresupuestoTipoDocSeleccionado) &&
             (!filtroPresupuestoEstadoSeleccionado || pr.estado === filtroPresupuestoEstadoSeleccionado) &&
             (!filtroPresupuestoTipoSeleccionado || pr.tipo === filtroPresupuestoTipoSeleccionado) &&
+            (!filtroPresupuestoTipoEventoSeleccionado || (filtroPresupuestoTipoEventoSeleccionado === 'Evento' ? pr.esEvento : !pr.esEvento)) &&
             (!segmentoPresupuestoSeleccionado || pr.esEvento);
     });
 
@@ -1244,12 +1325,13 @@ function renderizarTablaPresupuestos() {
     }
     actualizarIconosOrdenPresupuestos();
     actualizarIconoFiltroTipoPresupuestos();
+    actualizarIconoFiltroTipoEventoPresupuestos();
     actualizarIconoFiltroTipoDocPresupuestos();
     actualizarIconoFiltroEstadoPresupuestos();
     actualizarSegmentoPresupuestos();
 
     if (!presupuestosFiltrados.length) {
-        tbody.innerHTML = `<tr><td colspan="10" class="px-6 py-10 text-center text-slate-400 text-sm">No se encontraron presupuestos con ese criterio.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" class="px-6 py-10 text-center text-slate-400 text-sm">No se encontraron presupuestos con ese criterio.</td></tr>`;
     }
     presupuestosFiltrados.forEach(pr => {
         const fechaFormateada = pr.fecha ? new Date(pr.fecha + 'T00:00:00').toLocaleDateString('es-AR') : '-';
@@ -1262,6 +1344,7 @@ function renderizarTablaPresupuestos() {
             <td class="px-6 py-4 text-slate-500">${pr.clienteObj ? pr.clienteObj.tipo_documento : '-'}</td>
             <td class="px-6 py-4 text-slate-500">${pr.clienteObj ? pr.clienteObj.numero_documento : '-'}</td>
             <td class="px-6 py-4">${badgeTipoCliente(pr.tipo)}</td>
+            <td class="px-6 py-4"><span class="text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${pr.esEvento ? 'bg-violet-100 text-violet-800' : 'bg-slate-100 text-slate-600'}">${pr.esEvento ? 'Evento' : 'Normal'}</span></td>
             <td class="px-6 py-4 text-slate-500">${fechaFormateada}</td>
             <td class="px-6 py-4 text-right font-medium whitespace-nowrap">$ ${pr.total.toLocaleString()}</td>
             <td class="px-6 py-4 text-center"><span class="px-2.5 py-1 ${pr.estado === 'Convertido' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'} text-xs font-semibold rounded-full whitespace-nowrap">${pr.estado}</span></td>
@@ -1307,6 +1390,23 @@ function elegirFiltroTipoPresupuestos(valor) {
     filtroPresupuestoTipoSeleccionado = valor;
     document.getElementById('pop-tipo-presupuesto').classList.add('hidden');
     renderizarTablaPresupuestos();
+}
+
+function elegirFiltroTipoEventoPresupuestos(valor) {
+    filtroPresupuestoTipoEventoSeleccionado = valor;
+    document.getElementById('pop-tipo-evento-presupuesto').classList.add('hidden');
+    renderizarTablaPresupuestos();
+}
+
+function actualizarIconoFiltroTipoEventoPresupuestos() {
+    const boton = document.getElementById('btn-filtro-tipo-evento-presupuesto');
+    if (!boton) return;
+    boton.className = `normal-case transition ${filtroPresupuestoTipoEventoSeleccionado ? 'text-red-600' : 'text-slate-400 hover:text-slate-700'}`;
+    document.querySelectorAll('.opcion-filtro-tipo-evento-presupuesto').forEach(op => {
+        op.classList.toggle('bg-red-50', op.dataset.valor === filtroPresupuestoTipoEventoSeleccionado);
+        op.classList.toggle('text-red-700', op.dataset.valor === filtroPresupuestoTipoEventoSeleccionado);
+        op.classList.toggle('font-medium', op.dataset.valor === filtroPresupuestoTipoEventoSeleccionado);
+    });
 }
 
 function elegirSegmentoPresupuestos(valor) {
@@ -1374,15 +1474,19 @@ function verPresupuesto(id) {
     const fechaFormateada = pr.fecha ? new Date(pr.fecha + 'T00:00:00').toLocaleDateString('es-AR') : '-';
 
     const c = pr.clienteObj;
-    // Datos básicos del cliente en una sola línea: Nombre/Razón social, DNI/CUIT, domicilio, tipo de cliente y teléfono.
-    document.getElementById('presupuesto-cliente-linea').innerHTML = c
-        ? `Cliente: ${c.nombreMostrado} · ${c.documentoCompleto} · ${c.direccionCompleta} · ${c.tipo_cliente} · Tel: ${c.telefono || '-'}`
-        : `Cliente: ${pr.cliente}`;
+    // Franja de datos del cliente, mismo estilo visual que los comprobantes fiscales (franjaClienteComprobanteHTML),
+    // con un campo extra de Teléfono porque acá no hay condición de venta/pago que mostrar.
+    document.getElementById('presupuesto-cliente-franja').innerHTML = `
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600 border-b border-slate-200 pb-3">
+            <p><b class="text-slate-700">Nombre:</b> ${c ? c.nombreMostrado : pr.cliente}</p>
+            <p><b class="text-slate-700">Documento:</b> ${c ? c.documentoCompleto : '-'}</p>
+            <p class="sm:col-span-2"><b class="text-slate-700">Domicilio:</b> ${c ? c.direccionCompleta : '-'}</p>
+            <p><b class="text-slate-700">Condición frente al IVA:</b> ${c ? c.condicion_iva : '-'}</p>
+            <p><b class="text-slate-700">Tipo de Cliente:</b> ${c ? c.tipo_cliente : '-'}</p>
+            <p><b class="text-slate-700">Teléfono:</b> ${c ? (c.telefono || '-') : '-'}</p>
+        </div>`;
     document.getElementById('presupuesto-numero').innerText = `PRES-${String(pr.id).padStart(5, '0')}`;
     document.getElementById('presupuesto-fecha').innerText = `Fecha: ${fechaFormateada}`;
-    const badge = document.getElementById('presupuesto-estado-badge');
-    badge.textContent = pr.estado;
-    badge.className = `inline-block px-2.5 py-1 text-xs font-semibold rounded-full ${pr.estado === 'Convertido' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`;
 
     // Para Mayoristas o presupuestos de Evento, el % de bonificación se exhibe de forma destacada junto al estado.
     const badgeBonif = document.getElementById('presupuesto-bonificacion-badge');

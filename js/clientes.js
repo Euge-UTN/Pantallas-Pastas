@@ -232,14 +232,6 @@ function elegirFiltroCliTipo(valor) { filtroCliTipoSeleccionado = valor; documen
 function elegirFiltroCliIva(valor) { filtroCliIvaSeleccionado = valor; document.getElementById('pop-cli-iva').classList.add('hidden'); aplicarFiltroClientes(); }
 function elegirFiltroCliCtaCte(valor) { filtroCliCtaCteSeleccionado = valor; document.getElementById('pop-cli-ctacte').classList.add('hidden'); aplicarFiltroClientes(); }
 
-// Muestra/oculta y marca como obligatorio el Límite de Crédito según si el cliente tiene cuenta corriente habilitada.
-function actualizarVisibilidadLimiteCliente() {
-    const tieneCtaCte = document.getElementById('cli-cuenta-corriente').checked;
-    document.getElementById('wrap-cli-limite').classList.toggle('hidden', !tieneCtaCte);
-    if (!tieneCtaCte) document.getElementById('cli-limite').value = 0;
-    else if (!parseFloat(document.getElementById('cli-limite').value)) document.getElementById('cli-limite').value = 50000;
-}
-
 function guardarNuevoCliente() {
     const nombre = document.getElementById('cli-nombre').value.trim();
     const apellido = document.getElementById('cli-apellido').value.trim();
@@ -301,6 +293,7 @@ function resetFormularioCliente() {
     document.getElementById('cli-razon-social').value = '';
     document.getElementById('cli-numero-documento').value = '';
     document.getElementById('cli-altura').value = '';
+    document.getElementById('cli-cp').value = '';
     document.getElementById('cli-telefono').value = '';
     limpiarCamposTelefono('cli');
     document.getElementById('cli-email').value = '';

@@ -191,13 +191,17 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Calle *</label>
-                                <select id="emp-calle" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none" disabled>
+                                <select id="emp-calle" onchange="actualizarCodigoPostal('emp')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none" disabled>
                                     <option value="" disabled selected>Seleccioná una calle</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Altura *</label>
                                 <input type="text" id="emp-altura" placeholder="Ej: 1234" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Código Postal</label>
+                                <input type="text" id="emp-cp" readonly placeholder="Se completa según la calle" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none bg-slate-100 text-slate-500">
                             </div>
 
                             <div>

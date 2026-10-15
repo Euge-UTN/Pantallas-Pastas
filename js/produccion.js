@@ -1,6 +1,8 @@
 // ==========================================
 // MÓDULO DE PRODUCCIÓN: Orden_Producción (multi-producto) + sus 3 detalles
-// Ciclo: Planificada (valida stock, no descuenta) -> En Proceso (descuenta stock real) -> Finalizada (confirma lote/vencimiento/cantidad real) | Cancelada
+// Ciclo: En Proceso (arranca así, descuenta stock planificado al registrarla) -> Finalizada (Cierre de Orden:
+// confirma cantidad/lote/vencimiento real por producto, ajusta stock por la MP real utilizada y registra
+// horas reales de maquinaria) | Cancelada (revierte el stock descontado, disponible en cualquier momento)
 // Pantallas: Historial (listado + KPIs) / Registrar Orden / Detalle de Orden (consulta + seguimiento + cierre, según "Consultar orden de producción" del TP)
 // ==========================================
 const SUBVISTAS_PRODUCCION = ['historial', 'nueva-orden', 'detalle-orden'];
@@ -9,6 +11,7 @@ let itemsMaquinariaProduccionActual = [];
 let ultimoRequerimientoMP = [];
 let idPedidoOrigenSeleccionado = null; // null = Producción interna
 let ordenDetalleActualId = null;
+let ordenEnCierreId = null; // id de la OP que se está cerrando a través del modal de Cierre de Orden
 
 function mostrarSubvistaProduccion(subvista) {
     SUBVISTAS_PRODUCCION.forEach(v => document.getElementById(`vista-${v}`).classList.add('hidden'));
@@ -52,7 +55,7 @@ function renderizarStockUI() {
         div.className = 'bg-white border border-slate-200 rounded-xl p-4';
         div.innerHTML = `
             <p class="text-xs text-slate-400">${mp.nombre}</p>
-            <p class="text-xl font-bold ${bajo ? 'text-red-600' : 'text-slate-900'}">${mp.cantidad_actual} <span class="text-xs font-normal text-slate-400">${mp.unidad_medida}</span></p>
+            <p class="text-xl font-bold ${bajo ? 'text-red-600' : 'text-slate-900'}">${formatearCantidad(mp.cantidad_actual)} <span class="text-xs font-normal text-slate-400">${mp.unidad_medida}</span></p>
             ${bajo ? '<span class="text-[10px] font-semibold text-red-500">Stock bajo</span>' : ''}
         `;
         grid.appendChild(div);
@@ -287,7 +290,7 @@ function recalcularRequerimientoMP() {
     tbody.innerHTML = '';
 
     if (ultimoRequerimientoMP.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400 text-xs">Agregue un producto a fabricar para calcular la materia prima necesaria.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400 text-xs">Agregue un producto a fabricar para calcular la materia prima necesaria.</td></tr>`;
         btnNota.classList.add('hidden');
         return;
     }
@@ -301,8 +304,9 @@ function recalcularRequerimientoMP() {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td class="p-3 font-medium text-slate-800">${d.nombre}</td>
-            <td class="p-3 text-center ${faltante ? 'text-red-600 font-bold' : ''} whitespace-nowrap">${d.cantidad_planificada} ${unidad}</td>
-            <td class="p-3 text-center text-slate-500 whitespace-nowrap">${disponible} ${unidad}</td>
+            <td class="p-3 text-center ${faltante ? 'text-red-600 font-bold' : ''} whitespace-nowrap">${formatearCantidad(d.cantidad_planificada)}</td>
+            <td class="p-3 text-center text-slate-500 whitespace-nowrap">${formatearCantidad(disponible)}</td>
+            <td class="p-3 text-center text-slate-500 whitespace-nowrap">${unidad}</td>
             <td class="p-3 text-center"><span class="text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${faltante ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-800'}">${faltante ? 'Faltante' : 'Suficiente'}</span></td>
         `;
         tbody.appendChild(tr);
@@ -366,7 +370,6 @@ function renderizarTablaMaquinariaProduccion() {
 function registrarOrdenProduccion() {
     const idPedido = document.getElementById('prod-pedido-asociado').value;
     const empleado = document.getElementById('prod-empleado').value;
-    const estadoInicial = document.getElementById('prod-estado').value;
 
     if (itemsProductosProduccionActual.length === 0) return alert('Agregue al menos un producto a fabricar.');
     if (!empleado) return alert('Seleccione el empleado responsable.');
@@ -374,11 +377,11 @@ function registrarOrdenProduccion() {
 
     const detalleMateriaPrima = calcularRequerimientoConsolidado(itemsProductosProduccionActual);
 
-    if (estadoInicial === 'En Proceso') {
-        const faltante = detalleMateriaPrima.find(d => d.cantidad_planificada > stockMateriaPrima[d.clave_mp].cantidad_actual);
-        if (faltante) return alert(`Stock insuficiente de ${faltante.nombre} para iniciar ahora. Generá la Nota de Pedido de MP o registrá la orden como "Planificada".`);
-        detalleMateriaPrima.forEach(d => { stockMateriaPrima[d.clave_mp].cantidad_actual -= d.cantidad_planificada; });
-    }
+    // Toda orden nueva arranca directamente "En Proceso" (ya no existe el paso intermedio "Planificada"),
+    // por lo que el stock se descuenta acá mismo, al registrarla.
+    const faltante = detalleMateriaPrima.find(d => d.cantidad_planificada > stockMateriaPrima[d.clave_mp].cantidad_actual);
+    if (faltante) return alert(`Stock insuficiente de ${faltante.nombre} para iniciar esta orden. Generá una Nota de Pedido de MP desde Compras antes de continuar.`);
+    detalleMateriaPrima.forEach(d => { stockMateriaPrima[d.clave_mp].cantidad_actual -= d.cantidad_planificada; });
 
     const detalleProductos = itemsProductosProduccionActual.map(it => ({
         id_receta: it.id_receta, nombre_producto: it.nombre_producto, nombre_receta: it.nombre_receta,
@@ -397,9 +400,9 @@ function registrarOrdenProduccion() {
         hora_inicio: document.getElementById('prod-hora-inicio').value,
         fecha_fin: document.getElementById('prod-fecha-fin').value,
         hora_fin: document.getElementById('prod-hora-fin').value,
-        estado: estadoInicial,
+        estado: 'En Proceso',
         observaciones: document.getElementById('prod-observaciones').value.trim(),
-        stockDescontado: estadoInicial === 'En Proceso',
+        stockDescontado: true,
         detalleProductos,
         detalleMateriaPrima,
         detalleMaquinaria: itemsMaquinariaProduccionActual
@@ -428,7 +431,6 @@ function resetFormularioNuevaOrden() {
     document.getElementById('prod-hora-inicio').value = '';
     document.getElementById('prod-fecha-fin').value = '';
     document.getElementById('prod-hora-fin').value = '';
-    document.getElementById('prod-estado').value = 'Planificada';
     document.getElementById('prod-observaciones').value = '';
     document.getElementById('prod-item-autocompletar').value = '';
     document.getElementById('prod-item-select').value = '';
@@ -483,7 +485,7 @@ function renderizarHistorialProduccion() {
         const prodTexto = o.detalleProductos.length > 1
             ? `${o.detalleProductos[0].nombre_producto} +${o.detalleProductos.length - 1} más`
             : o.detalleProductos[0].nombre_producto;
-        const cancelable = o.estado === 'Planificada' || o.estado === 'En Proceso';
+        const cancelable = o.estado === 'En Proceso';
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50';
         tr.innerHTML = `
@@ -525,7 +527,6 @@ function cancelarOrdenProduccion(id) {
 
 function renderizarStatsProduccion() {
     const total = listaOrdenesProduccion.length;
-    const planificadas = listaOrdenesProduccion.filter(o => o.estado === 'Planificada').length;
     const enProceso = listaOrdenesProduccion.filter(o => o.estado === 'En Proceso').length;
     const finalizadas = listaOrdenesProduccion.filter(o => o.estado === 'Finalizada').length;
     const canceladas = listaOrdenesProduccion.filter(o => o.estado === 'Cancelada').length;
@@ -534,7 +535,6 @@ function renderizarStatsProduccion() {
     const elTotal = document.getElementById('kpi-prod-total');
     if (!elTotal) return;
     elTotal.textContent = total;
-    document.getElementById('kpi-prod-planificadas').textContent = planificadas;
     document.getElementById('kpi-prod-en-proceso').textContent = enProceso;
     document.getElementById('kpi-prod-finalizadas').textContent = finalizadas;
     document.getElementById('kpi-prod-canceladas').textContent = canceladas;
@@ -563,48 +563,46 @@ function renderizarDetalleOrdenProduccion() {
     const totalPlanificado = o.detalleProductos.reduce((s, d) => s + d.cantidad_planificada, 0);
     const totalReal = o.detalleProductos.reduce((s, d) => s + (d.cantidad_real || 0), 0);
     const avance = o.estado === 'En Proceso' ? Math.min(100, Math.round((totalReal / totalPlanificado) * 100)) : (o.estado === 'Finalizada' ? 100 : 0);
-    const enProceso = o.estado === 'En Proceso';
 
-    const filasProductos = o.detalleProductos.map((d, idx) => `
+    const filasProductos = o.detalleProductos.map(d => `
         <tr>
             <td class="p-3 font-medium text-slate-800">${d.nombre_producto}</td>
             <td class="p-3 text-slate-500">${d.nombre_receta}</td>
-            <td class="p-3 text-center whitespace-nowrap">${d.cantidad_planificada} kg</td>
-            <td class="p-3 text-center">${enProceso
-                ? `<input type="number" min="0" step="0.1" id="seg-real-${o.id_orden_produccion}-${idx}" placeholder="${d.cantidad_planificada}" class="w-20 text-center border border-slate-300 rounded-md p-1 text-sm outline-none">`
-                : `<span class="${d.cantidad_real == null ? 'text-slate-400' : 'text-slate-700'}">${d.cantidad_real ?? '-'}</span>`}</td>
-            <td class="p-3 text-center">${enProceso
-                ? `<input type="text" id="seg-lote-${o.id_orden_produccion}-${idx}" value="${d.numero_lote_proyectado}" class="w-28 text-center border border-slate-300 rounded-md p-1 text-sm outline-none">`
-                : `<span class="text-slate-600">${d.numero_lote_definitivo || d.numero_lote_proyectado}${d.numero_lote_definitivo ? '' : ' (proy.)'}</span>`}</td>
-            <td class="p-3 text-center">${enProceso
-                ? `<input type="date" id="seg-venc-${o.id_orden_produccion}-${idx}" class="w-36 text-center border border-slate-300 rounded-md p-1 text-sm outline-none">`
-                : `<span class="${d.fecha_vencimiento ? 'text-slate-600' : 'text-slate-400'}">${d.fecha_vencimiento || '-'}</span>`}</td>
+            <td class="p-3 text-center whitespace-nowrap">${formatearCantidad(d.cantidad_planificada)} kg</td>
+            <td class="p-3 text-center"><span class="${d.cantidad_real == null ? 'text-slate-400' : 'text-slate-700'}">${d.cantidad_real != null ? formatearCantidad(d.cantidad_real) : '-'}</span></td>
+            <td class="p-3 text-center text-slate-600">${d.numero_lote_definitivo || d.numero_lote_proyectado}${d.numero_lote_definitivo ? '' : ' (proy.)'}</td>
+            <td class="p-3 text-center"><span class="${d.fecha_vencimiento ? 'text-slate-600' : 'text-slate-400'}">${d.fecha_vencimiento || '-'}</span></td>
         </tr>`).join('');
 
     const filasMP = o.detalleMateriaPrima.map(d => `
         <tr>
             <td class="p-3 font-medium text-slate-800">${d.nombre}</td>
-            <td class="p-3 text-center whitespace-nowrap">${d.cantidad_planificada} ${stockMateriaPrima[d.clave_mp].unidad_medida}</td>
+            <td class="p-3 text-center whitespace-nowrap">${formatearCantidad(d.cantidad_planificada)}</td>
+            <td class="p-3 text-center whitespace-nowrap"><span class="${d.cantidad_real == null ? 'text-slate-400' : 'text-slate-700'}">${d.cantidad_real != null ? formatearCantidad(d.cantidad_real) : '-'}</span></td>
+            <td class="p-3 text-center whitespace-nowrap">${stockMateriaPrima[d.clave_mp].unidad_medida}</td>
         </tr>`).join('');
 
-    const filasMaquinaria = o.detalleMaquinaria.map(m => `
+    const filasMaquinaria = o.detalleMaquinaria.map(m => {
+        const maquina = listaMaquinaria.find(x => x.id_maquinaria === m.id_maquinaria);
+        return `
         <tr>
             <td class="p-3 font-medium text-slate-800">${m.nombre_maquinaria}</td>
             <td class="p-3 text-slate-600">${m.hora_inicio_planificada}</td>
             <td class="p-3 text-slate-600">${m.hora_fin_planificada}</td>
-        </tr>`).join('');
+            <td class="p-3 text-center"><span class="${m.hora_inicio_real ? 'text-slate-700' : 'text-slate-400'}">${m.hora_inicio_real || '-'}</span></td>
+            <td class="p-3 text-center"><span class="${m.hora_fin_real ? 'text-slate-700' : 'text-slate-400'}">${m.hora_fin_real || '-'}</span></td>
+            <td class="p-3 text-slate-600 whitespace-nowrap">${maquina ? maquina.id_unidad_tiempo : '-'}</td>
+        </tr>`;
+    }).join('');
 
     let bloqueAccion = '';
-    if (o.estado === 'Planificada') {
-        bloqueAccion = `<p class="text-xs text-slate-500">Orden planificada. Al iniciarla se descuenta el stock de materia prima.</p>
-            <div class="flex justify-end"><button type="button" onclick="iniciarOrdenProduccion(${o.id_orden_produccion})" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-1.5"><i data-lucide="play" class="w-4 h-4"></i>Iniciar Producción</button></div>`;
-    } else if (o.estado === 'En Proceso') {
+    if (o.estado === 'En Proceso') {
         bloqueAccion = `
             <div>
                 <div class="flex items-center justify-between text-xs text-slate-500 mb-1"><span>Avance (cantidad real vs. planificada)</span><span class="font-semibold text-slate-700">${avance}%</span></div>
                 <div class="h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-blue-500" style="width:${avance}%"></div></div>
             </div>
-            <div class="flex justify-end"><button type="button" onclick="finalizarOrdenProduccion(${o.id_orden_produccion})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-1.5"><i data-lucide="check-check" class="w-4 h-4"></i>Finalizar Orden</button></div>`;
+            <div class="flex justify-end"><button type="button" onclick="abrirModalCierreOrden(${o.id_orden_produccion})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-1.5"><i data-lucide="check-check" class="w-4 h-4"></i>Finalizar Orden</button></div>`;
     } else if (o.estado === 'Finalizada') {
         bloqueAccion = `<p class="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">Orden finalizada. Cantidad real, lote definitivo y vencimiento confirmados por producto.</p>`;
     } else {
@@ -640,7 +638,7 @@ function renderizarDetalleOrdenProduccion() {
                 <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Materia prima consumida (consolidada)</h4>
                 <table class="w-full text-sm text-left bg-white rounded-lg overflow-hidden border border-slate-200">
                     <thead class="bg-slate-100 text-xs text-slate-600 uppercase border-b border-slate-200">
-                        <tr><th class="p-3">Materia Prima</th><th class="p-3 text-center">Cantidad Planificada</th></tr>
+                        <tr><th class="p-3">Materia Prima</th><th class="p-3 text-center">Cant. Planificada</th><th class="p-3 text-center">Cant. Real</th><th class="p-3 text-center">Unidad</th></tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">${filasMP}</tbody>
                 </table>
@@ -650,7 +648,7 @@ function renderizarDetalleOrdenProduccion() {
                 <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Maquinaria utilizada</h4>
                 <table class="w-full text-sm text-left bg-white rounded-lg overflow-hidden border border-slate-200">
                     <thead class="bg-slate-100 text-xs text-slate-600 uppercase border-b border-slate-200">
-                        <tr><th class="p-3">Maquinaria</th><th class="p-3">Hora inicio plan.</th><th class="p-3">Hora fin plan.</th></tr>
+                        <tr><th class="p-3">Maquinaria</th><th class="p-3">Hora inicio plan.</th><th class="p-3">Hora fin plan.</th><th class="p-3 text-center">Hora inicio real</th><th class="p-3 text-center">Hora fin real</th><th class="p-3">Unidad</th></tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">${filasMaquinaria}</tbody>
                 </table>
@@ -662,42 +660,117 @@ function renderizarDetalleOrdenProduccion() {
     lucide.createIcons();
 }
 
-function iniciarOrdenProduccion(id) {
-    const orden = listaOrdenesProduccion.find(o => o.id_orden_produccion === id);
-    if (!orden || orden.estado !== 'Planificada') return;
+// ==========================================
+// CIERRE DE ORDEN (modal con los datos reales: producto, materia prima y maquinaria)
+// ==========================================
+function abrirModalCierreOrden(id) {
+    const o = listaOrdenesProduccion.find(x => x.id_orden_produccion === id);
+    if (!o || o.estado !== 'En Proceso') return;
+    ordenEnCierreId = id;
 
-    const faltante = orden.detalleMateriaPrima.find(d => d.cantidad_planificada > stockMateriaPrima[d.clave_mp].cantidad_actual);
-    if (faltante) return alert(`Stock insuficiente de ${faltante.nombre} para iniciar esta orden. Generá una Nota de Pedido de MP desde Compras antes de continuar.`);
+    const filasProductos = o.detalleProductos.map((d, idx) => `
+        <div class="border-b border-slate-100 pb-3 space-y-2">
+            <p class="text-xs font-semibold text-slate-700">${d.nombre_producto} <span class="text-slate-400 font-normal">(planificado: ${formatearCantidad(d.cantidad_planificada)} kg)</span></p>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div>
+                    <label class="block text-[11px] text-slate-500 mb-1">Cantidad Real Producida (Kg)</label>
+                    <input type="number" min="0" step="0.1" id="cierre-prod-real-${idx}" placeholder="${d.cantidad_planificada}" class="w-full border border-slate-300 rounded-md p-2 text-sm outline-none">
+                </div>
+                <div>
+                    <label class="block text-[11px] text-slate-500 mb-1">Lote Definitivo</label>
+                    <input type="text" id="cierre-prod-lote-${idx}" value="${d.numero_lote_proyectado}" class="w-full border border-slate-300 rounded-md p-2 text-sm outline-none">
+                </div>
+                <div>
+                    <label class="block text-[11px] text-slate-500 mb-1">Fecha de Vencimiento</label>
+                    <input type="date" id="cierre-prod-venc-${idx}" class="w-full border border-slate-300 rounded-md p-2 text-sm outline-none">
+                </div>
+            </div>
+        </div>`).join('');
 
-    orden.detalleMateriaPrima.forEach(d => { stockMateriaPrima[d.clave_mp].cantidad_actual -= d.cantidad_planificada; });
-    orden.estado = 'En Proceso';
-    orden.stockDescontado = true;
-    guardarDatos();
-    renderizarStockUI();
-    renderizarDetalleOrdenProduccion();
+    const filasMP = o.detalleMateriaPrima.map((d, idx) => `
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 items-end">
+            <p class="text-xs font-semibold text-slate-700">${d.nombre} <span class="text-slate-400 font-normal">(planificado: ${formatearCantidad(d.cantidad_planificada)} ${stockMateriaPrima[d.clave_mp].unidad_medida})</span></p>
+            <input type="number" min="0" step="0.01" id="cierre-mp-real-${idx}" placeholder="${d.cantidad_planificada}" class="w-full border border-slate-300 rounded-md p-2 text-sm outline-none">
+        </div>`).join('');
+
+    const filasMaquinaria = o.detalleMaquinaria.map((m, idx) => `
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 items-end">
+            <p class="text-xs font-semibold text-slate-700 sm:col-span-1">${m.nombre_maquinaria} <span class="text-slate-400 font-normal block">(plan.: ${m.hora_inicio_planificada}–${m.hora_fin_planificada})</span></p>
+            <div>
+                <label class="block text-[11px] text-slate-500 mb-1">Hora Real de Inicio</label>
+                <input type="time" id="cierre-maq-inicio-${idx}" class="w-full border border-slate-300 rounded-md p-2 text-sm outline-none">
+            </div>
+            <div>
+                <label class="block text-[11px] text-slate-500 mb-1">Hora Real de Fin</label>
+                <input type="time" id="cierre-maq-fin-${idx}" class="w-full border border-slate-300 rounded-md p-2 text-sm outline-none">
+            </div>
+        </div>`).join('');
+
+    document.getElementById('cierre-orden-contenido').innerHTML = `
+        <div>
+            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Productos</h4>
+            <div class="space-y-3">${filasProductos}</div>
+        </div>
+        <div>
+            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Materia Prima Realmente Utilizada</h4>
+            <div class="space-y-2">${filasMP}</div>
+        </div>
+        <div>
+            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Horas Reales de Maquinaria</h4>
+            <div class="space-y-2">${filasMaquinaria}</div>
+        </div>
+    `;
+    document.getElementById('modal-cierre-orden').classList.remove('hidden');
+    lucide.createIcons();
 }
 
-function finalizarOrdenProduccion(id) {
-    const orden = listaOrdenesProduccion.find(o => o.id_orden_produccion === id);
+function cerrarModalCierreOrden() {
+    document.getElementById('modal-cierre-orden').classList.add('hidden');
+    ordenEnCierreId = null;
+}
+
+function confirmarCierreOrden() {
+    const orden = listaOrdenesProduccion.find(o => o.id_orden_produccion === ordenEnCierreId);
     if (!orden || orden.estado !== 'En Proceso') return;
 
     orden.detalleProductos.forEach((d, idx) => {
-        const real = parseFloat(document.getElementById(`seg-real-${id}-${idx}`)?.value);
-        const lote = document.getElementById(`seg-lote-${id}-${idx}`)?.value.trim();
-        const venc = document.getElementById(`seg-venc-${id}-${idx}`)?.value;
+        const real = parseFloat(document.getElementById(`cierre-prod-real-${idx}`)?.value);
+        const lote = document.getElementById(`cierre-prod-lote-${idx}`)?.value.trim();
+        const venc = document.getElementById(`cierre-prod-venc-${idx}`)?.value;
         d.cantidad_real = (real && real > 0) ? real : d.cantidad_planificada;
         d.numero_lote_definitivo = lote || d.numero_lote_proyectado;
         d.fecha_vencimiento = venc || null;
     });
+
+    // La materia prima ya se había descontado del stock (según lo planificado) al registrar la orden;
+    // acá se ajusta solo la diferencia contra lo realmente utilizado, para que el stock quede exacto.
+    orden.detalleMateriaPrima.forEach((d, idx) => {
+        const real = parseFloat(document.getElementById(`cierre-mp-real-${idx}`)?.value);
+        const cantidadReal = (real && real > 0) ? real : d.cantidad_planificada;
+        const diferencia = cantidadReal - d.cantidad_planificada;
+        if (diferencia !== 0 && stockMateriaPrima[d.clave_mp]) stockMateriaPrima[d.clave_mp].cantidad_actual -= diferencia;
+        d.cantidad_real = cantidadReal;
+    });
+
+    orden.detalleMaquinaria.forEach((m, idx) => {
+        const inicioReal = document.getElementById(`cierre-maq-inicio-${idx}`)?.value;
+        const finReal = document.getElementById(`cierre-maq-fin-${idx}`)?.value;
+        m.hora_inicio_real = inicioReal || m.hora_inicio_planificada;
+        m.hora_fin_real = finReal || m.hora_fin_planificada;
+    });
+
     orden.estado = 'Finalizada';
 
     if (orden.id_orden_pedido_cliente) {
         const pedido = listaPedidos.find(p => p.id === orden.id_orden_pedido_cliente);
         if (pedido) pedido.estado = 'Listo';
     }
+    const idOrdenCerrada = orden.id_orden_produccion;
     guardarDatos();
+    cerrarModalCierreOrden();
+    renderizarStockUI();
     renderizarDetalleOrdenProduccion();
-    alert(`¡Orden OP-${id} finalizada! Lote(s) definitivo(s) confirmado(s).`);
+    alert(`¡Orden OP-${idOrdenCerrada} finalizada! Datos reales confirmados.`);
 }
 
 // ==========================================
