@@ -6,6 +6,8 @@ let ordenProveedoresCampo = null; // 'razon_social' | null
 let ordenProveedoresDireccion = null;
 let filtroProvIvaSeleccionado = '';
 let filtroProvEstadoSeleccionado = '';
+let filtroProvRubroSeleccionado = '';
+let filtroProvTipoDocumentoSeleccionado = '';
 
 function mostrarSubvistaProveedores(subvista) {
     SUBVISTAS_PROVEEDORES.forEach(v => document.getElementById(`vista-${v}`).classList.add('hidden'));
@@ -38,7 +40,7 @@ function renderizarTablaProveedores(lista) {
     tbody.innerHTML = '';
 
     if (!lista.length) {
-        tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-slate-400">No se encontraron proveedores con ese criterio.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="12" class="p-6 text-center text-slate-400">No se encontraron proveedores con ese criterio.</td></tr>`;
         return;
     }
 
@@ -47,11 +49,13 @@ function renderizarTablaProveedores(lista) {
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50';
         tr.innerHTML = `
+            <td class="px-6 py-3 font-semibold text-slate-500">PROV-${String(idx + 1).padStart(4, '0')}</td>
             <td class="px-6 py-3 font-semibold text-slate-800">${prov.nombreMostrado}</td>
-            <td class="px-6 py-3 font-mono">${prov.documentoCompleto}</td>
+            <td class="px-6 py-3 text-slate-500">${prov.tipo_documento || '-'}</td>
+            <td class="px-6 py-3">${prov.numero_documento || '-'}</td>
             <td class="px-6 py-3">${prov.rubro || '-'}</td>
             <td class="px-6 py-3 whitespace-nowrap">${prov.condicion_iva}</td>
-            <td class="px-6 py-3 whitespace-nowrap">${prov.fecha_alta || '-'}</td>
+            <td class="px-6 py-3 whitespace-nowrap">${prov.fecha_alta ? new Date(prov.fecha_alta + 'T00:00:00').toLocaleDateString('es-AR') : '-'}</td>
             <td class="px-6 py-3 whitespace-nowrap">${prov.tiempo_entrega_estimado || '-'}</td>
             <td class="px-6 py-3">${badgeTelefonos(prov)}</td>
             <td class="px-6 py-3 text-slate-600">${prov.email || '-'}</td>
@@ -91,11 +95,23 @@ function renderizarStatsProveedores() {
 
 function aplicarFiltroProveedores() {
     const terminoRazon = normalizarTexto(document.getElementById('buscar-prov-razon')?.value || '').trim();
+    const terminoNumero = normalizarTexto(document.getElementById('buscar-prov-numero')?.value || '').trim();
     const terminoDocumento = normalizarTexto(document.getElementById('buscar-prov-documento')?.value || '').trim();
+    const terminoTelefono = normalizarTexto(document.getElementById('buscar-prov-telefono')?.value || '').trim();
+    const terminoEmail = normalizarTexto(document.getElementById('buscar-prov-email')?.value || '').trim();
+    const terminoEntrega = normalizarTexto(document.getElementById('buscar-prov-entrega')?.value || '').trim();
+    const fechaAlta = document.getElementById('buscar-prov-fecha-alta')?.value || '';
 
     let filtrados = listaProveedores.filter(prov =>
+        (!terminoNumero || normalizarTexto(`PROV-${String(listaProveedores.indexOf(prov) + 1).padStart(4, '0')}`).includes(terminoNumero)) &&
         (!terminoRazon || normalizarTexto(prov.nombreMostrado).includes(terminoRazon)) &&
+        (!filtroProvTipoDocumentoSeleccionado || prov.tipo_documento === filtroProvTipoDocumentoSeleccionado) &&
         (!terminoDocumento || normalizarTexto(prov.numero_documento).includes(terminoDocumento)) &&
+        (!terminoTelefono || normalizarTexto(prov.telefonosCompletos.join(' ')).includes(terminoTelefono)) &&
+        (!terminoEmail || normalizarTexto(prov.email).includes(terminoEmail)) &&
+        (!terminoEntrega || normalizarTexto(prov.tiempo_entrega_estimado).includes(terminoEntrega)) &&
+        (!filtroProvRubroSeleccionado || prov.rubro === filtroProvRubroSeleccionado) &&
+        coincideFechaExacta(fechaAlta, prov.fecha_alta) &&
         (!filtroProvIvaSeleccionado || prov.condicion_iva === filtroProvIvaSeleccionado) &&
         (!filtroProvEstadoSeleccionado || (filtroProvEstadoSeleccionado === 'activo' ? prov.estado_activo : !prov.estado_activo))
     );
@@ -112,6 +128,8 @@ function aplicarFiltroProveedores() {
     actualizarIconoOrdenProveedores();
     actualizarIconoFiltroProv('btn-filtro-prov-iva', 'opcion-filtro-prov-iva', filtroProvIvaSeleccionado);
     actualizarIconoFiltroProv('btn-filtro-prov-estado', 'opcion-filtro-prov-estado', filtroProvEstadoSeleccionado);
+    actualizarIconoFiltroProv('btn-filtro-prov-rubro', 'opcion-filtro-prov-rubro', filtroProvRubroSeleccionado);
+    actualizarIconoFiltroProv('btn-filtro-prov-tipo-doc', 'opcion-filtro-prov-tipo-doc', filtroProvTipoDocumentoSeleccionado);
     renderizarTablaProveedores(filtrados);
 }
 
@@ -146,6 +164,16 @@ function actualizarIconoFiltroProv(idBoton, claseOpciones, valorSeleccionado) {
 
 function elegirFiltroProvIva(valor) { filtroProvIvaSeleccionado = valor; document.getElementById('pop-prov-iva').classList.add('hidden'); aplicarFiltroProveedores(); }
 function elegirFiltroProvEstado(valor) { filtroProvEstadoSeleccionado = valor; document.getElementById('pop-prov-estado').classList.add('hidden'); aplicarFiltroProveedores(); }
+function elegirFiltroProvRubro(valor) { filtroProvRubroSeleccionado = valor; document.getElementById('pop-prov-rubro').classList.add('hidden'); aplicarFiltroProveedores(); }
+function elegirFiltroProvTipoDocumento(valor) { filtroProvTipoDocumentoSeleccionado = valor; document.getElementById('pop-prov-tipo-doc').classList.add('hidden'); aplicarFiltroProveedores(); }
+
+function poblarFiltroTipoDocumentoProveedores() {
+    const cont = document.getElementById('pop-prov-tipo-doc');
+    if (!cont) return;
+    const tipos = [...new Set(listaProveedores.map(prov => prov.tipo_documento).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+    cont.innerHTML = `<button type="button" onclick="elegirFiltroProvTipoDocumento('')" class="opcion-filtro-prov-tipo-doc block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="">Todos</button>` +
+        tipos.map(tipo => `<button type="button" onclick="elegirFiltroProvTipoDocumento('${tipo.replace(/'/g, "\\'")}')" class="opcion-filtro-prov-tipo-doc block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="${tipo}">${tipo}</button>`).join('');
+}
 
 function guardarNuevoProveedor() {
     const razonSocial = document.getElementById('prov-razon-social').value.trim();
@@ -206,6 +234,7 @@ function resetFormularioProveedor() {
 
 function initPaginaProveedores() {
     inicializarCombosUbicacion();
+    poblarFiltroTipoDocumentoProveedores();
     resetFormularioProveedor();
     renderizarProveedoresUI();
     irASubvistaDesdeHashProveedores();

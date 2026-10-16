@@ -1,5 +1,5 @@
 // ==========================================
-// MÓDULO DE INICIO — panorama general y accesos rápidos según el rol logueado.
+// MÓDULO DE INICIO - panorama general y accesos rápidos según el rol logueado.
 // ==========================================
 const COLORES_TARJETA_INICIO = {
     amber: 'bg-amber-100 text-amber-600',
@@ -94,7 +94,7 @@ function renderizarStatsInicio() {
     document.getElementById('grid-stats-inicio').innerHTML = stats.join('') || `<p class="text-sm text-slate-400 col-span-full">No hay estadísticas disponibles para tu rol.</p>`;
 }
 
-// ---------- Gráficos de Ventas (Chart.js) — solo visibles para roles con acceso al módulo de Ventas ----------
+// ---------- Gráficos de Ventas (Chart.js) - solo visibles para roles con acceso al módulo de Ventas ----------
 let graficoVentasPeriodo = null;
 let graficoPedidosEstado = null;
 let graficoProductosTop = null;

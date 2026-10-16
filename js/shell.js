@@ -1,5 +1,5 @@
 // ==========================================
-// FÁBRICA DE PASTAS — SHELL (login, sidebar y control de acceso)
+// FÁBRICA DE PASTAS - SHELL (login, sidebar y control de acceso)
 // Se incluye en todas las páginas del panel interno. Inyecta el login
 // y la barra lateral, maneja la sesión (sessionStorage) y bloquea el
 // acceso a un módulo si el rol logueado no tiene permiso.
@@ -37,7 +37,7 @@ const MODULOS = [
         { id: 'comprobantes-venta', nombre: 'Comprobantes de Venta', icono: 'file-stack' }
     ] },
     { id: 'cobranzas', nombre: 'Cobranzas', icono: 'hand-coins', grupo: 'Módulo', submenu: [
-        { id: 'pagos', nombre: 'Comprobantes de pago', icono: 'wallet' },
+        { id: 'pagos', nombre: 'Comprobantes de Pago', icono: 'wallet' },
         { id: 'registrar-cobro', nombre: 'Registrar Cobro', icono: 'hand-coins' }
     ] },
     { id: 'compras', nombre: 'Compras', icono: 'shopping-basket', grupo: 'Módulo', submenu: [

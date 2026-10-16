@@ -1,5 +1,5 @@
 // ==========================================
-// FÁBRICA DE PASTAS — CAPA DE DATOS COMPARTIDA
+// FÁBRICA DE PASTAS - CAPA DE DATOS COMPARTIDA
 // Clases del dominio, datos semilla y persistencia en sessionStorage (dura
 // solo mientras el navegador esté abierto; lo cargado en una prueba no debe
 // acumularse para siempre). Este archivo se incluye en todas las páginas del
@@ -7,9 +7,44 @@
 // esté disponible de inmediato en las demás (ej. el selector de cliente en Ventas).
 // ==========================================
 
+function formatearIdentificador(prefijo, valor) {
+    const numero = String(valor ?? '').replace(/\D/g, '');
+    return `${prefijo}-${numero.padStart(4, '0')}`;
+}
+
 // Normaliza texto para búsquedas insensibles a mayúsculas y acentos (ej: "gomez" encuentra "Gómez").
 function normalizarTexto(valor) {
     return (valor || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
+
+// Estado visual de un Presupuesto de Cliente: "Vencido" es una etiqueta calculada (no se guarda en el objeto),
+// solo cambia cómo se ve - un presupuesto Pendiente vencido se sigue pudiendo editar, generar pedido o anular igual.
+function estadoPresupuesto(pr) {
+    if (pr.estado === 'Pendiente' && pr.fecha_vencimiento && pr.fecha_vencimiento < new Date().toISOString().slice(0, 10)) return 'Vencido';
+    return pr.estado;
+}
+
+// Filtro de fecha exacta: compara el valor de un <input type="date"> (vacío = sin filtro) contra un campo 'YYYY-MM-DD'.
+function coincideFechaExacta(valorInputDate, fechaCampo) {
+    return !valorInputDate || valorInputDate === fechaCampo;
+}
+
+// Filtro de rango de montos: los inputs Desde/Hasta son opcionales e independientes entre sí.
+function coincideRangoMonto(desde, hasta, monto) {
+    const d = parseFloat(desde);
+    const h = parseFloat(hasta);
+    if (!isNaN(d) && monto < d) return false;
+    if (!isNaN(h) && monto > h) return false;
+    return true;
+}
+
+// Filtro de rango de fechas: los inputs Desde/Hasta (type="date", formato YYYY-MM-DD) son opcionales e
+// independientes entre sí; la comparación de strings ISO funciona igual que una comparación numérica.
+function coincideRangoFecha(desde, hasta, fechaCampo) {
+    if (!fechaCampo) return !desde && !hasta;
+    if (desde && fechaCampo < desde) return false;
+    if (hasta && fechaCampo > hasta) return false;
+    return true;
 }
 
 // ---------- Teléfonos múltiples (botón "+" en Clientes, Proveedores y Empleados) ----------
@@ -53,6 +88,27 @@ function actualizarVisibilidadLimiteCliente(prefijo = 'cli') {
     document.getElementById(`wrap-${prefijo}-limite`).classList.toggle('hidden', !tieneCtaCte);
     if (!tieneCtaCte) document.getElementById(`${prefijo}-limite`).value = 0;
     else if (!parseFloat(document.getElementById(`${prefijo}-limite`).value)) document.getElementById(`${prefijo}-limite`).value = 50000;
+}
+
+// Si el cliente es Mayorista, la Razón Social deja de ser opcional (se usa como nombreMostrado en toda facturación
+// mayorista) y, a la inversa, Nombre/Apellido pasan a ser opcionales (muchos mayoristas se dan de alta solo con
+// la razón social de la empresa, sin una persona de contacto puntual).
+function actualizarVisibilidadRazonSocialCliente(prefijo = 'cli') {
+    const select = document.getElementById(`${prefijo}-tipo-cliente`) || document.getElementById(`${prefijo}-tipo`);
+    const esMayorista = select.value === 'Mayorista';
+
+    const inputRazonSocial = document.getElementById(`${prefijo}-razon-social`);
+    const marcadorRazonSocial = document.getElementById(`${prefijo}-razon-social-requerido`);
+    inputRazonSocial.required = esMayorista;
+    if (marcadorRazonSocial) marcadorRazonSocial.classList.toggle('hidden', !esMayorista);
+
+    ['nombre', 'apellido'].forEach(campo => {
+        const input = document.getElementById(`${prefijo}-${campo}`);
+        const marcador = document.getElementById(`${prefijo}-${campo}-requerido`);
+        if (!input) return;
+        input.required = !esMayorista;
+        if (marcador) marcador.classList.toggle('hidden', esMayorista);
+    });
 }
 
 // Redondea una cantidad a un máximo de 2 decimales (sin ceros de relleno), usado en las grillas de materia
@@ -117,7 +173,7 @@ function direccionDesdeCalle(calleObj, altura) {
     const prov = loc ? dbProvincias.find(p => p.id_provincia === loc.id_provincia) : null;
     const nomLoc = loc ? loc.nombre : '';
     const nomProv = prov ? prov.nombre : '';
-    const cp = calleObj.codigo_postal ? ` — CP ${calleObj.codigo_postal}` : '';
+    const cp = calleObj.codigo_postal ? ` - CP ${calleObj.codigo_postal}` : '';
     return `${calleObj.nombre} ${altura || ''}, ${nomLoc} (${nomProv})${cp}`.trim();
 }
 
@@ -173,13 +229,15 @@ class Persona {
 }
 
 class Cliente extends Persona {
-    constructor(nombre, apellido, tipo_documento, numero_documento, calleObj, altura, telefono, email, condicion_iva, tipo_cliente, limite_credito, razon_social, fecha_alta, tiene_cuenta_corriente, telefonos_adicionales) {
+    constructor(nombre, apellido, tipo_documento, numero_documento, calleObj, altura, telefono, email, condicion_iva, tipo_cliente, limite_credito, razon_social, fecha_alta, tiene_cuenta_corriente, telefonos_adicionales, usuario, contrasena) {
         super(nombre, apellido, tipo_documento, numero_documento, calleObj, altura, telefono, email, condicion_iva, telefonos_adicionales);
         this.tipo_cliente = tipo_cliente;
         this.limite_credito = limite_credito;
         this.razon_social = razon_social || '';
         this.fecha_alta = fecha_alta || new Date().toISOString().slice(0, 10);
         this.tiene_cuenta_corriente = !!tiene_cuenta_corriente;
+        this.usuario = usuario || '';
+        this.contrasena = contrasena || '';
     }
 
     get nombreMostrado() {
@@ -224,11 +282,22 @@ class Receta {
     }
 }
 
+// Marca: entidad compartida entre Maquinaria y Materia Prima (Marca_Maquinaria / Materia_Prima -> Marca del diagrama).
+class Marca { constructor(id_marca, nombre) { this.id_marca = id_marca; this.nombre = nombre; } }
+const dbMarcas = [
+    { id_marca: 1, nombre: 'Imperia' }, { id_marca: 2, nombre: 'Audionvac' }, { id_marca: 3, nombre: 'Famiglia' }, { id_marca: 4, nombre: 'Reggiani' },
+    { id_marca: 5, nombre: 'Molinos Cañuelas' }, { id_marca: 6, nombre: 'Avícola Sur' }, { id_marca: 7, nombre: 'Genérica' }
+];
+function nombreMarca(id_marca) {
+    const m = dbMarcas.find(x => x.id_marca === id_marca);
+    return m ? m.nombre : '-';
+}
+
 class Maquinaria {
-    constructor(id_maquinaria, nombre, descripcion, fecha_adquisicion, id_unidad_tiempo, estado, marca, modelo) {
+    constructor(id_maquinaria, nombre, descripcion, fecha_adquisicion, id_unidad_tiempo, estado, id_marca, modelo) {
         this.id_maquinaria = id_maquinaria; this.nombre = nombre; this.descripcion = descripcion;
         this.fecha_adquisicion = fecha_adquisicion; this.id_unidad_tiempo = id_unidad_tiempo; this.estado = estado || 'Operativa';
-        this.marca = marca || ''; this.modelo = modelo || '';
+        this.id_marca = id_marca || null; this.modelo = modelo || '';
     }
 }
 
@@ -256,17 +325,47 @@ const COLOR_ESTADO_ORDEN_MANTENIMIENTO = {
 // Badge de categoría de cliente: el pill principal lleva solo la categoría (Mostrador/Mayorista);
 // Evento y Donación se muestran aparte como íconos chicos con tooltip, para que nunca desborden la columna.
 // Se usa en las tablas de Pedidos, Presupuestos y Comprobantes de Venta.
+// Tipo de Comprobante de Venta según condición de IVA del cliente al momento de emitirlo (ver generarComprobanteVenta).
+const TIPO_COMPROBANTE_VENTA = { 1: 'Factura A', 2: 'Factura B' };
+
+const COLOR_TIPO_CLIENTE = { 'Mayorista': 'bg-indigo-100 text-indigo-800', 'Mostrador': 'bg-teal-100 text-teal-800' };
 function badgeTipoCliente(tipo) {
-    return `<span class="text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded whitespace-nowrap">${tipo}</span>`;
+    return `<span class="text-xs ${COLOR_TIPO_CLIENTE[tipo] || 'bg-slate-100 text-slate-700'} px-2 py-1 rounded whitespace-nowrap">${tipo}</span>`;
+}
+
+// Clasificación de un Pedido (y, por extensión, de su Comprobante de Venta) en una sola etiqueta.
+// Prioridad Donación > Evento > Web > Normal: un pedido puede tildar varias banderas a la vez
+// (ej. evento + web), pero esta etiqueta muestra la que más condiciona su circuito administrativo.
+const COLOR_TIPO_PEDIDO = { 'Donación': 'bg-pink-100 text-pink-800', 'Evento': 'bg-violet-100 text-violet-800', 'Web': 'bg-sky-100 text-sky-800', 'Normal': 'bg-slate-100 text-slate-600' };
+function tipoPedidoTexto(obj) {
+    if (obj.esDonacion) return 'Donación';
+    if (obj.esEvento) return 'Evento';
+    if (obj.esWeb) return 'Web';
+    return 'Normal';
+}
+function badgeTipoPedido(obj) {
+    const texto = tipoPedidoTexto(obj);
+    return `<span class="text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${COLOR_TIPO_PEDIDO[texto]}">${texto}</span>`;
 }
 
 // ---------- Compras: catálogo de materias primas y estados de Orden de Compra ----------
+// Tipo de Materia Prima: entidad propia (Tipo_Materia_Prima del diagrama), referenciada por id desde el catálogo.
+class TipoMateriaPrima { constructor(id_tipo_materia_prima, nombre) { this.id_tipo_materia_prima = id_tipo_materia_prima; this.nombre = nombre; } }
+const dbTiposMateriaPrima = [
+    { id_tipo_materia_prima: 1, nombre: 'Harina' }, { id_tipo_materia_prima: 2, nombre: 'Huevos' },
+    { id_tipo_materia_prima: 3, nombre: 'Lácteos' }, { id_tipo_materia_prima: 4, nombre: 'Envases' }
+];
+function nombreTipoMateriaPrima(id_tipo_materia_prima) {
+    const t = dbTiposMateriaPrima.find(x => x.id_tipo_materia_prima === id_tipo_materia_prima);
+    return t ? t.nombre : '-';
+}
+
 const CATALOGO_MATERIAS_PRIMAS = [
-    { clave: 'harina', tipo: 'Harina', marca: 'Molinos Cañuelas', nombre: 'Harina 0000 (Bolsa 50kg)', precio: 25000 },
-    { clave: 'huevos', tipo: 'Huevos', marca: 'Avícola Sur', nombre: 'Huevos Frescos (Cajón 30 dzn)', precio: 18000 },
-    { clave: 'ricotta', tipo: 'Lácteos', marca: 'Genérica', nombre: 'Ricotta Fresca (Balde 10kg)', precio: 14000 },
-    { clave: 'mozzarella', tipo: 'Lácteos', marca: 'Genérica', nombre: 'Queso Mozzarella (Bloque 5kg)', precio: 22000 },
-    { clave: 'cajas', tipo: 'Envases', marca: 'Genérica', nombre: 'Cajas para Ravioles (Pack x100)', precio: 8500 }
+    { clave: 'harina', id_tipo_materia_prima: 1, id_marca: 5, nombre: 'Harina 0000 (Bolsa 50kg)', precio: 25000 },
+    { clave: 'huevos', id_tipo_materia_prima: 2, id_marca: 6, nombre: 'Huevos Frescos (Cajón 30 dzn)', precio: 18000 },
+    { clave: 'ricotta', id_tipo_materia_prima: 3, id_marca: 7, nombre: 'Ricotta Fresca (Balde 10kg)', precio: 14000 },
+    { clave: 'mozzarella', id_tipo_materia_prima: 3, id_marca: 7, nombre: 'Queso Mozzarella (Bloque 5kg)', precio: 22000 },
+    { clave: 'cajas', id_tipo_materia_prima: 4, id_marca: 7, nombre: 'Cajas para Ravioles (Pack x100)', precio: 8500 }
 ];
 
 const ESTADOS_ORDEN_COMPRA = ['Enviada', 'Recibida'];
@@ -296,7 +395,7 @@ function nombreTipoComprobanteVenta(id) {
     return tipo ? tipo.nombre : '-';
 }
 
-// ---------- Datos fiscales de la empresa (datos de ejemplo — reemplazar por los reales) ----------
+// ---------- Datos fiscales de la empresa (datos de ejemplo - reemplazar por los reales) ----------
 const DATOS_EMPRESA = {
     razonSocial: 'Fábrica de Pastas S.R.L.',
     domicilioComercial: 'Av. Villegas 450, Trenque Lauquen (Buenos Aires)',
@@ -306,7 +405,8 @@ const DATOS_EMPRESA = {
 };
 
 // Encabezado estilo "comprobante fiscal" (letra/código + datos de la empresa), reutilizado por
-// Comprobante de Venta y Comprobante de Pago. `datos` = { letra, codigoAfip, numero, fecha, hora }.
+// Comprobante de Venta y Comprobante de Pago. `datos` = { letra, codigoAfip, numero, fecha, hora, empleado }.
+// CUIT y Fecha de Inicio de Actividades van en el bloque izquierdo (datos de la empresa, no del documento puntual).
 function encabezadoFiscalHTML(datos) {
     return `
         <div class="grid grid-cols-[1fr_auto_1fr] gap-4 items-start border-b border-slate-200 pb-4">
@@ -314,6 +414,8 @@ function encabezadoFiscalHTML(datos) {
                 <p class="text-sm font-bold text-slate-900">${DATOS_EMPRESA.razonSocial}</p>
                 <p>${DATOS_EMPRESA.domicilioComercial}</p>
                 <p>Condición frente al IVA: ${DATOS_EMPRESA.condicionIva}</p>
+                <p>CUIT: ${DATOS_EMPRESA.cuit}</p>
+                <p>Fecha de Inicio de Actividades: ${DATOS_EMPRESA.fechaInicioActividades}</p>
             </div>
             <div class="text-center border border-slate-300 rounded-md px-4 py-1">
                 <p class="text-2xl font-bold text-slate-800 leading-none">${datos.letra}</p>
@@ -321,22 +423,30 @@ function encabezadoFiscalHTML(datos) {
             </div>
             <div class="text-xs text-slate-600 text-right space-y-0.5">
                 <p class="text-sm font-bold text-slate-900">${datos.numero}</p>
-                <p>Fecha Emisión: ${datos.fecha}${datos.hora ? ` — ${datos.hora}` : ''}</p>
-                <p>CUIT: ${DATOS_EMPRESA.cuit}</p>
-                <p>Fecha de Inicio de Actividades: ${DATOS_EMPRESA.fechaInicioActividades}</p>
+                <p>Fecha Emisión: ${datos.fecha}</p>
+                ${datos.hora ? `<p>Hora de Emisión: ${datos.hora}</p>` : ''}
+                ${datos.empleado ? `<p>Responsable: ${datos.empleado}</p>` : ''}
             </div>
         </div>`;
 }
 
-// Franja de datos del cliente (Nombre/Documento/Domicilio/Condición IVA/Condición de Venta o Pago), igual en todos los comprobantes fiscales.
-function franjaClienteComprobanteHTML(cliente, nombreMostrado, condicion, etiquetaCondicion = 'Condición de Venta') {
+// Tarjeta de datos del cliente estilo "Pedidos" (caja gris con ícono + título), usada en Presupuestos y
+// en Comprobante de Venta para compartir el mismo lenguaje visual. `filasExtra` son líneas <p> ya armadas
+// (ej. Tipo de Cliente, Teléfono, Condición de Venta) que se agregan después de los datos base.
+function tarjetaClienteHTML(cliente, nombreFallback, filasExtra = []) {
+    const filas = cliente
+        ? [
+            `<b class="text-slate-700">Nombre:</b> ${cliente.nombreMostrado}`,
+            `<b class="text-slate-700">Documento:</b> ${cliente.documentoCompleto}`,
+            `<b class="text-slate-700">Domicilio:</b> ${cliente.direccionCompleta}`,
+            `<b class="text-slate-700">Condición frente al IVA:</b> ${cliente.condicion_iva}`,
+            ...filasExtra
+          ]
+        : [nombreFallback];
     return `
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600 border-b border-slate-200 pb-3">
-            <p><b class="text-slate-700">Nombre:</b> ${cliente ? cliente.nombreMostrado : nombreMostrado}</p>
-            <p><b class="text-slate-700">Documento:</b> ${cliente ? cliente.documentoCompleto : '-'}</p>
-            <p class="sm:col-span-2"><b class="text-slate-700">Domicilio:</b> ${cliente ? cliente.direccionCompleta : '-'}</p>
-            <p><b class="text-slate-700">Condición frente al IVA:</b> ${cliente ? cliente.condicion_iva : '-'}</p>
-            <p><b class="text-slate-700">${etiquetaCondicion}:</b> ${condicion}</p>
+        <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-1 text-xs">
+            <h3 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5"><i data-lucide="user" class="w-3.5 h-3.5"></i>Cliente ${cliente ? badgeTipoCliente(cliente.tipo_cliente) : ''}</h3>
+            ${filas.map(f => `<p>${f}</p>`).join('')}
         </div>`;
 }
 
@@ -349,6 +459,8 @@ function construirHTMLComprobanteVenta(cv) {
 
     const filas = (cv.detalle || []).map(i => `
         <tr class="border-b border-slate-100">
+            <td class="py-2 text-slate-500">${i.tipo || '-'}</td>
+            <td class="py-2 text-slate-500">${i.subtipo || '-'}</td>
             <td class="py-2">${i.nombre}</td>
             <td class="py-2 text-center">${i.cantidad}</td>
             <td class="py-2 text-right">$ ${i.precio_unitario.toLocaleString()}</td>
@@ -356,20 +468,21 @@ function construirHTMLComprobanteVenta(cv) {
         </tr>`).join('');
 
     return `
-        ${encabezadoFiscalHTML({ letra: tipo.letra, codigoAfip: tipo.codigoAfip, numero: `CV-${String(cv.id_comprobante_venta_cliente).padStart(5, '0')}`, fecha: fechaFormateada, hora: cv.hora_emision })}
-        ${franjaClienteComprobanteHTML(cv.clienteObj, cv.cliente, cv.condicion_venta)}
-        <div class="text-xs text-slate-400">Pedido asociado: PED-${cv.id_orden_pedido_cliente} — Empleado Responsable: ${cv.id_empleado}${cv.es_anulado ? ' — <span class="text-slate-600 font-semibold">Anulado</span>' : ''}</div>
-        ${cv.observaciones ? `<p class="text-xs text-slate-500"><b class="text-slate-700">Observaciones:</b> ${cv.observaciones}</p>` : ''}
+        ${encabezadoFiscalHTML({ letra: tipo.letra, codigoAfip: tipo.codigoAfip, numero: `${formatearIdentificador("CV", String(cv.id_comprobante_venta_cliente).padStart(4, '0'))}`, fecha: fechaFormateada, hora: cv.hora_emision, empleado: cv.id_empleado })}
+        ${cv.es_anulado ? `<span class="inline-block px-2.5 py-1 bg-slate-200 text-slate-600 text-xs font-semibold rounded-full">Anulado</span>` : ''}
+        <p class="no-print text-xs text-slate-400">Pedido asociado: ${formatearIdentificador("PED", cv.id_orden_pedido_cliente)}</p>
+        ${tarjetaClienteHTML(cv.clienteObj, cv.cliente, [`<b class="text-slate-700">Condición de Venta:</b> ${cv.condicion_venta}`])}
         <table class="w-full text-xs text-left">
             <thead class="border-b border-slate-300 uppercase text-slate-500">
-                <tr><th class="py-2">Producto</th><th class="py-2 text-center">Cant.</th><th class="py-2 text-right">P. Unitario</th><th class="py-2 text-right">Subtotal</th></tr>
+                <tr><th class="py-2">Tipo</th><th class="py-2">Subtipo</th><th class="py-2">Producto</th><th class="py-2 text-center">Cant.</th><th class="py-2 text-right">P. Unitario</th><th class="py-2 text-right">Subtotal</th></tr>
             </thead>
             <tbody>${filas}</tbody>
         </table>
-        <div class="border-t border-slate-200 pt-4 space-y-1 text-right">
-            <p class="text-xs text-slate-500">Subtotal: $ ${cv.subtotal.toLocaleString()}</p>
-            <p class="text-xs text-emerald-600">Bonificación (${cv.porcentaje_bonificacion}%): -$ ${descuentoMonto.toLocaleString()}</p>
-            <p class="text-lg font-bold text-slate-900">Total: $ ${cv.total.toLocaleString()}</p>
+        <div class="border-t border-slate-200 pt-4 space-y-1">
+            ${cv.observaciones ? `<p class="text-xs text-slate-500"><b class="text-slate-700">Observaciones:</b> ${cv.observaciones}</p>` : ''}
+            <p class="text-xs text-slate-500 text-right">Subtotal: $ ${cv.subtotal.toLocaleString()}</p>
+            <p class="text-xs text-emerald-600 text-right">Bonificación (${cv.porcentaje_bonificacion}%): -$ ${descuentoMonto.toLocaleString()}</p>
+            <div class="flex items-baseline gap-2"><span class="text-sm font-semibold text-slate-500">Total:</span><span class="text-lg font-bold text-slate-900">$ ${cv.total.toLocaleString()}</span></div>
         </div>`;
 }
 
@@ -378,6 +491,8 @@ function construirDetalleComprobanteVenta(pedido, idComprobante) {
     return (pedido.detalle || []).map(i => ({
         id_comprobante_venta_cliente: idComprobante,
         id_producto: i.nombre,
+        tipo: i.tipo,
+        subtipo: i.subtipo,
         nombre: i.nombre,
         cantidad: i.cantidad,
         precio_unitario: i.precioUnitario,
@@ -402,6 +517,7 @@ function generarComprobanteVenta(pedido) {
         condicion_venta: pedido.tipo === 'Mayorista' ? 'Cuenta Corriente' : 'Contado',
         esEvento: !!pedido.esEvento,
         esDonacion: !!pedido.esDonacion,
+        esWeb: !!pedido.esWeb,
         es_anulado: false,
         subtotal,
         porcentaje_bonificacion: pedido.esDonacion ? 100 : (pedido.bonificacion || 0),
@@ -426,6 +542,7 @@ function actualizarComprobanteVenta(pedido) {
     existente.condicion_venta = pedido.tipo === 'Mayorista' ? 'Cuenta Corriente' : 'Contado';
     existente.esEvento = !!pedido.esEvento;
     existente.esDonacion = !!pedido.esDonacion;
+    existente.esWeb = !!pedido.esWeb;
     existente.subtotal = (pedido.detalle || []).reduce((acc, i) => acc + i.subtotal, 0);
     existente.porcentaje_bonificacion = pedido.esDonacion ? 100 : (pedido.bonificacion || 0);
     existente.total = pedido.total;
@@ -487,7 +604,7 @@ function totalesCobradosPorMedio(fecha) {
     }));
 }
 
-function registrarComprobantePago({ comprobanteVenta, idMedioPago, condicionPago, importe, observaciones, fechaPago, horaPago }) {
+function registrarComprobantePago({ comprobanteVenta, idMedioPago, condicionPago, importe, observaciones, fechaPago, horaPago, empleado }) {
     const ahora = new Date();
     const comprobantePago = {
         id_comprobante_pago_cliente: numComprobantePagoContador++,
@@ -497,10 +614,12 @@ function registrarComprobantePago({ comprobanteVenta, idMedioPago, condicionPago
         cliente: comprobanteVenta.cliente,
         esEvento: !!comprobanteVenta.esEvento,
         esDonacion: !!comprobanteVenta.esDonacion,
+        esWeb: !!comprobanteVenta.esWeb,
         id_medio_pago: idMedioPago,
         fecha_pago: fechaPago || ahora.toISOString().slice(0, 10),
         hora_pago: horaPago || ahora.toTimeString().slice(0, 5),
         condicion_pago: condicionPago,
+        empleado: empleado || '',
         importe,
         observaciones: observaciones || '',
         es_anulado: false
@@ -510,7 +629,7 @@ function registrarComprobantePago({ comprobanteVenta, idMedioPago, condicionPago
 }
 
 // ==========================================
-// PERSISTENCIA (sessionStorage) — así lo cargado en una pantalla se ve
+// PERSISTENCIA (sessionStorage) - así lo cargado en una pantalla se ve
 // reflejado en el resto de las páginas del panel durante la sesión del
 // navegador. Al cerrar el navegador/pestaña los datos de prueba se
 // descartan y la próxima sesión vuelve a arrancar con los datos semilla.
@@ -519,10 +638,10 @@ const CLAVE_ALMACENAMIENTO = 'fabricaPastasDB_v1';
 
 function crearDatosIniciales() {
     const clientes = [
-        new Cliente('Hotel', 'Plaza S.A.', 'CUIT', '30712345678', dbCalles[0], '450', '(02392) 456789', 'compras@hotelplaza.com', 'Responsable Inscripto', 'Mayorista', 150000, 'Hotel Plaza S.A.', '2023-02-10', true),
-        new Cliente('Mariano', 'Mosa', 'CUIT', '30889911224', dbCalles[2], '890', '11-4567-1234', 'donmosa@gmail.com', 'Responsable Inscripto', 'Mayorista', 80000, 'Restaurante Don Mosa', '2023-06-18', true),
-        new Cliente('María', 'Gómez', 'DNI', '28554433', dbCalles[1], '245', '11-2233-4455', 'mariagomez@gmail.com', 'Consumidor Final', 'Mostrador', 0, '', '2024-01-05', false),
-        new Cliente('Lucas', 'Fernández', 'DNI', '35667788', dbCalles[4], '120', '0351-556677', 'lucasf@gmail.com', 'Consumidor Final', 'Mostrador', 0, '', '2024-03-22', false)
+        new Cliente('Hotel', 'Plaza S.A.', 'CUIT', '30712345678', dbCalles[0], '450', '(02392) 456789', 'compras@hotelplaza.com', 'Responsable Inscripto', 'Mayorista', 150000, 'Hotel Plaza S.A.', '2023-02-10', true, [], 'hotelplaza', 'hotelplaza123'),
+        new Cliente('Mariano', 'Mosa', 'CUIT', '30889911224', dbCalles[2], '890', '11-4567-1234', 'donmosa@gmail.com', 'Responsable Inscripto', 'Mayorista', 80000, 'Restaurante Don Mosa', '2023-06-18', true, [], 'donmosa', 'donmosa123'),
+        new Cliente('María', 'Gómez', 'DNI', '28554433', dbCalles[1], '245', '11-2233-4455', 'mariagomez@gmail.com', 'Consumidor Final', 'Mostrador', 0, '', '2024-01-05', false, [], 'mariagomez', 'mariagomez123'),
+        new Cliente('Lucas', 'Fernández', 'DNI', '35667788', dbCalles[4], '120', '0351-556677', 'lucasf@gmail.com', 'Consumidor Final', 'Mostrador', 0, '', '2024-03-22', false, [], 'lucasf', 'lucasf123')
     ];
     const proveedores = [
         new Proveedor('Jorge', 'Funes', 'CUIT', '30501234567', dbCalles[3], '100', '(0341) 4321000', 'ventas@molinos.com', 'Responsable Inscripto', 'Harinas y Sémolas', 'Molinos Cañuelas S.A.', '2021-05-03', '5 días hábiles', true),
@@ -533,18 +652,18 @@ function crearDatosIniciales() {
         new Proveedor('Ramiro', 'Suárez', 'CUIT', '30889900112', dbCalles[1], '560', '011-4890-3344', 'logistica@transpastas.com', 'Responsable Inscripto', 'Logística y Transporte', 'TransPastas Logística', '2022-06-30', '1 día hábil', true)
     ];
     const empleados = [
-        new Empleado('Carlos', 'Gómez', 'CUIL', '20334455669', '1988-05-14', dbCalles[0], '1234', '(02392) 15-443322', 'cgomez@pastas.com', 'EMP-001', 'Maestro Pastero (Producción)', '2021-03-15', 450000, '2021-03-10', 'Mañana'),
-        new Empleado('Laura', 'Rodríguez', 'CUIL', '27389900114', '1995-11-20', dbCalles[1], '567', '(02392) 15-887766', 'lrodriguez@pastas.com', 'EMP-002', 'Atención al Cliente / Mostrador', '2022-08-01', 380000, '2022-07-28', 'Tarde'),
-        new Empleado('Martín', 'Acosta', 'CUIL', '23456789012', '1992-02-18', dbCalles[2], '233', '0341-555-9988', 'macosta@pastas.com', 'EMP-003', 'Ayudante de Cocina', '2022-11-05', 350000, '2022-11-01', 'Mañana'),
-        new Empleado('Valentina', 'Suárez', 'CUIL', '28901234567', '1998-07-09', dbCalles[3], '45', '0341-444-1122', 'vsuarez@pastas.com', 'EMP-004', 'Atención al Cliente / Mostrador', '2023-02-20', 360000, '2023-02-15', 'Tarde'),
-        new Empleado('Franco', 'Benítez', 'CUIL', '21345678901', '1985-09-30', dbCalles[4], '820', '0351-333-7766', 'fbenitez@pastas.com', 'EMP-005', 'Repartidor / Logística', '2020-05-10', 400000, '2020-05-05', 'Mañana'),
-        new Empleado('Camila', 'Torres', 'CUIL', '26789012345', '2000-01-25', dbCalles[0], '150', '02392-556-4433', 'ctorres@pastas.com', 'EMP-006', 'Administrador / Contador', '2024-03-01', 470000, '2024-02-25', 'Noche', [], false)
+        new Empleado('Carlos', 'Gómez', 'CUIL', '20334455669', '1988-05-14', dbCalles[0], '1234', '(02392) 15-443322', 'cgomez@pastas.com', 'EMP-0001', 'Maestro Pastero (Producción)', '2021-03-15', 450000, '2021-03-10', 'Mañana'),
+        new Empleado('Laura', 'Rodríguez', 'CUIL', '27389900114', '1995-11-20', dbCalles[1], '567', '(02392) 15-887766', 'lrodriguez@pastas.com', 'EMP-0002', 'Atención al Cliente / Mostrador', '2022-08-01', 380000, '2022-07-28', 'Tarde'),
+        new Empleado('Martín', 'Acosta', 'CUIL', '23456789012', '1992-02-18', dbCalles[2], '233', '0341-555-9988', 'macosta@pastas.com', 'EMP-0003', 'Ayudante de Cocina', '2022-11-05', 350000, '2022-11-01', 'Mañana'),
+        new Empleado('Valentina', 'Suárez', 'CUIL', '28901234567', '1998-07-09', dbCalles[3], '45', '0341-444-1122', 'vsuarez@pastas.com', 'EMP-0004', 'Atención al Cliente / Mostrador', '2023-02-20', 360000, '2023-02-15', 'Tarde'),
+        new Empleado('Franco', 'Benítez', 'CUIL', '21345678901', '1985-09-30', dbCalles[4], '820', '0351-333-7766', 'fbenitez@pastas.com', 'EMP-0005', 'Repartidor / Logística', '2020-05-10', 400000, '2020-05-05', 'Mañana'),
+        new Empleado('Camila', 'Torres', 'CUIL', '26789012345', '2000-01-25', dbCalles[0], '150', '02392-556-4433', 'ctorres@pastas.com', 'EMP-0006', 'Administrador / Contador', '2024-03-01', 470000, '2024-02-25', 'Noche', [], false)
     ];
     const maquinaria = [
-        new Maquinaria(1, 'Sobadora Industrial', 'Laminadora de masa para pastas secas y rellenas', '2019-03-10', 'Horas', 'Operativa', 'Imperia', 'IM-450'),
-        new Maquinaria(2, 'Envasadora al Vacío', 'Envasado de productos frescos para conservación', '2021-07-22', 'Turnos', 'Operativa', 'Audionvac', 'VMS-25'),
-        new Maquinaria(3, 'Amasadora Doble Brazo', 'Amasado de grandes volúmenes de masa', '2017-11-05', 'Horas', 'En reparación', 'Famiglia', 'DB-120'),
-        new Maquinaria(4, 'Cortadora de Ravioles', 'Formado y corte de pastas rellenas', '2022-04-18', 'Turnos', 'Operativa', 'Reggiani', 'RV-300')
+        new Maquinaria(1, 'Sobadora Industrial', 'Laminadora de masa para pastas secas y rellenas', '2019-03-10', 'Horas', 'Operativa', 1, 'IM-450'),
+        new Maquinaria(2, 'Envasadora al Vacío', 'Envasado de productos frescos para conservación', '2021-07-22', 'Turnos', 'Operativa', 2, 'VMS-25'),
+        new Maquinaria(3, 'Amasadora Doble Brazo', 'Amasado de grandes volúmenes de masa', '2017-11-05', 'Horas', 'En reparación', 3, 'DB-120'),
+        new Maquinaria(4, 'Cortadora de Ravioles', 'Formado y corte de pastas rellenas', '2022-04-18', 'Turnos', 'Operativa', 4, 'RV-300')
     ];
     const recetas = [
         new Receta(1, 'Receta Ravioles de Ricotta', 'Ravioles de Ricotta y Verdura', [{ clave_mp: 'harina', cantidad_por_kg: 0.4 }, { clave_mp: 'ricotta', cantidad_por_kg: 0.3 }]),
@@ -552,8 +671,18 @@ function crearDatosIniciales() {
         new Receta(3, 'Receta Ñoquis de Papa', 'Ñoquis de Papa', [{ clave_mp: 'harina', cantidad_por_kg: 0.3 }])
     ];
     const pedidos = [
+        { id: 1052, clienteObj: clientes[1], cliente: 'Restaurante Don Mosa', tipo: 'Mayorista', esEvento: true, esDonacion: false, esWeb: true, bonificacion: 20,
+          empleado: 'Sistema Web', observaciones: 'Pedido ingresado automáticamente desde tienda-online.html.', estado: 'Pendiente', fecha: '2026-10-09', hora: '20:15',
+          fechaEntregaEstimada: '2026-10-18', horaEntregaEstimada: '19:00',
+          detalle: [{ id: 1, nombre: 'Sorrentinos de Jamón y Queso', tipo: 'Pastas Rellenas', cantidad: 25, precioUnitario: 4200, subtotal: 105000 }], total: 84000 },
+
+        { id: 1051, clienteObj: clientes[2], cliente: 'María Gómez', tipo: 'Mostrador', esDonacion: false, esWeb: true, bonificacion: 0,
+          empleado: 'Sistema Web', observaciones: 'Pedido ingresado automáticamente desde tienda-online.html.', estado: 'Listo', fecha: '2026-10-08', hora: '21:40',
+          detalle: [{ id: 1, nombre: 'Tallarines al Huevo', tipo: 'Pastas Secas', cantidad: 3, precioUnitario: 2800, subtotal: 8400 }], total: 8400 },
+
         { id: 1050, clienteObj: clientes[0], cliente: 'Hotel Plaza S.A.', tipo: 'Mayorista', esDonacion: false, bonificacion: 15,
           empleado: 'Carlos Gómez', observaciones: 'Evento de fin de semana, retira el chef.', estado: 'Pendiente', fecha: '2026-10-07', hora: '09:30',
+          fechaEntregaEstimada: '2026-10-20', horaEntregaEstimada: '10:00',
           detalle: [
               { id: 1, nombre: 'Ravioles de Ricotta y Verdura', tipo: 'Pastas Rellenas', cantidad: 15, precioUnitario: 3500, subtotal: 52500 },
               { id: 2, nombre: 'Tallarines al Huevo', tipo: 'Pastas Secas', cantidad: 10, precioUnitario: 2800, subtotal: 28000 }
@@ -561,14 +690,16 @@ function crearDatosIniciales() {
 
         { id: 1049, clienteObj: clientes[1], cliente: 'Restaurante Don Mosa', tipo: 'Mayorista', esDonacion: false, bonificacion: 10,
           empleado: 'Eugenia Fernández', observaciones: 'Pedido habitual quincenal.', estado: 'Pendiente', fecha: '2026-10-06', hora: '14:10',
+          fechaEntregaEstimada: '2026-10-17', horaEntregaEstimada: '15:30',
           detalle: [{ id: 1, nombre: 'Tallarines al Huevo', tipo: 'Pastas Secas', cantidad: 8, precioUnitario: 2800, subtotal: 22400 }], total: 20160 },
 
+        // Mostrador normal (ni evento ni donación): nace directamente "Listo" para facturar, no pasa por Pendiente.
         { id: 1048, clienteObj: clientes[2], cliente: 'María Gómez', tipo: 'Mostrador', esDonacion: false, bonificacion: 0,
-          empleado: 'Laura Rodríguez', observaciones: '', estado: 'Pendiente', fecha: '2026-10-06', hora: '10:45',
+          empleado: 'Laura Rodríguez', observaciones: '', estado: 'Listo', fecha: '2026-10-06', hora: '10:45',
           detalle: [{ id: 1, nombre: 'Ñoquis de Papa', tipo: 'Pastas Secas', cantidad: 6, precioUnitario: 3000, subtotal: 18000 }], total: 18000 },
 
         { id: 1047, clienteObj: clientes[3], cliente: 'Lucas Fernández', tipo: 'Mostrador', esDonacion: false, bonificacion: 0,
-          empleado: 'Laura Rodríguez', observaciones: '', estado: 'Pendiente', fecha: '2026-10-04', hora: '16:20',
+          empleado: 'Laura Rodríguez', observaciones: '', estado: 'Listo', fecha: '2026-10-04', hora: '16:20',
           detalle: [{ id: 1, nombre: 'Ravioles de Ricotta y Verdura', tipo: 'Pastas Rellenas', cantidad: 5, precioUnitario: 3500, subtotal: 17500 }], total: 17500 },
 
         { id: 1046, clienteObj: clientes[0], cliente: 'Hotel Plaza S.A.', tipo: 'Mayorista', esDonacion: false, bonificacion: 15,
@@ -579,7 +710,7 @@ function crearDatosIniciales() {
           ], total: 54400 },
 
         { id: 1045, clienteObj: clientes[3], cliente: 'Lucas Fernández', tipo: 'Mostrador', esDonacion: false, bonificacion: 0,
-          empleado: 'Laura Rodríguez', observaciones: '', estado: 'Pendiente', fecha: '2026-10-01', hora: '11:00',
+          empleado: 'Laura Rodríguez', observaciones: '', estado: 'Listo', fecha: '2026-10-01', hora: '11:00',
           detalle: [{ id: 1, nombre: 'Ñoquis de Papa', tipo: 'Pastas Secas', cantidad: 4, precioUnitario: 3000, subtotal: 12000 }], total: 12000 },
 
         { id: 1044, clienteObj: clientes[2], cliente: 'María Gómez', tipo: 'Mostrador', esDonacion: false, bonificacion: 0,
@@ -593,17 +724,17 @@ function crearDatosIniciales() {
           detalle: [{ id: 1, nombre: 'Ñoquis de Papa', tipo: 'Pastas Secas', cantidad: 3, precioUnitario: 3000, subtotal: 9000 }], total: 9000 },
 
         { id: 1042, clienteObj: clientes[1], cliente: 'Restaurante Don Mosa', tipo: 'Mayorista', esDonacion: false, bonificacion: 10,
-          empleado: 'Eugenia Fernández', observaciones: 'Entrega habitual de los lunes.', estado: 'Pendiente', fecha: '2026-09-29', hora: '10:30',
+          empleado: 'Eugenia Fernández', observaciones: 'Entrega habitual de los lunes.', estado: 'Listo', fecha: '2026-09-29', hora: '10:30',
           detalle: [{ id: 1, nombre: 'Sorrentinos de Jamón y Queso', tipo: 'Pastas Rellenas', cantidad: 10, precioUnitario: 4200, subtotal: 42000 }], total: 37800 },
 
-        { id: 1041, clienteObj: clientes[0], cliente: 'Hotel Plaza S.A.', tipo: 'Mayorista', esDonacion: false, bonificacion: 15,
-          empleado: 'Carlos Gómez', observaciones: 'Entregar en la cocina del hotel, preguntar por el chef Darío.', estado: 'En preparación', fecha: '2026-09-27', hora: '11:00',
+        { id: 1041, clienteObj: clientes[0], cliente: 'Hotel Plaza S.A.', tipo: 'Mayorista', esDonacion: false, bonificacion: 15, idPresupuestoOrigen: 5,
+          empleado: 'Carlos Gómez', observaciones: 'Entregar en la cocina del hotel, preguntar por el chef Darío.', estado: 'Listo', fecha: '2026-09-27', hora: '11:00',
           detalle: [
               { id: 1, nombre: 'Sorrentinos de Jamón y Queso', tipo: 'Pastas Rellenas', cantidad: 15, precioUnitario: 4200, subtotal: 63000 },
               { id: 2, nombre: 'Salsa Bolognesa en Pote', tipo: 'Salsas', cantidad: 15, precioUnitario: 1800, subtotal: 27000 }
           ], total: 76500 },
 
-        { id: 1040, clienteObj: clientes[1], cliente: 'Restaurante Don Mosa', tipo: 'Mayorista', esEvento: true, esDonacion: false, bonificacion: 20,
+        { id: 1040, clienteObj: clientes[1], cliente: 'Restaurante Don Mosa', tipo: 'Mayorista', esEvento: true, esDonacion: false, bonificacion: 20, idPresupuestoOrigen: 2,
           empleado: 'Carlos Gómez', observaciones: 'Pedido para evento de fin de mes.', estado: 'Entregado', fecha: '2026-09-24', hora: '08:30',
           fechaEntrega: '2026-09-25', horaEntrega: '14:00',
           detalle: [{ id: 1, nombre: 'Ravioles de Ricotta y Verdura', tipo: 'Pastas Rellenas', cantidad: 20, precioUnitario: 3500, subtotal: 70000 }], total: 56000 },
@@ -618,7 +749,7 @@ function crearDatosIniciales() {
           detalle: [{ id: 1, nombre: 'Salsa Fileto en Pote', tipo: 'Salsas', cantidad: 10, precioUnitario: 1200, subtotal: 12000 }], total: 12000 },
 
         { id: 1037, clienteObj: clientes[1], cliente: 'Restaurante Don Mosa', tipo: 'Mayorista', esDonacion: false, bonificacion: 10,
-          empleado: 'Carlos Gómez', observaciones: '', estado: 'En preparación', fecha: '2026-09-21', hora: '10:00',
+          empleado: 'Carlos Gómez', observaciones: '', estado: 'Listo', fecha: '2026-09-21', hora: '10:00',
           detalle: [{ id: 1, nombre: 'Ravioles de Ricotta y Verdura', tipo: 'Pastas Rellenas', cantidad: 12, precioUnitario: 3500, subtotal: 42000 }], total: 37800 },
 
         { id: 1036, clienteObj: clientes[2], cliente: 'María Gómez', tipo: 'Mostrador', esDonacion: false, bonificacion: 0,
@@ -632,52 +763,61 @@ function crearDatosIniciales() {
         { id: 1034, clienteObj: clientes[3], cliente: 'Lucas Fernández', tipo: 'Mostrador', esDonacion: false, bonificacion: 0,
           empleado: 'Laura Rodríguez', observaciones: '', estado: 'Entregado', fecha: '2026-09-18', hora: '16:00',
           fechaEntrega: '2026-09-18', horaEntrega: '18:30',
-          detalle: [{ id: 1, nombre: 'Tallarines al Huevo', tipo: 'Pastas Secas', cantidad: 1, precioUnitario: 2800, subtotal: 2800 }], total: 2800 }
+          detalle: [{ id: 1, nombre: 'Tallarines al Huevo', tipo: 'Pastas Secas', cantidad: 1, precioUnitario: 2800, subtotal: 2800 }], total: 2800 },
+
+        // Pedido con devolución parcial ya registrada, para tener un caso real de estado "Devuelto" en los datos de ejemplo.
+        { id: 1033, clienteObj: clientes[2], cliente: 'María Gómez', tipo: 'Mostrador', esDonacion: false, bonificacion: 0,
+          empleado: 'Laura Rodríguez', observaciones: '', estado: 'Devuelto', fecha: '2026-09-17', hora: '10:30',
+          fechaEntrega: '2026-09-17', horaEntrega: '11:15',
+          detalle: [{ id: 1, nombre: 'Ñoquis de Papa', tipo: 'Pastas Secas', cantidad: 4, precioUnitario: 3000, subtotal: 12000 }], total: 12000,
+          devoluciones: [{ id: 1, registradoPor: 'Laura Rodríguez', motivo: 'El cliente encontró 1 unidad en mal estado.',
+              items: [{ nombre: 'Ñoquis de Papa', tipo: 'Pastas Secas', cantidad: 1 }], fecha: '2026-09-18', hora: '09:40' }] }
     ];
 
     // Presupuestos: cotizaciones previas a confirmar un pedido. Algunos ya se convirtieron en una de las órdenes de arriba.
     const presupuestos = [
         { id: 7, clienteObj: clientes[2], cliente: 'María Gómez', tipo: 'Mostrador', esEvento: false,
-          observaciones: '', estado: 'Pendiente', idPedidoGenerado: null, creadoPor: 'Eugenia Fernández', fecha: '2026-10-06', hora: '11:20',
+          observaciones: '', estado: 'Pendiente', idPedidoGenerado: null, creadoPor: 'Eugenia Fernández', fecha: '2026-10-06', hora: '11:20', fecha_vencimiento: '2026-10-13',
           detalle: [{ id: 1, nombre: 'Tallarines al Huevo', tipo: 'Pasta', subtipo: 'Seca', cantidad: 2, precioUnitario: 2800, subtotal: 5600 }], total: 5600 },
 
         { id: 6, clienteObj: clientes[1], cliente: 'Restaurante Don Mosa', tipo: 'Mayorista', esEvento: true,
-          observaciones: 'Presupuesto para evento de cumpleaños empresarial.', estado: 'Pendiente', idPedidoGenerado: null, creadoPor: 'Josefina Silva', fecha: '2026-10-05', hora: '16:40',
+          observaciones: 'Presupuesto para evento de cumpleaños empresarial.', estado: 'Pendiente', idPedidoGenerado: null, creadoPor: 'Josefina Silva', fecha: '2026-10-05', hora: '16:40', fecha_vencimiento: '2026-10-25',
           detalle: [
               { id: 1, nombre: 'Ravioles de Ricotta y Verdura', tipo: 'Pasta', subtipo: 'Rellena', cantidad: 25, precioUnitario: 3500, subtotal: 87500 },
               { id: 2, nombre: 'Salsa Fileto en Pote', tipo: 'Salsa', subtipo: 'Clásica', cantidad: 10, precioUnitario: 1200, subtotal: 12000 }
           ], total: 99500 },
 
         { id: 5, clienteObj: clientes[0], cliente: 'Hotel Plaza S.A.', tipo: 'Mayorista', esEvento: false,
-          observaciones: 'Pedido habitual quincenal del hotel.', estado: 'Convertido', idPedidoGenerado: 1041, creadoPor: 'Carlos Gómez', fecha: '2026-09-26', hora: '09:15',
+          observaciones: 'Pedido habitual quincenal del hotel.', estado: 'Convertido', idPedidoGenerado: 1041, creadoPor: 'Carlos Gómez', fecha: '2026-09-26', hora: '09:15', fecha_vencimiento: '2026-10-10',
           detalle: [
               { id: 1, nombre: 'Sorrentinos de Jamón y Queso', tipo: 'Pasta', subtipo: 'Rellena', cantidad: 15, precioUnitario: 4200, subtotal: 63000 },
               { id: 2, nombre: 'Salsa Bolognesa en Pote', tipo: 'Salsa', subtipo: 'Clásica', cantidad: 15, precioUnitario: 1800, subtotal: 27000 }
           ], total: 90000 },
 
         { id: 4, clienteObj: clientes[3], cliente: 'Lucas Fernández', tipo: 'Mostrador', esEvento: true,
-          observaciones: 'Reunión familiar de cumpleaños.', estado: 'Pendiente', idPedidoGenerado: null, creadoPor: 'Eugenia Fernández', fecha: '2026-09-25', hora: '14:00',
+          observaciones: 'Reunión familiar de cumpleaños.', estado: 'Pendiente', idPedidoGenerado: null, creadoPor: 'Eugenia Fernández', fecha: '2026-09-25', hora: '14:00', fecha_vencimiento: '2026-10-30',
           detalle: [{ id: 1, nombre: 'Ñoquis de Papa', tipo: 'Pasta', subtipo: 'Seca', cantidad: 6, precioUnitario: 3000, subtotal: 18000 }], total: 18000 },
 
         { id: 3, clienteObj: clientes[2], cliente: 'María Gómez', tipo: 'Mostrador', esEvento: false,
-          observaciones: '', estado: 'Pendiente', idPedidoGenerado: null, creadoPor: 'Josefina Silva', fecha: '2026-09-23', hora: '10:05',
+          observaciones: '', estado: 'Pendiente', idPedidoGenerado: null, creadoPor: 'Josefina Silva', fecha: '2026-09-23', hora: '10:05', fecha_vencimiento: '2026-10-20',
           detalle: [{ id: 1, nombre: 'Salsa Fileto en Pote', tipo: 'Salsa', subtipo: 'Clásica', cantidad: 3, precioUnitario: 1200, subtotal: 3600 }], total: 3600 },
 
         { id: 2, clienteObj: clientes[1], cliente: 'Restaurante Don Mosa', tipo: 'Mayorista', esEvento: true,
-          observaciones: 'Pedido para evento de fin de mes.', estado: 'Convertido', idPedidoGenerado: 1040, creadoPor: 'Carlos Gómez', fecha: '2026-09-22', hora: '08:00',
+          observaciones: 'Pedido para evento de fin de mes.', estado: 'Convertido', idPedidoGenerado: 1040, creadoPor: 'Carlos Gómez', fecha: '2026-09-22', hora: '08:00', fecha_vencimiento: '2026-10-07',
           detalle: [{ id: 1, nombre: 'Ravioles de Ricotta y Verdura', tipo: 'Pasta', subtipo: 'Rellena', cantidad: 20, precioUnitario: 3500, subtotal: 70000 }], total: 70000 },
 
         { id: 1, clienteObj: clientes[0], cliente: 'Hotel Plaza S.A.', tipo: 'Mayorista', esEvento: true,
-          observaciones: 'Evento de fin de año para el personal del hotel.', estado: 'Pendiente', idPedidoGenerado: null, creadoPor: 'Josefina Silva', fecha: '2026-09-20', hora: '17:30',
+          observaciones: 'Evento de fin de año para el personal del hotel.', estado: 'Pendiente', idPedidoGenerado: null, creadoPor: 'Josefina Silva', fecha: '2026-09-20', hora: '17:30', fecha_vencimiento: '2026-10-05',
           detalle: [
               { id: 1, nombre: 'Sorrentinos de Jamón y Queso', tipo: 'Pasta', subtipo: 'Rellena', cantidad: 30, precioUnitario: 4200, subtotal: 126000 },
               { id: 2, nombre: 'Salsa Fileto en Pote', tipo: 'Salsa', subtipo: 'Clásica', cantidad: 20, precioUnitario: 1200, subtotal: 24000 }
           ], total: 150000 }
     ];
 
-    // Comprobantes de venta: surgen automáticamente de cada orden de pedido ya confirmada (de la más antigua a la más nueva).
+    // El Comprobante de Venta recién nace cuando el pedido llega a "Listo" (ver actualizarComprobanteVenta);
+    // los que siguen Pendiente o En preparación todavía no tienen uno.
     let contadorComprobanteVenta = 1;
-    const comprobantesVenta = pedidos.slice().reverse().map(pedido => {
+    const comprobantesVenta = pedidos.slice().reverse().filter(pedido => !['Pendiente', 'En preparación'].includes(pedido.estado)).map(pedido => {
         const idComprobante = contadorComprobanteVenta++;
         return {
             id_comprobante_venta_cliente: idComprobante,
@@ -692,13 +832,14 @@ function crearDatosIniciales() {
             condicion_venta: pedido.tipo === 'Mayorista' ? 'Cuenta Corriente' : 'Contado',
             esEvento: !!pedido.esEvento,
             esDonacion: !!pedido.esDonacion,
+            esWeb: !!pedido.esWeb,
             es_anulado: pedido.estado === 'Cancelado',
             subtotal: (pedido.detalle || []).reduce((acc, i) => acc + i.subtotal, 0),
             porcentaje_bonificacion: pedido.esDonacion ? 100 : (pedido.bonificacion || 0),
             total: pedido.total,
             observaciones: pedido.observaciones || '',
             detalle: (pedido.detalle || []).map(i => ({
-                id_comprobante_venta_cliente: idComprobante, id_producto: i.nombre, nombre: i.nombre,
+                id_comprobante_venta_cliente: idComprobante, id_producto: i.nombre, tipo: i.tipo, subtipo: i.subtipo, nombre: i.nombre,
                 cantidad: i.cantidad, precio_unitario: i.precioUnitario, total: i.subtotal
             }))
         };
@@ -708,13 +849,13 @@ function crearDatosIniciales() {
     let contadorComprobantePago = 1;
     const comprobantesPago = [];
     const pagosHistoricos = [
-        { idPedido: 1034, idMedioPago: 1, fecha: '2026-09-18', hora: '18:35' },
-        { idPedido: 1040, idMedioPago: 3, fecha: '2026-09-25', hora: '14:10' },
-        { idPedido: 1035, idMedioPago: 2, fecha: '2026-09-19', hora: '10:05' },
-        { idPedido: 1036, idMedioPago: 1, fecha: '2026-09-20', hora: '13:50' },
-        { idPedido: 1037, idMedioPago: 4, fecha: '2026-09-21', hora: '11:15' },
-        { idPedido: 1041, idMedioPago: 3, fecha: '2026-09-27', hora: '12:00' },
-        { idPedido: 1042, idMedioPago: 1, fecha: '2026-09-29', hora: '11:00' }
+        { idPedido: 1034, idMedioPago: 1, fecha: '2026-09-18', hora: '18:35', condicionPago: 'Contado', empleado: 'Laura Rodríguez' },
+        { idPedido: 1040, idMedioPago: 3, fecha: '2026-09-25', hora: '14:10', condicionPago: 'Cuenta Corriente', empleado: 'Carlos Gómez' },
+        { idPedido: 1035, idMedioPago: 2, fecha: '2026-09-19', hora: '10:05', condicionPago: 'Contado', empleado: 'Laura Rodríguez' },
+        { idPedido: 1036, idMedioPago: 1, fecha: '2026-09-20', hora: '13:50', condicionPago: 'Contado', empleado: 'Valentina Suárez' },
+        { idPedido: 1037, idMedioPago: 4, fecha: '2026-09-21', hora: '11:15', condicionPago: 'Contado', empleado: 'Laura Rodríguez' },
+        { idPedido: 1041, idMedioPago: 3, fecha: '2026-09-27', hora: '12:00', condicionPago: 'Cuenta Corriente', empleado: 'Carlos Gómez' },
+        { idPedido: 1042, idMedioPago: 1, fecha: '2026-09-29', hora: '11:00', condicionPago: 'Contado', empleado: 'Josefina Silva' }
     ];
     pagosHistoricos.forEach(pago => {
         const cv = comprobantesVenta.find(c => c.id_orden_pedido_cliente === pago.idPedido);
@@ -727,53 +868,67 @@ function crearDatosIniciales() {
             cliente: cv.cliente,
             esEvento: !!cv.esEvento,
             esDonacion: !!cv.esDonacion,
+            esWeb: !!cv.esWeb,
             id_medio_pago: pago.idMedioPago,
             fecha_pago: pago.fecha,
             hora_pago: pago.hora,
-            condicion_pago: 'Contado',
+            condicion_pago: pago.condicionPago,
+            empleado: pago.empleado,
             importe: cv.total,
             observaciones: '',
             es_anulado: false
         });
     });
 
-    // Presupuestos de Proveedores: cotizaciones de materia prima previas a confirmar una orden de compra.
+    // Presupuestos de Proveedores: cotizaciones de materia prima y maquinaria previas a confirmar una orden.
     const presupuestosProveedor = [
         { id_presupuesto_proveedor: 6, proveedorObj: proveedores[2], proveedor: proveedores[2].nombreMostrado,
           fecha_emision: '2026-10-04', hora_emision: '10:00', condicion_entrega: 'Entrega en fábrica', fecha_vencimiento: '2026-10-25',
-          estado: 'Pendiente', idOrdenCompraGenerada: null, observaciones: '',
+          estado: 'Pendiente', empleado: 'Laura Rodríguez', tipo: 'MateriaPrima', idOrdenCompraGenerada: null, observaciones: '',
           detalle: [{ clave: 'ricotta', tipo: 'Ricotta', marca: 'Lácteos Santa Rosa', nombre: 'Ricotta Fresca (Balde 10kg)', cantidad: 6, precio_unitario: 15000, subtotal: 90000 }],
           total_estimado: 90000 },
 
         { id_presupuesto_proveedor: 5, proveedorObj: proveedores[4], proveedor: proveedores[4].nombreMostrado,
           fecha_emision: '2026-09-30', hora_emision: '15:40', condicion_entrega: 'Entrega en fábrica', fecha_vencimiento: '2026-10-18',
-          estado: 'Convertido', idOrdenCompraGenerada: 104, observaciones: 'Reposición de condimentos para la línea de salsas.',
+          estado: 'Convertido', empleado: 'Carlos Gómez', tipo: 'MateriaPrima', idOrdenCompraGenerada: 104, observaciones: 'Reposición de condimentos para la línea de salsas.',
           detalle: [{ clave: 'condimentos', tipo: 'Condimentos', marca: 'Condimentos Córdoba', nombre: 'Surtido de Especias (Caja 20kg)', cantidad: 2, precio_unitario: 45000, subtotal: 90000 }],
           total_estimado: 90000 },
 
         { id_presupuesto_proveedor: 4, proveedorObj: proveedores[3], proveedor: proveedores[3].nombreMostrado,
           fecha_emision: '2026-09-18', hora_emision: '09:50', condicion_entrega: 'Retira el proveedor habitual', fecha_vencimiento: '2026-10-05',
-          estado: 'Pendiente', idOrdenCompraGenerada: null, observaciones: '',
+          estado: 'Pendiente', empleado: 'Martín Acosta', tipo: 'MateriaPrima', idOrdenCompraGenerada: null, observaciones: '',
           detalle: [{ clave: 'embalajes', tipo: 'Embalajes', marca: 'Embalajes del Norte', nombre: 'Cajas de Packaging (Pack x200)', cantidad: 3, precio_unitario: 30000, subtotal: 90000 }],
           total_estimado: 90000 },
 
         { id_presupuesto_proveedor: 3, proveedorObj: proveedores[1], proveedor: proveedores[1].nombreMostrado,
           fecha_emision: '2026-10-02', hora_emision: '09:30', condicion_entrega: 'Entrega en fábrica', fecha_vencimiento: '2026-10-20',
-          estado: 'Pendiente', idOrdenCompraGenerada: null, observaciones: '',
+          estado: 'Pendiente', empleado: 'Laura Rodríguez', tipo: 'MateriaPrima', idOrdenCompraGenerada: null, observaciones: '',
           detalle: [{ clave: 'huevos', tipo: 'Huevos', marca: 'Avícola Sur', nombre: 'Huevos Frescos (Cajón 30 dzn)', cantidad: 4, precio_unitario: 18000, subtotal: 72000 }],
           total_estimado: 72000 },
 
         { id_presupuesto_proveedor: 2, proveedorObj: proveedores[0], proveedor: proveedores[0].nombreMostrado,
           fecha_emision: '2026-09-28', hora_emision: '11:00', condicion_entrega: 'Retira el proveedor habitual', fecha_vencimiento: '2026-10-15',
-          estado: 'Convertido', idOrdenCompraGenerada: 102, observaciones: 'Pedido mensual de harina.',
+          estado: 'Convertido', empleado: 'Carlos Gómez', tipo: 'MateriaPrima', idOrdenCompraGenerada: 102, observaciones: 'Pedido mensual de harina.',
           detalle: [{ clave: 'harina', tipo: 'Harina', marca: 'Molinos Cañuelas', nombre: 'Harina 0000 (Bolsa 50kg)', cantidad: 10, precio_unitario: 25000, subtotal: 250000 }],
           total_estimado: 250000 },
 
         { id_presupuesto_proveedor: 1, proveedorObj: proveedores[0], proveedor: proveedores[0].nombreMostrado,
           fecha_emision: '2026-09-15', hora_emision: '10:15', condicion_entrega: 'Entrega en fábrica', fecha_vencimiento: '2026-09-30',
-          estado: 'Pendiente', idOrdenCompraGenerada: null, observaciones: '',
+          estado: 'Pendiente', empleado: 'Martín Acosta', tipo: 'MateriaPrima', idOrdenCompraGenerada: null, observaciones: '',
           detalle: [{ clave: 'harina', tipo: 'Harina', marca: 'Molinos Cañuelas', nombre: 'Harina 0000 (Bolsa 50kg)', cantidad: 5, precio_unitario: 25000, subtotal: 125000 }],
-          total_estimado: 125000 }
+          total_estimado: 125000 },
+
+        { id_presupuesto_proveedor: 8, proveedorObj: proveedores[5], proveedor: proveedores[5].nombreMostrado,
+          fecha_emision: '2026-10-11', hora_emision: '09:20', condicion_entrega: 'Entrega en fábrica', fecha_vencimiento: '2026-11-10',
+          estado: 'Pendiente', empleado: 'Carlos Gómez', tipo: 'Maquinaria', idOrdenCompraGenerada: null, observaciones: 'Cotización para renovar el equipo de laminado.',
+          detalle: [{ id_maquinaria: 1, marca: 'Imperia', nombre: 'Sobadora Industrial', modelo: 'IM-450', cantidad: 1, precio_unitario: 1850000, subtotal: 1850000 }],
+          total_estimado: 1850000 },
+
+        { id_presupuesto_proveedor: 7, proveedorObj: proveedores[5], proveedor: proveedores[5].nombreMostrado,
+          fecha_emision: '2026-10-10', hora_emision: '14:10', condicion_entrega: 'Entrega en fábrica', fecha_vencimiento: '2026-11-09',
+          estado: 'Pendiente', empleado: 'Laura Rodríguez', tipo: 'Maquinaria', idOrdenCompraGenerada: null, observaciones: 'Presupuesto de equipo de envasado al vacío.',
+          detalle: [{ id_maquinaria: 2, marca: 'VacuumPack', nombre: 'Envasadora al Vacío', modelo: 'VMS-25', cantidad: 1, precio_unitario: 2450000, subtotal: 2450000 }],
+          total_estimado: 2450000 }
     ];
 
     // Órdenes de Compra: algunas surgen de un presupuesto ya convertido, otras se emiten directamente.
@@ -882,8 +1037,8 @@ function crearDatosIniciales() {
         },
         cajaDiaria: 0,
         contadores: {
-            recibo: 1, ordenCompra: 106, lote: 5, pedido: 1051, empleado: 7, maquinaria: 5, ordenMant: 6, ordenProduccion: 5,
-            comprobanteVenta: contadorComprobanteVenta, comprobantePago: contadorComprobantePago, presupuesto: 8, presupuestoProveedor: 7, remito: 3
+            recibo: 1, ordenCompra: 106, lote: 5, pedido: 1053, empleado: 7, maquinaria: 5, ordenMant: 6, ordenProduccion: 5,
+            comprobanteVenta: contadorComprobanteVenta, comprobantePago: contadorComprobantePago, presupuesto: 8, presupuestoProveedor: 9, remito: 3
         }
     };
 }
@@ -933,6 +1088,19 @@ function cargarDatos() {
             resto.proveedorObj = datos.proveedores.find(p => p.numero_documento === proveedorDocumento) || null;
             return resto;
         });
+        // Completa presupuestos ya guardados en la sesión y suma ejemplos de maquinaria una sola vez.
+        datos.presupuestosProveedor.forEach((pr, indice) => {
+            if (!pr.empleado) pr.empleado = datos.empleados[indice % datos.empleados.length]?.nombreMostrado || datos.empleados[indice % datos.empleados.length]?.nombre || '-';
+            if (!pr.tipo) pr.tipo = 'MateriaPrima';
+        });
+        if (!datos.presupuestosProveedor.some(pr => pr.tipo === 'Maquinaria')) {
+            const proveedorMaquinaria = datos.proveedores.find(p => /log[ií]stica/i.test(p.rubro || '')) || datos.proveedores[0];
+            const idBase = Math.max(0, ...datos.presupuestosProveedor.map(pr => Number(pr.id_presupuesto_proveedor) || 0));
+            datos.presupuestosProveedor.push(
+                { id_presupuesto_proveedor: idBase + 1, proveedorObj: proveedorMaquinaria, proveedor: proveedorMaquinaria?.nombreMostrado || '', fecha_emision: '2026-10-11', hora_emision: '09:20', condicion_entrega: 'Entrega en fábrica', fecha_vencimiento: '2026-11-10', estado: 'Pendiente', empleado: datos.empleados[0]?.nombreMostrado || 'Carlos Gómez', tipo: 'Maquinaria', idOrdenCompraGenerada: null, observaciones: 'Cotización para renovar el equipo de laminado.', detalle: [{ id_maquinaria: 1, marca: 'Imperia', nombre: 'Sobadora Industrial', modelo: 'IM-450', cantidad: 1, precio_unitario: 1850000, subtotal: 1850000 }], total_estimado: 1850000 },
+                { id_presupuesto_proveedor: idBase + 2, proveedorObj: proveedorMaquinaria, proveedor: proveedorMaquinaria?.nombreMostrado || '', fecha_emision: '2026-10-10', hora_emision: '14:10', condicion_entrega: 'Entrega en fábrica', fecha_vencimiento: '2026-11-09', estado: 'Pendiente', empleado: datos.empleados[1]?.nombreMostrado || 'Laura Rodríguez', tipo: 'Maquinaria', idOrdenCompraGenerada: null, observaciones: 'Presupuesto de equipo de envasado al vacío.', detalle: [{ id_maquinaria: 2, marca: 'VacuumPack', nombre: 'Envasadora al Vacío', modelo: 'VMS-25', cantidad: 1, precio_unitario: 2450000, subtotal: 2450000 }], total_estimado: 2450000 }
+            );
+        }
         datos.remitos = (datos.remitos || []).map(r => {
             const { proveedorDocumento, ...resto } = r;
             resto.proveedorObj = datos.proveedores.find(p => p.numero_documento === proveedorDocumento) || null;
@@ -946,6 +1114,7 @@ function cargarDatos() {
         datos.contadores = datos.contadores || crearDatosIniciales().contadores;
         datos.contadores.presupuesto = datos.contadores.presupuesto || 1;
         datos.contadores.presupuestoProveedor = datos.contadores.presupuestoProveedor || 1;
+        datos.contadores.presupuestoProveedor = Math.max(datos.contadores.presupuestoProveedor, ...datos.presupuestosProveedor.map(pr => (Number(pr.id_presupuesto_proveedor) || 0) + 1));
         datos.contadores.remito = datos.contadores.remito || 1;
         return datos;
     } catch (e) {
@@ -1144,7 +1313,7 @@ function renderizarClientesUI() {
         });
         const optOtro = document.createElement('option');
         optOtro.value = 'OTRO';
-        optOtro.innerText = '— Registrar o ingresar manualmente —';
+        optOtro.innerText = '- Registrar o ingresar manualmente -';
         select.appendChild(optOtro);
     });
 }

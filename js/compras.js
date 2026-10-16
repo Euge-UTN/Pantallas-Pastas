@@ -61,9 +61,9 @@ let ordenCompraEnConversionId = null; // id del presupuesto de proveedor que se 
 // ==========================================
 // MODAL: AGREGAR PROVEEDOR RÁPIDO (desde Registrar Presupuesto u Registrar Orden de Compra)
 // ==========================================
-let destinoModalNuevoProveedor = 'oc'; // 'oc' | 'presupuesto' — a qué autocompletado vuelve tras guardar
+let destinoModalNuevoProveedor = 'presupuesto'; // 'presupuesto' | 'remito' - a qué autocompletado vuelve tras guardar
 
-function abrirModalNuevoProveedor(destino = 'oc') {
+function abrirModalNuevoProveedor(destino = 'presupuesto') {
     destinoModalNuevoProveedor = destino;
     ['mprov-razon-social', 'mprov-numero-documento', 'mprov-altura', 'mprov-cp', 'mprov-telefono', 'mprov-email', 'mprov-rubro', 'mprov-tiempo-entrega'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('mprov-tipo-documento').selectedIndex = 0;
@@ -106,99 +106,88 @@ function guardarProveedorDesdeCompras() {
     guardarDatos();
 
     const idx = listaProveedores.indexOf(nuevo);
-    if (destinoModalNuevoProveedor === 'presupuesto') {
-        elegirProveedorPresupuesto(idx);
-    } else if (destinoModalNuevoProveedor === 'remito') {
+    if (destinoModalNuevoProveedor === 'remito') {
         elegirProveedorRemito(idx);
     } else {
-        elegirProveedorOC(idx);
+        elegirProveedorPresupuesto(idx);
     }
     cerrarModalNuevoProveedor();
 }
 
-function filtrarProveedoresAutocompletadoOC() {
-    const input = document.getElementById('oc-proveedor-autocompletar');
-    const cont = document.getElementById('oc-proveedor-autocompletar-opciones');
+// La Orden de Compra se origina obligatoriamente en un Presupuesto de Proveedor Pendiente:
+// se busca directo el presupuesto (por N° o por proveedor) y éste completa proveedor + ítems,
+// mismo rol que "Generar Pedido" desde un Presupuesto en Ventas, pero buscado acá adentro.
+function filtrarPresupuestosAutocompletadoOC() {
+    const input = document.getElementById('oc-presupuesto-autocompletar');
+    const cont = document.getElementById('oc-presupuesto-autocompletar-opciones');
     const termino = normalizarTexto(input.value).trim();
 
-    document.getElementById('select-oc-proveedor').value = '';
+    document.getElementById('select-oc-presupuesto').value = '';
     proveedorSeleccionadoOC = null;
+    ordenCompraEnConversionId = null;
     document.getElementById('ficha-proveedor-oc').classList.add('hidden');
-    document.getElementById('oc-presupuesto-previo-wrap').classList.add('hidden');
-    calcularTotalOC();
+    itemsOCActual = [];
+    renderizarTablaOC();
 
     if (!termino) { cont.classList.add('hidden'); cont.innerHTML = ''; return; }
 
-    const filtrados = listaProveedores.filter(p => p.estado_activo && (normalizarTexto(`${p.nombre} ${p.apellido}`).includes(termino) || normalizarTexto(p.razon_social).includes(termino) || normalizarTexto(p.numero_documento).includes(termino)));
+    const pendientes = listaPresupuestosProveedor.filter(pr => pr.estado === 'Pendiente');
+    const filtrados = pendientes.filter(pr => {
+        const proveedor = pr.proveedorObj ? pr.proveedorObj.nombreMostrado : (pr.proveedor || '');
+        return normalizarTexto(proveedor).includes(termino) || String(pr.id_presupuesto_proveedor).includes(termino);
+    });
     if (!filtrados.length) {
         cont.innerHTML = `<p class="px-3 py-2 text-xs text-slate-400">Sin resultados.</p>`;
         cont.classList.remove('hidden');
         return;
     }
-    cont.innerHTML = filtrados.map(p => {
-        const idx = listaProveedores.indexOf(p);
-        return `<button type="button" onmousedown="event.preventDefault(); elegirProveedorOC(${idx})" class="block w-full text-left px-3 py-2 text-sm hover:bg-slate-100">
-            <span class="block truncate">${p.nombreMostrado}</span>
-            <span class="block text-[11px] text-slate-400">${p.rubro || '-'} · ${p.documentoCompleto}</span>
+    cont.innerHTML = filtrados.map(pr => {
+        const idx = listaPresupuestosProveedor.indexOf(pr);
+        const proveedor = pr.proveedorObj ? pr.proveedorObj.nombreMostrado : (pr.proveedor || '-');
+        return `<button type="button" onmousedown="event.preventDefault(); elegirPresupuestoOC(${idx})" class="block w-full text-left px-3 py-2 text-sm hover:bg-slate-100">
+            <span class="block truncate">${formatearIdentificador("PRES-PROV", String(pr.id_presupuesto_proveedor).padStart(4, '0'))} - ${proveedor}</span>
+            <span class="block text-[11px] text-slate-400">$ ${pr.total_estimado.toLocaleString()}</span>
         </button>`;
     }).join('');
     cont.classList.remove('hidden');
 }
 
 document.addEventListener('click', (e) => {
-    if (!e.target.closest('#oc-proveedor-autocompletar') && !e.target.closest('#oc-proveedor-autocompletar-opciones')) {
-        document.getElementById('oc-proveedor-autocompletar-opciones')?.classList.add('hidden');
+    if (!e.target.closest('#oc-presupuesto-autocompletar') && !e.target.closest('#oc-presupuesto-autocompletar-opciones')) {
+        document.getElementById('oc-presupuesto-autocompletar-opciones')?.classList.add('hidden');
     }
 });
 
-function elegirProveedorOC(idx) {
-    proveedorSeleccionadoOC = listaProveedores[idx];
-    document.getElementById('oc-proveedor-autocompletar').value = proveedorSeleccionadoOC.nombreMostrado;
-    document.getElementById('select-oc-proveedor').value = idx;
-    document.getElementById('oc-proveedor-autocompletar-opciones').classList.add('hidden');
-    mostrarFichaProveedorOC();
-    poblarPresupuestosPreviosOC();
-    calcularTotalOC();
+function elegirPresupuestoOC(idx) {
+    const pr = listaPresupuestosProveedor[idx];
+    if (!pr || pr.estado !== 'Pendiente') return;
+
+    ordenCompraEnConversionId = pr.id_presupuesto_proveedor;
+    proveedorSeleccionadoOC = pr.proveedorObj;
+    document.getElementById('oc-presupuesto-autocompletar').value = `${formatearIdentificador("PRES-PROV", String(pr.id_presupuesto_proveedor).padStart(4, '0'))} - ${pr.proveedorObj ? pr.proveedorObj.nombreMostrado : pr.proveedor}`;
+    document.getElementById('select-oc-presupuesto').value = idx;
+    document.getElementById('oc-presupuesto-autocompletar-opciones').classList.add('hidden');
+
+    itemsOCActual = pr.detalle.map(i => ({ id: Date.now() + Math.random(), clave: i.clave, tipo: i.tipo, marca: i.marca, nombre: i.nombre, cantidad: i.cantidad, precioUnitario: i.precio_unitario, subtotal: i.subtotal }));
+    document.getElementById('oc-observaciones').value = pr.observaciones || '';
+    mostrarFichaProveedorOC(pr);
+    renderizarTablaOC();
 }
 
-function mostrarFichaProveedorOC() {
+function mostrarFichaProveedorOC(pr) {
     const ficha = document.getElementById('ficha-proveedor-oc');
     const p = proveedorSeleccionadoOC;
     if (!p) { ficha.classList.add('hidden'); return; }
     ficha.innerHTML = `
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
+            <p><b class="text-slate-700">Proveedor:</b> ${p.nombreMostrado}</p>
             <p><b class="text-slate-700">Rubro:</b> ${p.rubro || '-'}</p>
             <p><b class="text-slate-700">Documento:</b> ${p.documentoCompleto}</p>
             <p><b class="text-slate-700">Condición IVA:</b> ${p.condicion_iva}</p>
             <p><b class="text-slate-700">Dirección:</b> ${p.direccionCompleta}</p>
+            <p><b class="text-slate-700">Condición de Entrega:</b> ${pr.condicion_entrega || '-'}</p>
         </div>`;
     ficha.classList.remove('hidden');
-}
-
-// Al elegir proveedor, se puede opcionalmente partir de uno de sus presupuestos Pendientes
-// (mismo rol que "Generar Pedido" desde un Presupuesto en Ventas, pero elegido acá adentro).
-function poblarPresupuestosPreviosOC() {
-    const wrap = document.getElementById('oc-presupuesto-previo-wrap');
-    const select = document.getElementById('oc-presupuesto-previo');
-    const presupuestosProveedorPendientes = listaPresupuestosProveedor.filter(pr => pr.proveedorObj === proveedorSeleccionadoOC && pr.estado === 'Pendiente');
-
-    if (!presupuestosProveedorPendientes.length) { wrap.classList.add('hidden'); select.innerHTML = ''; return; }
-
-    select.innerHTML = `<option value="">— No usar ningún presupuesto previo —</option>` +
-        presupuestosProveedorPendientes.map(pr => `<option value="${pr.id_presupuesto_proveedor}">PRES-PROV-${String(pr.id_presupuesto_proveedor).padStart(5, '0')} — $ ${pr.total_estimado.toLocaleString()}</option>`).join('');
-    wrap.classList.remove('hidden');
-}
-
-function cargarPresupuestoEnOC() {
-    const idPresupuesto = parseInt(document.getElementById('oc-presupuesto-previo').value);
-    if (isNaN(idPresupuesto)) { ordenCompraEnConversionId = null; return; }
-    const pr = listaPresupuestosProveedor.find(p => p.id_presupuesto_proveedor === idPresupuesto);
-    if (!pr) return;
-
-    ordenCompraEnConversionId = pr.id_presupuesto_proveedor;
-    itemsOCActual = pr.detalle.map(i => ({ id: Date.now() + Math.random(), clave: i.clave, tipo: i.tipo, marca: i.marca, nombre: i.nombre, cantidad: i.cantidad, precioUnitario: i.precio_unitario, subtotal: i.subtotal }));
-    document.getElementById('oc-observaciones').value = pr.observaciones || '';
-    renderizarTablaOC();
 }
 
 function filtrarMateriaPrimaAutocompletadoOC() {
@@ -210,7 +199,7 @@ function filtrarMateriaPrimaAutocompletadoOC() {
 
     if (!termino) { cont.classList.add('hidden'); cont.innerHTML = ''; return; }
 
-    const filtrados = CATALOGO_MATERIAS_PRIMAS.filter(m => normalizarTexto(m.nombre).includes(termino) || normalizarTexto(m.tipo).includes(termino) || normalizarTexto(m.marca).includes(termino));
+    const filtrados = CATALOGO_MATERIAS_PRIMAS.filter(m => normalizarTexto(m.nombre).includes(termino) || normalizarTexto(nombreTipoMateriaPrima(m.id_tipo_materia_prima)).includes(termino) || normalizarTexto(nombreMarca(m.id_marca)).includes(termino));
     if (!filtrados.length) {
         cont.innerHTML = `<p class="px-3 py-2 text-xs text-slate-400">Sin resultados.</p>`;
         cont.classList.remove('hidden');
@@ -220,7 +209,7 @@ function filtrarMateriaPrimaAutocompletadoOC() {
         const idx = CATALOGO_MATERIAS_PRIMAS.indexOf(m);
         return `<button type="button" onmousedown="event.preventDefault(); elegirMateriaPrimaOC(${idx})" class="block w-full text-left px-3 py-2 text-sm hover:bg-slate-100">
             <span class="block truncate">${m.nombre}</span>
-            <span class="block text-[11px] text-slate-400">${m.tipo} · ${m.marca}</span>
+            <span class="block text-[11px] text-slate-400">${nombreTipoMateriaPrima(m.id_tipo_materia_prima)} · ${nombreMarca(m.id_marca)}</span>
         </button>`;
     }).join('');
     cont.classList.remove('hidden');
@@ -252,7 +241,7 @@ function agregarMateriaPrimaOC() {
         itemExistente.cantidad += cantidad;
         itemExistente.subtotal = itemExistente.cantidad * itemExistente.precioUnitario;
     } else {
-        itemsOCActual.push({ id: Date.now(), clave: m.clave, tipo: m.tipo, marca: m.marca, nombre: m.nombre, cantidad, precioUnitario: m.precio, subtotal: m.precio * cantidad });
+        itemsOCActual.push({ id: Date.now(), clave: m.clave, tipo: nombreTipoMateriaPrima(m.id_tipo_materia_prima), marca: nombreMarca(m.id_marca), nombre: m.nombre, cantidad, precioUnitario: m.precio, subtotal: m.precio * cantidad });
     }
     document.getElementById('oc-mp-autocompletar').value = '';
     document.getElementById('oc-mp-select').value = '';
@@ -312,11 +301,9 @@ function resetFormularioOC() {
     itemsOCActual = [];
     proveedorSeleccionadoOC = null;
     ordenCompraEnConversionId = null;
-    document.getElementById('oc-proveedor-autocompletar').value = '';
-    document.getElementById('select-oc-proveedor').value = '';
+    document.getElementById('oc-presupuesto-autocompletar').value = '';
+    document.getElementById('select-oc-presupuesto').value = '';
     document.getElementById('ficha-proveedor-oc').classList.add('hidden');
-    document.getElementById('oc-presupuesto-previo-wrap').classList.add('hidden');
-    document.getElementById('oc-presupuesto-previo').innerHTML = '';
     document.getElementById('oc-condicion-pago').selectedIndex = 0;
     document.getElementById('oc-observaciones').value = '';
     document.getElementById('oc-mp-autocompletar').value = '';
@@ -327,7 +314,7 @@ function resetFormularioOC() {
 }
 
 function confirmarOrdenCompra() {
-    if (!proveedorSeleccionadoOC) return alert('Buscá y seleccioná el proveedor.');
+    if (!ordenCompraEnConversionId || !proveedorSeleccionadoOC) return alert('Buscá y seleccioná un presupuesto de proveedor: toda Orden de Compra debe originarse en uno.');
     if (itemsOCActual.length === 0) return alert('Añadí al menos una materia prima a la orden.');
     const condicionPago = document.getElementById('oc-condicion-pago').value;
     if (!condicionPago) return alert('Seleccioná la condición de pago.');
@@ -345,13 +332,11 @@ function confirmarOrdenCompra() {
     };
     listaOrdenesCompra.unshift(nuevaOrden);
 
-    if (ordenCompraEnConversionId) {
-        const presupuesto = listaPresupuestosProveedor.find(p => p.id_presupuesto_proveedor === ordenCompraEnConversionId);
-        if (presupuesto) { presupuesto.estado = 'Convertido'; presupuesto.idOrdenCompraGenerada = nuevaOrden.id; }
-    }
+    const presupuesto = listaPresupuestosProveedor.find(p => p.id_presupuesto_proveedor === ordenCompraEnConversionId);
+    if (presupuesto) { presupuesto.estado = 'Convertido'; presupuesto.idOrdenCompraGenerada = nuevaOrden.id; }
 
     guardarDatos();
-    alert(`¡Orden de Compra OC-${nuevaOrden.id} emitida a "${proveedorSeleccionadoOC.nombreMostrado}"!`);
+    alert(`¡Orden de Compra ${formatearIdentificador("OC", nuevaOrden.id)} emitida a "${proveedorSeleccionadoOC.nombreMostrado}"!`);
     volverAlListadoCompras();
 }
 
@@ -360,7 +345,6 @@ function confirmarOrdenCompra() {
 // ==========================================
 let ordenOCCampo = null;
 let ordenOCDireccion = null;
-let filtroOCTipoDocSeleccionado = '';
 let filtroOCEstadoSeleccionado = '';
 
 function renderizarTablaOrdenesCompra() {
@@ -376,37 +360,36 @@ function renderizarTablaOrdenesCompra() {
     document.getElementById('kpi-oc-ticket-promedio').innerText = `$ ${Math.round(ticketPromedio).toLocaleString()}`;
 
     const terminoNum = normalizarTexto(document.getElementById('buscar-num-oc')?.value || '').trim();
-    const terminoNombre = normalizarTexto(document.getElementById('buscar-nombre-oc')?.value || '').trim();
-    const terminoApellido = normalizarTexto(document.getElementById('buscar-apellido-oc')?.value || '').trim();
-    const terminoDocumento = normalizarTexto(document.getElementById('buscar-documento-oc')?.value || '').trim();
+    const terminoPresupuesto = normalizarTexto(document.getElementById('buscar-num-presupuesto-oc')?.value || '').trim();
+    const terminoProveedor = normalizarTexto(document.getElementById('buscar-proveedor-oc')?.value || '').trim();
+    const fechaDesde = document.getElementById('buscar-fecha-desde-oc')?.value || '';
+    const fechaHasta = document.getElementById('buscar-fecha-hasta-oc')?.value || '';
+    const montoDesde = document.getElementById('buscar-monto-desde-oc')?.value || '';
+    const montoHasta = document.getElementById('buscar-monto-hasta-oc')?.value || '';
 
     let ordenesFiltradas = listaOrdenesCompra.filter(oc => {
-        const nombre = oc.proveedorObj ? oc.proveedorObj.nombre : '';
-        const apellido = oc.proveedorObj ? oc.proveedorObj.apellido : '';
-        const documento = oc.proveedorObj ? oc.proveedorObj.numero_documento : '';
-        const tipoDocumento = oc.proveedorObj ? oc.proveedorObj.tipo_documento : '';
+        const proveedor = oc.proveedorObj ? oc.proveedorObj.nombreMostrado : (oc.proveedor || '');
         return (!terminoNum || String(oc.id).includes(terminoNum)) &&
-            (!terminoNombre || normalizarTexto(nombre).includes(terminoNombre)) &&
-            (!terminoApellido || normalizarTexto(apellido).includes(terminoApellido)) &&
-            (!terminoDocumento || normalizarTexto(documento).includes(terminoDocumento)) &&
-            (!filtroOCTipoDocSeleccionado || tipoDocumento === filtroOCTipoDocSeleccionado) &&
-            (!filtroOCEstadoSeleccionado || oc.estado === filtroOCEstadoSeleccionado);
+            (!terminoPresupuesto || (oc.id_presupuesto_proveedor && String(oc.id_presupuesto_proveedor).includes(terminoPresupuesto))) &&
+            (!terminoProveedor || normalizarTexto(proveedor).includes(terminoProveedor)) &&
+            (!filtroOCEstadoSeleccionado || oc.estado === filtroOCEstadoSeleccionado) &&
+            coincideRangoFecha(fechaDesde, fechaHasta, oc.fecha_emision) &&
+            coincideRangoMonto(montoDesde, montoHasta, oc.total);
     });
 
     if (ordenOCCampo && ordenOCDireccion) {
         ordenesFiltradas.sort((a, b) => {
-            const va = (a.proveedorObj ? a.proveedorObj[ordenOCCampo] : '') || '';
-            const vb = (b.proveedorObj ? b.proveedorObj[ordenOCCampo] : '') || '';
+            const va = (a.proveedorObj ? a.proveedorObj.nombreMostrado : (a.proveedor || '')) || '';
+            const vb = (b.proveedorObj ? b.proveedorObj.nombreMostrado : (b.proveedor || '')) || '';
             const cmp = va.localeCompare(vb, 'es');
             return ordenOCDireccion === 'asc' ? cmp : -cmp;
         });
     }
     actualizarIconosOrdenOC();
-    actualizarIconoFiltroTipoDocOC();
     actualizarIconoFiltroEstadoOC();
 
     if (!ordenesFiltradas.length) {
-        tbody.innerHTML = `<tr><td colspan="9" class="px-6 py-10 text-center text-slate-400 text-sm">No se encontraron órdenes de compra con ese criterio.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="px-6 py-10 text-center text-slate-400 text-sm">No se encontraron órdenes de compra con ese criterio.</td></tr>`;
     }
     ordenesFiltradas.forEach(oc => {
         const tr = document.createElement('tr');
@@ -414,11 +397,9 @@ function renderizarTablaOrdenesCompra() {
         const activa = oc.estado === 'Enviada';
         const fechaFormateada = oc.fecha_emision ? new Date(oc.fecha_emision + 'T00:00:00').toLocaleDateString('es-AR') : '-';
         tr.innerHTML = `
-            <td class="px-6 py-4 font-semibold text-slate-900">OC-${oc.id}</td>
-            <td class="px-6 py-4">${oc.proveedorObj ? oc.proveedorObj.nombre : '-'}</td>
-            <td class="px-6 py-4">${oc.proveedorObj ? oc.proveedorObj.apellido : '-'}</td>
-            <td class="px-6 py-4 text-slate-500">${oc.proveedorObj ? oc.proveedorObj.tipo_documento : '-'}</td>
-            <td class="px-6 py-4 text-slate-500">${oc.proveedorObj ? oc.proveedorObj.numero_documento : '-'}</td>
+            <td class="px-6 py-4 font-semibold text-slate-900">${formatearIdentificador('OC', oc.id)}</td>
+            <td class="px-6 py-4 text-slate-500">${oc.id_presupuesto_proveedor ? `${formatearIdentificador("PRES-PROV", String(oc.id_presupuesto_proveedor).padStart(4, '0'))}` : '-'}</td>
+            <td class="px-6 py-4 text-slate-800">${oc.proveedorObj ? oc.proveedorObj.nombreMostrado : (oc.proveedor || '-')}</td>
             <td class="px-6 py-4 text-slate-500">${fechaFormateada}</td>
             <td class="px-6 py-4 text-right font-medium whitespace-nowrap">$ ${oc.total.toLocaleString()}</td>
             <td class="px-6 py-4 text-center"><span class="px-2.5 py-1 ${COLOR_ESTADO_ORDEN_COMPRA[oc.estado]} text-xs font-semibold rounded-full whitespace-nowrap">${oc.estado}</span></td>
@@ -443,29 +424,13 @@ function alternarOrdenOC(campo) {
 }
 
 function actualizarIconosOrdenOC() {
-    ['nombre', 'apellido'].forEach(campo => {
+    ['proveedor'].forEach(campo => {
         const boton = document.getElementById(`btn-orden-${campo}-oc`);
         if (!boton) return;
         const activo = ordenOCCampo === campo;
         const icono = activo && ordenOCDireccion === 'asc' ? 'arrow-up' : activo && ordenOCDireccion === 'desc' ? 'arrow-down' : 'arrow-up-down';
         boton.className = `normal-case transition ${activo ? 'text-red-600' : 'text-slate-400 hover:text-slate-700'}`;
         boton.innerHTML = `<i data-lucide="${icono}" class="w-3.5 h-3.5"></i>`;
-    });
-}
-
-function elegirFiltroTipoDocOC(valor) {
-    filtroOCTipoDocSeleccionado = valor;
-    document.getElementById('pop-tipo-doc-oc').classList.add('hidden');
-    renderizarTablaOrdenesCompra();
-}
-function actualizarIconoFiltroTipoDocOC() {
-    const boton = document.getElementById('btn-filtro-tipo-doc-oc');
-    if (!boton) return;
-    boton.className = `normal-case transition ${filtroOCTipoDocSeleccionado ? 'text-red-600' : 'text-slate-400 hover:text-slate-700'}`;
-    document.querySelectorAll('.opcion-filtro-tipo-doc-oc').forEach(op => {
-        op.classList.toggle('bg-red-50', op.dataset.valor === filtroOCTipoDocSeleccionado);
-        op.classList.toggle('text-red-700', op.dataset.valor === filtroOCTipoDocSeleccionado);
-        op.classList.toggle('font-medium', op.dataset.valor === filtroOCTipoDocSeleccionado);
     });
 }
 
@@ -494,12 +459,25 @@ function avanzarEstadoOrdenCompra(id) {
 }
 
 function cancelarOrdenCompra(id) {
-    if (!confirm(`¿Confirma la cancelación de la orden de compra OC-${id}?`)) return;
+    if (!confirm(`¿Confirma la cancelación de la orden de compra ${formatearIdentificador("OC", id)}?`)) return;
     const oc = listaOrdenesCompra.find(o => o.id === id);
     if (!oc) return;
     oc.estado = 'Cancelada';
     guardarDatos();
     renderizarTablaOrdenesCompra();
+}
+
+function tarjetaProveedorComprasHTML(proveedor, nombreFallback, etiquetaExtra, valorExtra) {
+    return `
+        <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-1 text-xs">
+            <h3 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5"><i data-lucide="truck" class="w-3.5 h-3.5"></i>Proveedor</h3>
+            ${proveedor ? `
+                <p><b class="text-slate-700">Nombre:</b> ${proveedor.nombreMostrado}</p>
+                <p><b class="text-slate-700">Documento:</b> ${proveedor.documentoCompleto}</p>
+                <p><b class="text-slate-700">Domicilio:</b> ${proveedor.direccionCompleta}</p>
+                <p><b class="text-slate-700">Teléfono:</b> ${proveedor.telefono || '-'}</p>` : `<p><b class="text-slate-700">Nombre:</b> ${nombreFallback || '-'}</p>`}
+            ${etiquetaExtra ? `<p><b class="text-slate-700">${etiquetaExtra}:</b> ${valorExtra || '-'}</p>` : ''}
+        </div>`;
 }
 
 function verDetalleOrdenCompra(id) {
@@ -518,37 +496,23 @@ function verDetalleOrdenCompra(id) {
             <td class="py-2 text-right">$ ${i.subtotal.toLocaleString()}</td>
         </tr>`).join('');
 
+    const fechaRecepcionFormateada = oc.fecha_recepcion ? new Date(oc.fecha_recepcion + 'T00:00:00').toLocaleDateString('es-AR') : null;
+
     document.getElementById('area-detalle-orden-compra').innerHTML = `
         <div class="flex justify-between items-start border-b border-slate-200 pb-4">
             <div>
                 <h1 class="text-2xl font-bold text-red-600">FÁBRICA DE PASTAS</h1>
                 <p class="text-xs text-slate-500">Orden de Compra a Proveedor</p>
-                <div class="flex items-center gap-2 mt-2">
-                    <p class="text-sm font-bold text-slate-800">OC-${oc.id}</p>
-                    <span class="px-2.5 py-1 ${COLOR_ESTADO_ORDEN_COMPRA[oc.estado]} text-xs font-semibold rounded-full whitespace-nowrap">${oc.estado}</span>
-                </div>
-                ${oc.id_presupuesto_proveedor ? `<p class="text-xs text-slate-400 mt-1">Generada desde PRES-PROV-${String(oc.id_presupuesto_proveedor).padStart(5, '0')}</p>` : ''}
+                <p class="text-sm font-bold text-slate-800 mt-2">${formatearIdentificador('OC', oc.id)}</p>
+                ${oc.id_presupuesto_proveedor ? `<p class="text-xs text-slate-400 mt-1">Generada desde ${formatearIdentificador("PRES-PROV", String(oc.id_presupuesto_proveedor).padStart(4, '0'))}</p>` : ''}
             </div>
             <div class="text-right text-xs text-slate-500 space-y-0.5">
-                <p><b class="text-slate-700">Fecha de Emisión:</b> ${fechaFormateada} — ${oc.hora_emision || '-'}</p>
-                <p><b class="text-slate-700">Condición de Pago:</b> ${oc.condicion_pago}</p>
+                <p><b class="text-slate-700">Fecha de Emisión:</b> ${fechaFormateada}</p><p class="pl-1">${oc.hora_emision || '-'} hs</p>
+                <p><b class="text-slate-700">Fecha de Recepción:</b> ${fechaRecepcionFormateada || 'Aún no recibida'}</p><p class="pl-1">${fechaRecepcionFormateada ? `${oc.hora_recepcion || '-'} hs` : ''}</p>
             </div>
         </div>
 
-        <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-1 text-xs">
-            <h3 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5"><i data-lucide="truck" class="w-3.5 h-3.5"></i>Proveedor</h3>
-            ${p ? `
-            <p><b class="text-slate-700">Nombre:</b> ${p.nombreMostrado}</p>
-            <p><b class="text-slate-700">Documento:</b> ${p.documentoCompleto}</p>
-            <p><b class="text-slate-700">Domicilio:</b> ${p.direccionCompleta}</p>
-            <p><b class="text-slate-700">Teléfono:</b> ${p.telefono || '-'}</p>
-            ` : `<p>${oc.proveedor}</p>`}
-        </div>
-
-        ${oc.observaciones ? `
-        <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
-            <b>Observaciones:</b> ${oc.observaciones}
-        </div>` : ''}
+        ${tarjetaProveedorComprasHTML(p, oc.proveedor, 'Condición de Pago', oc.condicion_pago)}
 
         <div>
             <h3 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Detalle de Materias Primas</h3>
@@ -560,8 +524,14 @@ function verDetalleOrdenCompra(id) {
             </table>
         </div>
 
-        <div class="border-t border-slate-200 pt-4 text-right">
-            <p class="text-lg font-bold text-slate-900">Total: $ ${oc.total.toLocaleString()}</p>
+        ${oc.observaciones ? `
+        <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
+            <b>Observaciones:</b> ${oc.observaciones}
+        </div>` : ''}
+
+        <div class="border-t border-slate-200 pt-4 flex items-baseline gap-2">
+            <span class="text-sm font-semibold text-slate-500">Total:</span>
+            <span class="text-lg font-bold text-slate-900">$ ${oc.total.toLocaleString()}</span>
         </div>
     `;
     lucide.createIcons();
@@ -573,10 +543,27 @@ function verDetalleOrdenCompra(id) {
 // ==========================================
 let proveedorSeleccionadoPresupuesto = null;
 let itemsPresupuestoProveedorActual = [];
+let itemsPresupuestoMaquinariaActual = [];
+let tipoPresupuestoProveedorActual = 'MateriaPrima'; // 'MateriaPrima' | 'Maquinaria'
 let presupuestoProveedorEnEdicionId = null;
 let ordenPresupuestoProveedorCampo = null;
 let ordenPresupuestoProveedorDireccion = null;
 let filtroPresupuestoProveedorEstadoSeleccionado = '';
+let filtroTipoPresupuestoProveedorListado = '';
+
+// Alterna entre cotizar Materia Prima o Maquinaria: bloquea/oculta la sección del tipo no elegido.
+function elegirTipoPresupuestoProveedor(tipo) {
+    tipoPresupuestoProveedorActual = tipo;
+    document.getElementById('presup-seccion-materia-prima').classList.toggle('hidden', tipo !== 'MateriaPrima');
+    document.getElementById('presup-seccion-maquinaria').classList.toggle('hidden', tipo !== 'Maquinaria');
+    ['MateriaPrima', 'Maquinaria'].forEach(t => {
+        const boton = document.getElementById(`tipo-presupuesto-${t}`);
+        if (!boton) return;
+        const activo = t === tipo;
+        boton.className = `tipo-presupuesto-proveedor px-4 py-1.5 rounded-md font-semibold transition ${activo ? 'bg-red-600 text-white' : 'text-slate-500 hover:bg-white'}`;
+    });
+    calcularTotalPresupuestoProveedor();
+}
 
 // Si Producción generó una Nota de Pedido de MP por faltante de stock, la precarga acá como ítems del presupuesto.
 function precargarNotaPedidoMPPendiente() {
@@ -589,9 +576,11 @@ function precargarNotaPedidoMPPendiente() {
             const cat = CATALOGO_MATERIAS_PRIMAS.find(c => c.clave === f.clave);
             if (!cat) return;
             const cantidad = Math.ceil(f.cantidad);
-            itemsPresupuestoProveedorActual.push({ id: Date.now() + Math.random(), clave: cat.clave, tipo: cat.tipo, marca: cat.marca, nombre: cat.nombre, cantidad, precioUnitario: cat.precio, subtotal: cantidad * cat.precio });
+            itemsPresupuestoProveedorActual.push({ id: Date.now() + Math.random(), clave: cat.clave, tipo: nombreTipoMateriaPrima(cat.id_tipo_materia_prima), marca: nombreMarca(cat.id_marca), nombre: cat.nombre, cantidad, precioUnitario: cat.precio, subtotal: cantidad * cat.precio });
         });
         renderizarTablaItemsPresupuestoProveedor();
+        // No hay una Orden de Producción confirmada todavía en este punto (el faltante se calcula antes de
+        // registrar la producción, como chequeo previo), por eso la observación queda genérica.
         document.getElementById('presup-proveedor-observaciones').value = 'Generado automáticamente desde Producción por faltante de materia prima.';
     } catch (e) { /* nota corrupta o vacía: se ignora */ }
 }
@@ -667,7 +656,7 @@ function filtrarMateriaPrimaAutocompletadoPresupuesto() {
 
     if (!termino) { cont.classList.add('hidden'); cont.innerHTML = ''; return; }
 
-    const filtrados = CATALOGO_MATERIAS_PRIMAS.filter(m => normalizarTexto(m.nombre).includes(termino) || normalizarTexto(m.tipo).includes(termino) || normalizarTexto(m.marca).includes(termino));
+    const filtrados = CATALOGO_MATERIAS_PRIMAS.filter(m => normalizarTexto(m.nombre).includes(termino) || normalizarTexto(nombreTipoMateriaPrima(m.id_tipo_materia_prima)).includes(termino) || normalizarTexto(nombreMarca(m.id_marca)).includes(termino));
     if (!filtrados.length) {
         cont.innerHTML = `<p class="px-3 py-2 text-xs text-slate-400">Sin resultados.</p>`;
         cont.classList.remove('hidden');
@@ -677,7 +666,7 @@ function filtrarMateriaPrimaAutocompletadoPresupuesto() {
         const idx = CATALOGO_MATERIAS_PRIMAS.indexOf(m);
         return `<button type="button" onmousedown="event.preventDefault(); elegirMateriaPrimaPresupuesto(${idx})" class="block w-full text-left px-3 py-2 text-sm hover:bg-slate-100">
             <span class="block truncate">${m.nombre}</span>
-            <span class="block text-[11px] text-slate-400">${m.tipo} · ${m.marca}</span>
+            <span class="block text-[11px] text-slate-400">${nombreTipoMateriaPrima(m.id_tipo_materia_prima)} · ${nombreMarca(m.id_marca)}</span>
         </button>`;
     }).join('');
     cont.classList.remove('hidden');
@@ -709,7 +698,7 @@ function agregarMateriaPrimaPresupuesto() {
         itemExistente.cantidad += cantidad;
         itemExistente.subtotal = itemExistente.cantidad * itemExistente.precioUnitario;
     } else {
-        itemsPresupuestoProveedorActual.push({ id: Date.now(), clave: m.clave, tipo: m.tipo, marca: m.marca, nombre: m.nombre, cantidad, precioUnitario: m.precio, subtotal: m.precio * cantidad });
+        itemsPresupuestoProveedorActual.push({ id: Date.now(), clave: m.clave, tipo: nombreTipoMateriaPrima(m.id_tipo_materia_prima), marca: nombreMarca(m.id_marca), nombre: m.nombre, cantidad, precioUnitario: m.precio, subtotal: m.precio * cantidad });
     }
     document.getElementById('presup-mp-autocompletar').value = '';
     document.getElementById('presup-mp-select').value = '';
@@ -720,6 +709,102 @@ function agregarMateriaPrimaPresupuesto() {
 function eliminarItemPresupuestoProveedor(id) {
     itemsPresupuestoProveedorActual = itemsPresupuestoProveedorActual.filter(item => item.id !== id);
     renderizarTablaItemsPresupuestoProveedor();
+}
+
+// ---------- Presupuesto de Proveedor: sección Maquinaria (mismo patrón que Materia Prima) ----------
+function filtrarMaquinariaAutocompletadoPresupuesto() {
+    const input = document.getElementById('presup-maq-autocompletar');
+    const cont = document.getElementById('presup-maq-autocompletar-opciones');
+    const termino = normalizarTexto(input.value).trim();
+
+    document.getElementById('presup-maq-select').value = '';
+    if (!termino) { cont.classList.add('hidden'); cont.innerHTML = ''; return; }
+
+    const filtrados = listaMaquinaria.filter(m => normalizarTexto(m.nombre).includes(termino) || normalizarTexto(nombreMarca(m.id_marca)).includes(termino) || normalizarTexto(m.modelo).includes(termino));
+    if (!filtrados.length) {
+        cont.innerHTML = `<p class="px-3 py-2 text-xs text-slate-400">Sin resultados.</p>`;
+        cont.classList.remove('hidden');
+        return;
+    }
+    cont.innerHTML = filtrados.map(m => {
+        const idx = listaMaquinaria.indexOf(m);
+        return `<button type="button" onmousedown="event.preventDefault(); elegirMaquinariaAutocompletadoPresupuesto(${idx})" class="block w-full text-left px-3 py-2 text-sm hover:bg-slate-100">
+            <span class="block truncate">${nombreMarca(m.id_marca)} - ${m.modelo}</span>
+            <span class="block text-[11px] text-slate-400">${m.nombre}</span>
+        </button>`;
+    }).join('');
+    cont.classList.remove('hidden');
+}
+
+function elegirMaquinariaAutocompletadoPresupuesto(idx) {
+    const m = listaMaquinaria[idx];
+    document.getElementById('presup-maq-autocompletar').value = `${nombreMarca(m.id_marca)} - ${m.modelo}`;
+    document.getElementById('presup-maq-select').value = idx;
+    document.getElementById('presup-maq-autocompletar-opciones').classList.add('hidden');
+}
+
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('#presup-maq-autocompletar') && !e.target.closest('#presup-maq-autocompletar-opciones')) {
+        document.getElementById('presup-maq-autocompletar-opciones')?.classList.add('hidden');
+    }
+});
+
+function agregarMaquinariaPresupuesto() {
+    const idx = parseInt(document.getElementById('presup-maq-select').value);
+    const cantidad = parseInt(document.getElementById('presup-maq-cant').value);
+    const precioUnitario = parseFloat(document.getElementById('presup-maq-precio').value);
+
+    if (isNaN(idx)) return alert('Elegí una maquinaria de la lista de sugerencias.');
+    if (!cantidad || cantidad <= 0) return alert('Ingrese una cantidad válida.');
+    if (!precioUnitario || precioUnitario <= 0) return alert('Ingrese el precio unitario cotizado.');
+
+    const m = listaMaquinaria[idx];
+    itemsPresupuestoMaquinariaActual.push({ id: Date.now(), id_maquinaria: m.id_maquinaria, marca: nombreMarca(m.id_marca), nombre: m.nombre, modelo: m.modelo, cantidad, precioUnitario, subtotal: precioUnitario * cantidad });
+    document.getElementById('presup-maq-autocompletar').value = '';
+    document.getElementById('presup-maq-select').value = '';
+    document.getElementById('presup-maq-cant').value = 1;
+    document.getElementById('presup-maq-precio').value = '';
+    renderizarTablaItemsPresupuestoMaquinaria();
+}
+
+function eliminarItemPresupuestoMaquinaria(id) {
+    itemsPresupuestoMaquinariaActual = itemsPresupuestoMaquinariaActual.filter(item => item.id !== id);
+    renderizarTablaItemsPresupuestoMaquinaria();
+}
+
+function renderizarTablaItemsPresupuestoMaquinaria() {
+    const tbody = document.getElementById('tabla-items-presupuesto-maquinaria');
+    tbody.innerHTML = '';
+    itemsPresupuestoMaquinariaActual.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="p-3 text-slate-500">${item.marca}</td>
+            <td class="p-3 font-medium text-slate-800">${item.nombre} (${item.modelo})</td>
+            <td class="p-3 text-right">$ ${item.precioUnitario.toLocaleString()}</td>
+            <td class="p-3 text-center">
+                <input type="number" min="1" value="${item.cantidad}" onchange="actualizarCantidadItemPresupuestoMaquinaria(${item.id}, this.value)" class="w-16 text-center border border-slate-300 rounded-md p-1 text-sm outline-none focus:ring-2 focus:ring-red-500">
+            </td>
+            <td class="p-3 text-right font-semibold">$ ${item.subtotal.toLocaleString()}</td>
+            <td class="p-3 text-center">
+                <button type="button" onclick="eliminarItemPresupuestoMaquinaria(${item.id})" class="text-red-500 hover:text-red-700">
+                    <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+    lucide.createIcons();
+    calcularTotalPresupuestoProveedor();
+}
+
+function actualizarCantidadItemPresupuestoMaquinaria(id, nuevaCantidad) {
+    const cantidad = parseInt(nuevaCantidad);
+    const item = itemsPresupuestoMaquinariaActual.find(i => i.id === id);
+    if (!item) return;
+    if (!cantidad || cantidad <= 0) { renderizarTablaItemsPresupuestoMaquinaria(); return; }
+    item.cantidad = cantidad;
+    item.subtotal = item.cantidad * item.precioUnitario;
+    renderizarTablaItemsPresupuestoMaquinaria();
 }
 
 function renderizarTablaItemsPresupuestoProveedor() {
@@ -759,14 +844,23 @@ function actualizarCantidadItemPresupuestoProveedor(id, nuevaCantidad) {
 }
 
 function calcularTotalPresupuestoProveedor() {
-    const total = itemsPresupuestoProveedorActual.reduce((acc, i) => acc + i.subtotal, 0);
-    document.getElementById('cant-items-presupuesto-proveedor').innerText = itemsPresupuestoProveedorActual.length;
+    const items = tipoPresupuestoProveedorActual === 'Maquinaria' ? itemsPresupuestoMaquinariaActual : itemsPresupuestoProveedorActual;
+    const subtotal = items.reduce((acc, i) => acc + i.subtotal, 0);
+    const bonifPct = parseFloat(document.getElementById('presup-bonificacion')?.value) || 0;
+    const bonifMonto = subtotal * (bonifPct / 100);
+    const total = Math.max(0, subtotal - bonifMonto);
+
+    document.getElementById('cant-items-presupuesto-proveedor').innerText = items.length;
+    document.getElementById('subtotal-presupuesto-proveedor-monto').innerText = `$ ${subtotal.toLocaleString()}`;
+    document.getElementById('label-bonificacion-presupuesto-proveedor').innerText = `Bonificación (${bonifPct}%)`;
+    document.getElementById('bonificacion-presupuesto-proveedor-monto').innerText = `-$ ${bonifMonto.toLocaleString()}`;
     document.getElementById('total-presupuesto-proveedor-monto').innerText = `$ ${total.toLocaleString()}`;
     return total;
 }
 
 function resetFormularioPresupuestoProveedor() {
     itemsPresupuestoProveedorActual = [];
+    itemsPresupuestoMaquinariaActual = [];
     proveedorSeleccionadoPresupuesto = null;
     presupuestoProveedorEnEdicionId = null;
     document.getElementById('titulo-form-presupuesto-proveedor').innerText = 'Registrar Presupuesto de Proveedor';
@@ -775,12 +869,24 @@ function resetFormularioPresupuestoProveedor() {
     document.getElementById('select-presup-proveedor').value = '';
     document.getElementById('ficha-proveedor-presupuesto').classList.add('hidden');
     document.getElementById('presup-condicion-entrega').value = '';
+    const ahora = new Date();
+    document.getElementById('presup-fecha-emision').value = ahora.toISOString().slice(0, 10);
+    document.getElementById('presup-hora-emision').value = ahora.toTimeString().slice(0, 5);
     document.getElementById('presup-fecha-vencimiento').value = '';
+    document.getElementById('presup-bonificacion').value = 0;
     document.getElementById('presup-proveedor-observaciones').value = '';
     document.getElementById('presup-mp-autocompletar').value = '';
     document.getElementById('presup-mp-select').value = '';
     document.getElementById('presup-mp-cant').value = 1;
+    document.getElementById('presup-maq-autocompletar').value = '';
+    document.getElementById('presup-maq-select').value = '';
+    document.getElementById('presup-maq-cant').value = 1;
+    document.getElementById('presup-maq-precio').value = '';
+    document.getElementById('presup-proveedor-empleado').value = usuarioInternoActual.nombre;
+    document.getElementById('presup-proveedor-empleado-nombre').textContent = `${usuarioInternoActual.nombre} (${usuarioInternoActual.rol})`;
+    elegirTipoPresupuestoProveedor('MateriaPrima');
     renderizarTablaItemsPresupuestoProveedor();
+    renderizarTablaItemsPresupuestoMaquinaria();
     lucide.createIcons();
 }
 
@@ -789,17 +895,30 @@ function editarPresupuestoProveedor(id) {
     if (!presupuesto || presupuesto.estado !== 'Pendiente') return;
 
     presupuestoProveedorEnEdicionId = id;
-    itemsPresupuestoProveedorActual = presupuesto.detalle.map(i => ({ id: Date.now() + Math.random(), clave: i.clave, tipo: i.tipo, marca: i.marca, nombre: i.nombre, cantidad: i.cantidad, precioUnitario: i.precio_unitario, subtotal: i.subtotal }));
+    itemsPresupuestoProveedorActual = [];
+    itemsPresupuestoMaquinariaActual = [];
+    if (presupuesto.tipo === 'Maquinaria') {
+        itemsPresupuestoMaquinariaActual = presupuesto.detalle.map(i => ({ id: Date.now() + Math.random(), id_maquinaria: i.id_maquinaria, marca: i.marca, nombre: i.nombre, modelo: i.modelo, cantidad: i.cantidad, precioUnitario: i.precio_unitario, subtotal: i.subtotal }));
+    } else {
+        itemsPresupuestoProveedorActual = presupuesto.detalle.map(i => ({ id: Date.now() + Math.random(), clave: i.clave, tipo: i.tipo, marca: i.marca, nombre: i.nombre, cantidad: i.cantidad, precioUnitario: i.precio_unitario, subtotal: i.subtotal }));
+    }
 
-    document.getElementById('titulo-form-presupuesto-proveedor').innerText = `Editar Presupuesto PRES-PROV-${String(id).padStart(5, '0')}`;
+    document.getElementById('titulo-form-presupuesto-proveedor').innerText = `Editar Presupuesto ${formatearIdentificador("PRES-PROV", String(id).padStart(4, '0'))}`;
     document.getElementById('btn-guardar-presupuesto-proveedor').innerHTML = '<i data-lucide="save" class="w-4 h-4"></i><span>Guardar Cambios</span>';
 
     elegirProveedorPresupuesto(listaProveedores.indexOf(presupuesto.proveedorObj));
+    elegirTipoPresupuestoProveedor(presupuesto.tipo || 'MateriaPrima');
     document.getElementById('presup-condicion-entrega').value = presupuesto.condicion_entrega || '';
+    document.getElementById('presup-fecha-emision').value = presupuesto.fecha_emision || '';
+    document.getElementById('presup-hora-emision').value = presupuesto.hora_emision || '';
     document.getElementById('presup-fecha-vencimiento').value = presupuesto.fecha_vencimiento || '';
+    document.getElementById('presup-bonificacion').value = presupuesto.bonificacion || 0;
     document.getElementById('presup-proveedor-observaciones').value = presupuesto.observaciones || '';
+    document.getElementById('presup-proveedor-empleado').value = presupuesto.empleado || usuarioInternoActual.nombre;
+    document.getElementById('presup-proveedor-empleado-nombre').textContent = presupuesto.empleado || `${usuarioInternoActual.nombre} (${usuarioInternoActual.rol})`;
 
     renderizarTablaItemsPresupuestoProveedor();
+    renderizarTablaItemsPresupuestoMaquinaria();
     mostrarSubvistaCompras('registrar-presupuesto-proveedor');
     if (window.location.hash !== '#registrar-presupuesto') window.location.hash = 'registrar-presupuesto';
     lucide.createIcons();
@@ -807,56 +926,81 @@ function editarPresupuestoProveedor(id) {
 
 function guardarPresupuestoProveedor() {
     if (!proveedorSeleccionadoPresupuesto) return alert('Buscá y seleccioná el proveedor.');
-    if (itemsPresupuestoProveedorActual.length === 0) return alert('Añadí al menos una materia prima al presupuesto.');
+    const esMaquinaria = tipoPresupuestoProveedorActual === 'Maquinaria';
+    const itemsActivos = esMaquinaria ? itemsPresupuestoMaquinariaActual : itemsPresupuestoProveedorActual;
+    if (itemsActivos.length === 0) return alert(`Añadí al menos ${esMaquinaria ? 'una maquinaria' : 'una materia prima'} al presupuesto.`);
 
     const condicionEntrega = document.getElementById('presup-condicion-entrega').value.trim();
+    const fechaEmision = document.getElementById('presup-fecha-emision').value;
+    const horaEmision = document.getElementById('presup-hora-emision').value;
     const fechaVencimiento = document.getElementById('presup-fecha-vencimiento').value || null;
+    if (!condicionEntrega) return alert('La condición de entrega es obligatoria.');
+    if (!fechaEmision || !horaEmision) return alert('La fecha y hora de emisión son obligatorias.');
+    if (!fechaVencimiento) return alert('La fecha de vencimiento es obligatoria.');
+    const bonificacion = parseFloat(document.getElementById('presup-bonificacion').value) || 0;
     const observaciones = document.getElementById('presup-proveedor-observaciones').value.trim();
-    const detalle = itemsPresupuestoProveedorActual.map(i => ({ clave: i.clave, tipo: i.tipo, marca: i.marca, nombre: i.nombre, cantidad: i.cantidad, precio_unitario: i.precioUnitario, subtotal: i.subtotal }));
+    const empleado = document.getElementById('presup-proveedor-empleado').value || usuarioInternoActual.nombre;
+    const detalle = esMaquinaria
+        ? itemsActivos.map(i => ({ id_maquinaria: i.id_maquinaria, marca: i.marca, nombre: i.nombre, modelo: i.modelo, cantidad: i.cantidad, precio_unitario: i.precioUnitario, subtotal: i.subtotal }))
+        : itemsActivos.map(i => ({ clave: i.clave, tipo: i.tipo, marca: i.marca, nombre: i.nombre, cantidad: i.cantidad, precio_unitario: i.precioUnitario, subtotal: i.subtotal }));
     const total = calcularTotalPresupuestoProveedor();
+    const datosComunes = {
+        proveedorObj: proveedorSeleccionadoPresupuesto, proveedor: proveedorSeleccionadoPresupuesto.nombreMostrado,
+        tipo: tipoPresupuestoProveedorActual, empleado, fecha_emision: fechaEmision, hora_emision: horaEmision,
+        condicion_entrega: condicionEntrega, fecha_vencimiento: fechaVencimiento, bonificacion,
+        observaciones, detalle, total_estimado: total
+    };
 
     if (presupuestoProveedorEnEdicionId) {
         const presupuesto = listaPresupuestosProveedor.find(p => p.id_presupuesto_proveedor === presupuestoProveedorEnEdicionId);
-        Object.assign(presupuesto, { proveedorObj: proveedorSeleccionadoPresupuesto, proveedor: proveedorSeleccionadoPresupuesto.nombreMostrado, condicion_entrega: condicionEntrega, fecha_vencimiento: fechaVencimiento, observaciones, detalle, total_estimado: total });
+        Object.assign(presupuesto, datosComunes);
         guardarDatos();
-        alert(`¡Presupuesto PRES-PROV-${String(presupuesto.id_presupuesto_proveedor).padStart(5, '0')} actualizado con éxito!`);
+        alert(`¡Presupuesto ${formatearIdentificador("PRES-PROV", String(presupuesto.id_presupuesto_proveedor).padStart(4, '0'))} actualizado con éxito!`);
     } else {
-        const ahora = new Date();
-        const nuevoPresupuesto = {
-            id_presupuesto_proveedor: numPresupuestoProveedorContador++,
-            proveedorObj: proveedorSeleccionadoPresupuesto, proveedor: proveedorSeleccionadoPresupuesto.nombreMostrado,
-            fecha_emision: ahora.toISOString().slice(0, 10), hora_emision: ahora.toTimeString().slice(0, 5),
-            condicion_entrega: condicionEntrega, fecha_vencimiento: fechaVencimiento,
-            estado: 'Pendiente', idOrdenCompraGenerada: null, observaciones, detalle, total_estimado: total
-        };
+        const nuevoPresupuesto = { id_presupuesto_proveedor: numPresupuestoProveedorContador++, estado: 'Pendiente', idOrdenCompraGenerada: null, ...datosComunes };
         listaPresupuestosProveedor.unshift(nuevoPresupuesto);
         guardarDatos();
-        alert(`¡Presupuesto PRES-PROV-${String(nuevoPresupuesto.id_presupuesto_proveedor).padStart(5, '0')} guardado para "${nuevoPresupuesto.proveedor}"!`);
+        alert(`¡Presupuesto ${formatearIdentificador("PRES-PROV", String(nuevoPresupuesto.id_presupuesto_proveedor).padStart(4, '0'))} guardado para "${nuevoPresupuesto.proveedor}"!`);
     }
     volverAPresupuestosProveedor();
+}
+
+// Badge chico que distingue un presupuesto de Materia Prima de uno de Maquinaria en el listado.
+function badgeTipoPresupuestoProveedor(tipo) {
+    return tipo === 'Maquinaria'
+        ? `<span class="inline-flex items-center text-xs bg-violet-100 text-violet-800 px-2 py-1 rounded whitespace-nowrap">Maquinaria</span>`
+        : `<span class="inline-flex items-center text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded whitespace-nowrap">Materia Prima</span>`;
 }
 
 function renderizarTablaPresupuestosProveedor() {
     const tbody = document.getElementById('tabla-presupuestos-proveedor');
     tbody.innerHTML = '';
+    renderizarStatsPresupuestosProveedor();
 
     const terminoNum = normalizarTexto(document.getElementById('buscar-num-presupuesto-proveedor')?.value || '').trim();
-    const terminoNombre = normalizarTexto(document.getElementById('buscar-nombre-presupuesto-proveedor')?.value || '').trim();
-    const terminoApellido = normalizarTexto(document.getElementById('buscar-apellido-presupuesto-proveedor')?.value || '').trim();
+    const terminoProveedor = normalizarTexto(document.getElementById('buscar-proveedor-presupuesto-proveedor')?.value || '').trim();
+    const terminoEmpleado = normalizarTexto(document.getElementById('buscar-empleado-presupuesto-proveedor')?.value || '').trim();
+    const fechaEmisionExacta = document.getElementById('buscar-emision-presupuesto-proveedor')?.value || '';
+    const fechaVencimientoExacta = document.getElementById('buscar-vencimiento-presupuesto-proveedor')?.value || '';
+    const montoDesde = document.getElementById('buscar-monto-desde-presupuesto-proveedor')?.value || '';
+    const montoHasta = document.getElementById('buscar-monto-hasta-presupuesto-proveedor')?.value || '';
 
     let filtrados = listaPresupuestosProveedor.filter(pr => {
-        const nombre = pr.proveedorObj ? pr.proveedorObj.nombre : '';
-        const apellido = pr.proveedorObj ? pr.proveedorObj.apellido : '';
+        const proveedor = pr.proveedorObj ? pr.proveedorObj.nombreMostrado : (pr.proveedor || '');
         return (!terminoNum || String(pr.id_presupuesto_proveedor).includes(terminoNum)) &&
-            (!terminoNombre || normalizarTexto(nombre).includes(terminoNombre)) &&
-            (!terminoApellido || normalizarTexto(apellido).includes(terminoApellido)) &&
-            (!filtroPresupuestoProveedorEstadoSeleccionado || pr.estado === filtroPresupuestoProveedorEstadoSeleccionado);
+            (!terminoProveedor || normalizarTexto(proveedor).includes(terminoProveedor)) &&
+            (!terminoEmpleado || normalizarTexto(pr.empleado).includes(terminoEmpleado)) &&
+            (!filtroPresupuestoProveedorEstadoSeleccionado || pr.estado === filtroPresupuestoProveedorEstadoSeleccionado) &&
+            (!filtroTipoPresupuestoProveedorListado || pr.tipo === filtroTipoPresupuestoProveedorListado) &&
+            coincideFechaExacta(fechaEmisionExacta, pr.fecha_emision) &&
+            coincideFechaExacta(fechaVencimientoExacta, pr.fecha_vencimiento) &&
+            coincideRangoMonto(montoDesde, montoHasta, pr.total_estimado);
     });
 
     if (ordenPresupuestoProveedorCampo && ordenPresupuestoProveedorDireccion) {
         filtrados.sort((a, b) => {
-            const va = (a.proveedorObj ? a.proveedorObj[ordenPresupuestoProveedorCampo] : '') || '';
-            const vb = (b.proveedorObj ? b.proveedorObj[ordenPresupuestoProveedorCampo] : '') || '';
+            const va = (a.proveedorObj ? a.proveedorObj.nombreMostrado : (a.proveedor || '')) || '';
+            const vb = (b.proveedorObj ? b.proveedorObj.nombreMostrado : (b.proveedor || '')) || '';
             const cmp = va.localeCompare(vb, 'es');
             return ordenPresupuestoProveedorDireccion === 'asc' ? cmp : -cmp;
         });
@@ -865,17 +1009,20 @@ function renderizarTablaPresupuestosProveedor() {
     actualizarIconoFiltroEstadoPresupuestoProveedor();
 
     if (!filtrados.length) {
-        tbody.innerHTML = `<tr><td colspan="7" class="px-6 py-10 text-center text-slate-400 text-sm">No se encontraron presupuestos con ese criterio.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" class="px-6 py-10 text-center text-slate-400 text-sm">No se encontraron presupuestos con ese criterio.</td></tr>`;
     }
     filtrados.forEach(pr => {
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50';
-        const fechaFormateada = pr.fecha_emision ? new Date(pr.fecha_emision + 'T00:00:00').toLocaleDateString('es-AR') : '-';
+        const fechaEmisionFormateada = pr.fecha_emision ? new Date(pr.fecha_emision + 'T00:00:00').toLocaleDateString('es-AR') : '-';
+        const fechaVencimientoFormateada = pr.fecha_vencimiento ? new Date(pr.fecha_vencimiento + 'T00:00:00').toLocaleDateString('es-AR') : '-';
         tr.innerHTML = `
-            <td class="px-6 py-4 font-semibold text-slate-900">PRES-PROV-${String(pr.id_presupuesto_proveedor).padStart(5, '0')}</td>
-            <td class="px-6 py-4">${pr.proveedorObj ? pr.proveedorObj.nombre : '-'}</td>
-            <td class="px-6 py-4">${pr.proveedorObj ? pr.proveedorObj.apellido : '-'}</td>
-            <td class="px-6 py-4 text-slate-500">${fechaFormateada}</td>
+            <td class="px-6 py-4 font-semibold text-slate-900">${formatearIdentificador("PRES-PROV", String(pr.id_presupuesto_proveedor).padStart(4, '0'))}</td>
+            <td class="px-6 py-4">${badgeTipoPresupuestoProveedor(pr.tipo)}</td>
+            <td class="px-6 py-4 text-slate-800">${pr.proveedorObj ? pr.proveedorObj.nombreMostrado : (pr.proveedor || '-')}</td>
+            <td class="px-6 py-4 text-slate-500">${pr.empleado || '-'}</td>
+            <td class="px-6 py-4 text-slate-500">${fechaEmisionFormateada}</td>
+            <td class="px-6 py-4 text-slate-500">${fechaVencimientoFormateada}</td>
             <td class="px-6 py-4 text-right font-medium whitespace-nowrap">$ ${pr.total_estimado.toLocaleString()}</td>
             <td class="px-6 py-4 text-center"><span class="px-2.5 py-1 ${pr.estado === 'Convertido' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'} text-xs font-semibold rounded-full whitespace-nowrap">${pr.estado}</span></td>
             <td class="px-6 py-4">
@@ -890,6 +1037,18 @@ function renderizarTablaPresupuestosProveedor() {
     lucide.createIcons();
 }
 
+function renderizarStatsPresupuestosProveedor() {
+    const total = listaPresupuestosProveedor.length;
+    const pendientes = listaPresupuestosProveedor.filter(pr => pr.estado === 'Pendiente').length;
+    const maquinaria = listaPresupuestosProveedor.filter(pr => pr.tipo === 'Maquinaria').length;
+    const materiaPrima = listaPresupuestosProveedor.filter(pr => pr.tipo !== 'Maquinaria').length;
+    const set = (id, valor) => { const el = document.getElementById(id); if (el) el.textContent = valor; };
+    set('kpi-pres-prov-total', total);
+    set('kpi-pres-prov-pendientes', pendientes);
+    set('kpi-pres-prov-materia-prima', materiaPrima);
+    set('kpi-pres-prov-maquinaria', maquinaria);
+}
+
 function alternarOrdenPresupuestoProveedor(campo) {
     if (ordenPresupuestoProveedorCampo !== campo) { ordenPresupuestoProveedorCampo = campo; ordenPresupuestoProveedorDireccion = 'asc'; }
     else if (ordenPresupuestoProveedorDireccion === 'asc') { ordenPresupuestoProveedorDireccion = 'desc'; }
@@ -898,7 +1057,7 @@ function alternarOrdenPresupuestoProveedor(campo) {
 }
 
 function actualizarIconosOrdenPresupuestoProveedor() {
-    ['nombre', 'apellido'].forEach(campo => {
+    ['proveedor'].forEach(campo => {
         const boton = document.getElementById(`btn-orden-${campo}-presupuesto-proveedor`);
         if (!boton) return;
         const activo = ordenPresupuestoProveedorCampo === campo;
@@ -913,6 +1072,12 @@ function elegirFiltroEstadoPresupuestoProveedor(valor) {
     document.getElementById('pop-estado-presupuesto-proveedor').classList.add('hidden');
     renderizarTablaPresupuestosProveedor();
 }
+
+function elegirFiltroTipoPresupuestoProveedorListado(valor) {
+    filtroTipoPresupuestoProveedorListado = valor;
+    document.getElementById('pop-tipo-presupuesto-proveedor')?.classList.add('hidden');
+    renderizarTablaPresupuestosProveedor();
+}
 function actualizarIconoFiltroEstadoPresupuestoProveedor() {
     const boton = document.getElementById('btn-filtro-estado-presupuesto-proveedor');
     if (!boton) return;
@@ -924,55 +1089,72 @@ function actualizarIconoFiltroEstadoPresupuestoProveedor() {
     });
 }
 
-// Vista impresa del Presupuesto de Proveedor — misma estética que verPresupuesto() de Ventas:
+// Vista impresa del Presupuesto de Proveedor - misma estética que verPresupuesto() de Ventas:
 // línea única de datos del proveedor + badge de estado + tabla de materias primas + total.
 function verPresupuestoProveedor(id) {
     const pr = listaPresupuestosProveedor.find(p => p.id_presupuesto_proveedor === id);
     if (!pr) return;
     const p = pr.proveedorObj;
+    const esMaquinaria = pr.tipo === 'Maquinaria';
     const fechaFormateada = pr.fecha_emision ? new Date(pr.fecha_emision + 'T00:00:00').toLocaleDateString('es-AR') : '-';
     const vencimientoFormateado = pr.fecha_vencimiento ? new Date(pr.fecha_vencimiento + 'T00:00:00').toLocaleDateString('es-AR') : '-';
 
-    document.getElementById('presupuesto-proveedor-linea').innerHTML = p
-        ? `Proveedor: ${p.nombreMostrado} · ${p.documentoCompleto} · ${p.direccionCompleta} · ${p.rubro || '-'} · Tel: ${p.telefono || '-'}`
-        : `Proveedor: ${pr.proveedor}`;
-    document.getElementById('presupuesto-proveedor-numero').innerText = `PRES-PROV-${String(pr.id_presupuesto_proveedor).padStart(5, '0')}`;
-    document.getElementById('presupuesto-proveedor-fecha').innerText = `Fecha: ${fechaFormateada} — Vence: ${vencimientoFormateado}`;
-    const badge = document.getElementById('presupuesto-proveedor-estado-badge');
-    badge.textContent = pr.estado;
-    badge.className = `inline-block px-2.5 py-1 text-xs font-semibold rounded-full ${pr.estado === 'Convertido' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`;
+    document.getElementById('presupuesto-proveedor-linea').innerHTML = tarjetaProveedorComprasHTML(p, pr.proveedor, 'Condición de Entrega', pr.condicion_entrega);
+    document.getElementById('presupuesto-proveedor-numero').innerText = `${formatearIdentificador("PRES-PROV", String(pr.id_presupuesto_proveedor).padStart(4, '0'))}`;
+    document.getElementById('presupuesto-proveedor-fecha-emision').textContent = fechaFormateada;
+    document.getElementById('presupuesto-proveedor-hora-emision').textContent = pr.hora_emision || '-';
+    document.getElementById('presupuesto-proveedor-vencimiento').textContent = vencimientoFormateado;
 
+    // El detalle cambia según el tipo: Materia Prima (Marca/Nombre/Cantidad/Precio/Subtotal) o Maquinaria (Marca/Maquinaria/Cantidad/Precio/Subtotal).
+    document.getElementById('presupuesto-proveedor-detalle-head').innerHTML = `
+        <tr>
+            <th class="py-2">Marca</th>
+            <th class="py-2">${esMaquinaria ? 'Maquinaria' : 'Nombre'}</th>
+            <th class="py-2 text-center">Cant.</th>
+            <th class="py-2 text-right">Precio</th>
+            <th class="py-2 text-right">Subtotal</th>
+        </tr>`;
     document.getElementById('presupuesto-proveedor-detalle-body').innerHTML = pr.detalle.map(i => `
         <tr>
-            <td class="py-2 text-slate-500">${i.tipo}</td>
             <td class="py-2 text-slate-500">${i.marca}</td>
-            <td class="py-2">${i.nombre}</td>
-            <td class="py-2 text-right">$ ${i.precio_unitario.toLocaleString()}</td>
+            <td class="py-2">${i.nombre}${esMaquinaria && i.modelo ? ` (${i.modelo})` : ''}</td>
             <td class="py-2 text-center">${i.cantidad}</td>
+            <td class="py-2 text-right">$ ${i.precio_unitario.toLocaleString()}</td>
             <td class="py-2 text-right">$ ${i.subtotal.toLocaleString()}</td>
         </tr>`).join('');
-    document.getElementById('presupuesto-proveedor-total-monto').innerText = `Total Estimado: $ ${pr.total_estimado.toLocaleString()}`;
-    document.getElementById('presupuesto-proveedor-condicion-entrega').textContent = pr.condicion_entrega || '-';
+
+    const subtotal = pr.detalle.reduce((acc, i) => acc + i.subtotal, 0);
+    const bonifPct = pr.bonificacion || 0;
+    const bonifMonto = subtotal * (bonifPct / 100);
+    document.getElementById('presupuesto-proveedor-subtotal-monto').textContent = `$ ${subtotal.toLocaleString()}`;
+    document.getElementById('presupuesto-proveedor-bonificacion-linea').textContent = bonifPct ? `Bonificación (${bonifPct}%): -$ ${bonifMonto.toLocaleString()}` : '';
+    document.getElementById('presupuesto-proveedor-total-monto').innerText = `$ ${pr.total_estimado.toLocaleString()}`;
+
+    const obs = document.getElementById('presupuesto-proveedor-observaciones');
+    if (pr.observaciones) {
+        obs.innerHTML = `<b>Observaciones:</b> ${pr.observaciones}`;
+        obs.classList.remove('hidden');
+    } else {
+        obs.classList.add('hidden');
+    }
 
     const wrapGenerar = document.getElementById('presupuesto-proveedor-generar-oc-wrap');
     wrapGenerar.innerHTML = pr.estado === 'Pendiente'
         ? `<button type="button" onclick="editarPresupuestoProveedor(${pr.id_presupuesto_proveedor})" class="bg-slate-100 border border-slate-300 text-slate-700 px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-200 flex items-center space-x-2"><i data-lucide="pencil" class="w-4 h-4"></i><span>Editar</span></button>
            <button type="button" onclick="generarOrdenCompraDesdePresupuesto(${pr.id_presupuesto_proveedor})" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2"><i data-lucide="arrow-right-circle" class="w-4 h-4"></i><span>Generar Orden de Compra</span></button>`
-        : pr.idOrdenCompraGenerada ? `<p class="text-xs text-slate-500">Convertido en la orden de compra OC-${pr.idOrdenCompraGenerada}.</p>` : '';
+        : pr.idOrdenCompraGenerada ? `<p class="text-xs text-slate-500">Convertido en la orden de compra ${formatearIdentificador("OC", pr.idOrdenCompraGenerada)}.</p>` : '';
     lucide.createIcons();
     mostrarSubvistaCompras('presupuesto-proveedor-detalle');
 }
 
 // Precarga Registrar Orden de Compra con el proveedor y el detalle de este presupuesto (misma lógica
-// que poblarPresupuestosPreviosOC + cargarPresupuestoEnOC, pero disparada desde el botón del detalle).
+// que elegirPresupuestoOC, pero disparada desde el botón del detalle en vez de la búsqueda).
 function generarOrdenCompraDesdePresupuesto(id) {
-    const pr = listaPresupuestosProveedor.find(p => p.id_presupuesto_proveedor === id);
-    if (!pr || pr.estado !== 'Pendiente') return;
+    const idx = listaPresupuestosProveedor.findIndex(p => p.id_presupuesto_proveedor === id);
+    if (idx === -1) return;
 
     resetFormularioOC();
-    elegirProveedorOC(listaProveedores.indexOf(pr.proveedorObj));
-    document.getElementById('oc-presupuesto-previo').value = pr.id_presupuesto_proveedor;
-    cargarPresupuestoEnOC();
+    elegirPresupuestoOC(idx);
 
     mostrarSubvistaCompras('registrar-orden-compra');
     if (window.location.hash !== '#registrar-orden-compra') window.location.hash = 'registrar-orden-compra';
@@ -1071,7 +1253,7 @@ function poblarOrdenesCompraRemito() {
     }
     vacio.classList.add('hidden');
     select.innerHTML = `<option value="" disabled selected>Elegí una orden de compra</option>` +
-        ordenes.map(oc => `<option value="${oc.id}">OC-${String(oc.id).padStart(3, '0')} — $ ${oc.total.toLocaleString()} (${oc.estado})</option>`).join('');
+        ordenes.map(oc => `<option value="${oc.id}">${formatearIdentificador("OC", String(oc.id).padStart(4, '0'))} - $ ${oc.total.toLocaleString()} (${oc.estado})</option>`).join('');
 }
 
 // Precarga el detalle de materias primas desde la Orden de Compra elegida (editable: lo recibido puede diferir de lo pedido).
@@ -1092,7 +1274,7 @@ function filtrarMateriaPrimaAutocompletadoRemito() {
     document.getElementById('remito-mp-select').value = '';
     if (!termino) { cont.classList.add('hidden'); cont.innerHTML = ''; return; }
 
-    const filtrados = CATALOGO_MATERIAS_PRIMAS.filter(m => normalizarTexto(m.nombre).includes(termino) || normalizarTexto(m.tipo).includes(termino) || normalizarTexto(m.marca).includes(termino));
+    const filtrados = CATALOGO_MATERIAS_PRIMAS.filter(m => normalizarTexto(m.nombre).includes(termino) || normalizarTexto(nombreTipoMateriaPrima(m.id_tipo_materia_prima)).includes(termino) || normalizarTexto(nombreMarca(m.id_marca)).includes(termino));
     if (!filtrados.length) {
         cont.innerHTML = `<p class="px-3 py-2 text-xs text-slate-400">Sin resultados.</p>`;
         cont.classList.remove('hidden');
@@ -1102,7 +1284,7 @@ function filtrarMateriaPrimaAutocompletadoRemito() {
         const idx = CATALOGO_MATERIAS_PRIMAS.indexOf(m);
         return `<button type="button" onmousedown="event.preventDefault(); elegirMateriaPrimaRemito(${idx})" class="block w-full text-left px-3 py-2 text-sm hover:bg-slate-100">
             <span class="block truncate">${m.nombre}</span>
-            <span class="block text-[11px] text-slate-400">${m.tipo} · ${m.marca}</span>
+            <span class="block text-[11px] text-slate-400">${nombreTipoMateriaPrima(m.id_tipo_materia_prima)} · ${nombreMarca(m.id_marca)}</span>
         </button>`;
     }).join('');
     cont.classList.remove('hidden');
@@ -1133,7 +1315,7 @@ function agregarMateriaPrimaRemito() {
     if (itemExistente) {
         itemExistente.cantidad += cantidad;
     } else {
-        itemsRemitoActual.push({ id: Date.now(), clave: m.clave, tipo: m.tipo, marca: m.marca, nombre: m.nombre, cantidad });
+        itemsRemitoActual.push({ id: Date.now(), clave: m.clave, tipo: nombreTipoMateriaPrima(m.id_tipo_materia_prima), marca: nombreMarca(m.id_marca), nombre: m.nombre, cantidad });
     }
     document.getElementById('remito-mp-autocompletar').value = '';
     document.getElementById('remito-mp-select').value = '';
@@ -1229,8 +1411,16 @@ function confirmarRemito() {
         detalle: itemsRemitoActual.map(i => ({ clave: i.clave, tipo: i.tipo, marca: i.marca, nombre: i.nombre, cantidad: i.cantidad }))
     };
     listaRemitos.unshift(remito);
+
+    // Confirmar el remito cierra el ciclo: la Orden de Compra pasa a "Recibida" con su fecha/hora de recepción.
+    if (ordenCompraSeleccionadaRemito.estado !== 'Cancelada') {
+        ordenCompraSeleccionadaRemito.estado = 'Recibida';
+        ordenCompraSeleccionadaRemito.fecha_recepcion = fechaEntrega;
+        ordenCompraSeleccionadaRemito.hora_recepcion = horaEntrega;
+    }
+
     guardarDatos();
-    alert(`¡Remito REM-${String(remito.id_remito_proveedor).padStart(4, '0')} registrado con éxito!`);
+    alert(`¡Remito ${formatearIdentificador("REM", String(remito.id_remito_proveedor).padStart(4, '0'))} registrado con éxito! La Orden de Compra ${formatearIdentificador("OC", ordenCompraSeleccionadaRemito.id)} quedó marcada como Recibida.`);
     volverARemitos();
 }
 
@@ -1251,12 +1441,20 @@ function actualizarIconoOrdenRemitos() {
 function renderizarTablaRemitos() {
     const tbody = document.getElementById('tabla-remitos');
     if (!tbody) return;
+    renderizarStatsRemitos();
     const terminoNum = normalizarTexto(document.getElementById('buscar-num-remito')?.value || '').trim();
+    const terminoCompra = normalizarTexto(document.getElementById('buscar-num-compra-remito')?.value || '').trim();
     const terminoProveedor = normalizarTexto(document.getElementById('buscar-proveedor-remito')?.value || '').trim();
+    const terminoFirma = normalizarTexto(document.getElementById('buscar-firma-remito')?.value || '').trim();
+    const fechaRemito = document.getElementById('buscar-fecha-remito')?.value || '';
+    const fechaEntregaRemito = document.getElementById('buscar-entrega-remito')?.value || '';
 
     let filtrados = listaRemitos.filter(r =>
-        (!terminoNum || String(r.id_remito_proveedor).includes(terminoNum)) &&
-        (!terminoProveedor || normalizarTexto(r.proveedor).includes(terminoProveedor))
+        (!terminoNum || normalizarTexto(formatearIdentificador('REM', r.id_remito_proveedor)).includes(terminoNum)) &&
+        (!terminoCompra || normalizarTexto(formatearIdentificador('OC', r.id_orden_compra_proveedor)).includes(terminoCompra)) &&
+        (!terminoProveedor || normalizarTexto(`${r.proveedorObj?.nombreMostrado || r.proveedor}`).includes(terminoProveedor)) &&
+        (!terminoFirma || normalizarTexto(r.firma_recepcion).includes(terminoFirma)) &&
+        coincideFechaExacta(fechaRemito, r.fecha_emision) && coincideFechaExacta(fechaEntregaRemito, r.fecha_entrega)
     );
 
     if (ordenRemitosDireccion) {
@@ -1278,9 +1476,9 @@ function renderizarTablaRemitos() {
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50';
         tr.innerHTML = `
-            <td class="px-6 py-3 font-semibold text-slate-900 font-mono whitespace-nowrap">REM-${String(r.id_remito_proveedor).padStart(4, '0')}</td>
+            <td class="px-6 py-3 font-semibold text-slate-900 whitespace-nowrap">${formatearIdentificador("REM", String(r.id_remito_proveedor).padStart(4, '0'))}</td>
+            <td class="px-6 py-3 text-slate-500 whitespace-nowrap">${formatearIdentificador("OC", String(r.id_orden_compra_proveedor).padStart(4, '0'))}</td>
             <td class="px-6 py-3 font-semibold text-slate-800">${r.proveedor}</td>
-            <td class="px-6 py-3 font-mono text-slate-500 whitespace-nowrap">OC-${String(r.id_orden_compra_proveedor).padStart(3, '0')}</td>
             <td class="px-6 py-3 text-slate-500 whitespace-nowrap">${fechaEmisionFormateada}</td>
             <td class="px-6 py-3 text-slate-500 whitespace-nowrap">${fechaEntregaFormateada}</td>
             <td class="px-6 py-3 text-slate-600">${r.firma_recepcion || '-'}</td>
@@ -1291,6 +1489,17 @@ function renderizarTablaRemitos() {
         tbody.appendChild(tr);
     });
     lucide.createIcons();
+}
+
+function renderizarStatsRemitos() {
+    const total = listaRemitos.length;
+    const proveedores = new Set(listaRemitos.map(r => r.proveedorObj?.numero_documento || r.proveedor).filter(Boolean)).size;
+    const firmados = listaRemitos.filter(r => (r.firma_recepcion || '').trim()).length;
+    const set = (id, valor) => { const el = document.getElementById(id); if (el) el.textContent = valor; };
+    set('kpi-remitos-total', total);
+    set('kpi-remitos-proveedores', proveedores);
+    set('kpi-remitos-firmados', firmados);
+    set('kpi-remitos-sin-firma', total - firmados);
 }
 
 function verDetalleRemito(id) {
@@ -1311,24 +1520,15 @@ function verDetalleRemito(id) {
             <div>
                 <h1 class="text-2xl font-bold text-red-600">FÁBRICA DE PASTAS</h1>
                 <p class="text-xs text-slate-500">Remito de Proveedor</p>
-                <p class="text-sm font-bold text-slate-800 mt-2">REM-${String(r.id_remito_proveedor).padStart(4, '0')}</p>
+                <p class="text-sm font-bold text-slate-800 mt-2">${formatearIdentificador("REM", String(r.id_remito_proveedor).padStart(4, '0'))}</p>
             </div>
             <div class="text-right text-xs text-slate-500 space-y-0.5">
-                <p><b class="text-slate-700">Fecha de Emisión:</b> ${fechaEmisionFormateada} ${r.hora_emision || ''}</p>
-                <p><b class="text-slate-700">Fecha de Entrega:</b> ${fechaEntregaFormateada} ${r.hora_entrega || ''}</p>
-                <p><b class="text-slate-700">Orden de Compra:</b> OC-${String(r.id_orden_compra_proveedor).padStart(3, '0')}</p>
+                <p><b class="text-slate-700">Fecha:</b> ${fechaEmisionFormateada}</p>
+                <p><b class="text-slate-700">Fecha entrega:</b> ${fechaEntregaFormateada}</p>
+                <p><b class="text-slate-700">Orden de Compra:</b> ${formatearIdentificador("OC", String(r.id_orden_compra_proveedor).padStart(4, '0'))}</p>
             </div>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600">
-            <p><b class="text-slate-700">Proveedor:</b> ${r.proveedor}</p>
-            <p><b class="text-slate-700">Documento:</b> ${r.proveedorObj ? r.proveedorObj.documentoCompleto : '-'}</p>
-            <p class="sm:col-span-2"><b class="text-slate-700">Domicilio:</b> ${r.proveedorObj ? r.proveedorObj.direccionCompleta : '-'}</p>
-            <p><b class="text-slate-700">Firma de Recepción:</b> ${r.firma_recepcion || '-'}</p>
-        </div>
-        ${r.observaciones ? `
-        <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
-            <b>Observaciones:</b> ${r.observaciones}
-        </div>` : ''}
+        ${tarjetaProveedorComprasHTML(r.proveedorObj, r.proveedor, 'Firma Recepción', r.firma_recepcion)}
         <div>
             <h3 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Materias Primas Recibidas</h3>
             <table class="w-full text-xs text-left">
@@ -1337,7 +1537,11 @@ function verDetalleRemito(id) {
                 </thead>
                 <tbody>${filas}</tbody>
             </table>
-        </div>`;
+        </div>
+        ${r.observaciones ? `
+        <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
+            <b>Observaciones:</b> ${r.observaciones}
+        </div>` : ''}`;
     mostrarSubvistaCompras('detalle-remito');
     lucide.createIcons();
 }

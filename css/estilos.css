@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
+
 .nav-link {
     color: rgba(255,255,255,0.78);
 }
@@ -102,3 +104,7 @@
 }
 .toast-login { animation: toastIn .2s ease-out; }
 @keyframes toastIn { from { opacity:0; transform:translateY(-6px);} to { opacity:1; transform:translateY(0);} }
+/* Tipografía única para todas las páginas del sistema y sus controles. */
+html, body, body *, button, input, select, textarea {
+    font-family: 'Montserrat', Arial, Helvetica, sans-serif !important;
+}

@@ -9,7 +9,7 @@ let ordenHistorialDireccion = null; // null | 'asc' | 'desc'
 let filtroPedidoTipoSeleccionado = '';
 let filtroPedidoTipoDocSeleccionado = '';
 let filtroPedidoEstadoSeleccionado = '';
-let segmentoPedidoSeleccionado = ''; // '' | 'Evento' | 'Donacion' — filtro externo a la tabla, fuera de la columna Tipo Cliente
+let filtroPedidoTipoPedidoSeleccionado = ''; // '' | 'Normal' | 'Web' | 'Evento' | 'Donación' - filtro de la columna "Tipo Pedido"
 
 const SUBVISTAS_VENTAS = ['dashboard', 'nuevo-pedido', 'presupuesto', 'detalle-pedido', 'comprobante-venta', 'presupuestos', 'registrar-presupuesto', 'comprobantes-venta', 'comprobante-venta-detalle'];
 function mostrarSubvistaVentas(subvista) {
@@ -60,7 +60,8 @@ let ordenCVDireccion = null;
 let filtroCVTipoSeleccionado = '';
 let filtroCVTipoDocSeleccionado = '';
 let filtroCVEstadoSeleccionado = '';
-let segmentoCVSeleccionado = ''; // '' | 'Evento' | 'Donacion' — filtro externo a la tabla, fuera de la columna Tipo Cliente
+let filtroCVTipoPedidoSeleccionado = ''; // '' | 'Normal' | 'Web' | 'Evento' | 'Donación' - filtro de la columna "Tipo de Pedido"
+let filtroCVTipoComprobanteSeleccionado = ''; // '' | '1' | '2' - filtro de la columna "Tipo comprobante" (id_tipo_comprobante_venta)
 
 function renderizarTablaComprobantesVenta() {
     const tbody = document.getElementById('tabla-comprobantes-venta');
@@ -75,30 +76,35 @@ function renderizarTablaComprobantesVenta() {
     document.getElementById('kpi-cv-pendiente-monto').innerText = `$ ${comprobantesVenta.filter(f => f.estado === 'Pendiente').reduce((a, f) => a + f.cv.total, 0).toLocaleString()}`;
 
     const terminoNum = normalizarTexto(document.getElementById('buscar-num-cv')?.value || '').trim();
-    const terminoNombre = normalizarTexto(document.getElementById('buscar-nombre-cv')?.value || '').trim();
-    const terminoApellido = normalizarTexto(document.getElementById('buscar-apellido-cv')?.value || '').trim();
+    const terminoCliente = normalizarTexto(document.getElementById('buscar-cliente-cv')?.value || '').trim();
     const terminoDocumento = normalizarTexto(document.getElementById('buscar-documento-cv')?.value || '').trim();
+    const terminoPedido = normalizarTexto(document.getElementById('buscar-pedido-cv')?.value || '').trim();
+    const fechaExacta = document.getElementById('buscar-fecha-cv')?.value || '';
+    const montoDesde = document.getElementById('buscar-monto-desde-cv')?.value || '';
+    const montoHasta = document.getElementById('buscar-monto-hasta-cv')?.value || '';
 
     let filtradas = comprobantesVenta.filter(({ cv, estado }) => {
-        const nombre = cv.clienteObj ? cv.clienteObj.nombre : '';
-        const apellido = cv.clienteObj ? cv.clienteObj.apellido : '';
+        const cliente = cv.clienteObj ? cv.clienteObj.nombreMostrado : (cv.cliente || '');
         const documento = cv.clienteObj ? cv.clienteObj.numero_documento : '';
         const tipoDocumento = cv.clienteObj ? cv.clienteObj.tipo_documento : '';
         const tipoCliente = cv.clienteObj ? cv.clienteObj.tipo_cliente : '';
         return (!terminoNum || String(cv.id_comprobante_venta_cliente).includes(terminoNum)) &&
-            (!terminoNombre || normalizarTexto(nombre).includes(terminoNombre)) &&
-            (!terminoApellido || normalizarTexto(apellido).includes(terminoApellido)) &&
+            (!terminoCliente || normalizarTexto(cliente).includes(terminoCliente)) &&
             (!terminoDocumento || normalizarTexto(documento).includes(terminoDocumento)) &&
+            (!terminoPedido || String(cv.id_orden_pedido_cliente).includes(terminoPedido)) &&
             (!filtroCVTipoDocSeleccionado || tipoDocumento === filtroCVTipoDocSeleccionado) &&
             (!filtroCVEstadoSeleccionado || estado === filtroCVEstadoSeleccionado) &&
             (!filtroCVTipoSeleccionado || tipoCliente === filtroCVTipoSeleccionado) &&
-            (!segmentoCVSeleccionado || (segmentoCVSeleccionado === 'Evento' ? cv.esEvento : cv.esDonacion));
+            (!filtroCVTipoPedidoSeleccionado || tipoPedidoTexto(cv) === filtroCVTipoPedidoSeleccionado) &&
+            (!filtroCVTipoComprobanteSeleccionado || String(cv.id_tipo_comprobante_venta) === filtroCVTipoComprobanteSeleccionado) &&
+            coincideFechaExacta(fechaExacta, cv.fecha_emision) &&
+            coincideRangoMonto(montoDesde, montoHasta, cv.total);
     });
 
     if (ordenCVCampo && ordenCVDireccion) {
         filtradas.sort((a, b) => {
-            const va = (a.cv.clienteObj ? a.cv.clienteObj[ordenCVCampo] : '') || '';
-            const vb = (b.cv.clienteObj ? b.cv.clienteObj[ordenCVCampo] : '') || '';
+            const va = (a.cv.clienteObj ? a.cv.clienteObj.nombreMostrado : (a.cv.cliente || '')) || '';
+            const vb = (b.cv.clienteObj ? b.cv.clienteObj.nombreMostrado : (b.cv.cliente || '')) || '';
             const cmp = va.localeCompare(vb, 'es');
             return ordenCVDireccion === 'asc' ? cmp : -cmp;
         });
@@ -107,10 +113,11 @@ function renderizarTablaComprobantesVenta() {
     actualizarIconoFiltroTipoComprobantesVenta();
     actualizarIconoFiltroTipoDocComprobantesVenta();
     actualizarIconoFiltroEstadoComprobantesVenta();
-    actualizarSegmentoComprobantesVenta();
+    actualizarIconoFiltroTipoPedidoComprobantesVenta();
+    actualizarIconoFiltroTipoComprobanteCV();
 
     if (!filtradas.length) {
-        tbody.innerHTML = `<tr><td colspan="10" class="px-6 py-10 text-center text-slate-400 text-sm">No se encontraron comprobantes con ese criterio.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="12" class="px-6 py-10 text-center text-slate-400 text-sm">No se encontraron comprobantes con ese criterio.</td></tr>`;
     }
     const coloresEstadoCV = { 'Pendiente': 'bg-amber-100 text-amber-800', 'Cobrada': 'bg-emerald-100 text-emerald-800', 'Anulada': 'bg-slate-200 text-slate-600' };
     filtradas.forEach(({ cv, estado }) => {
@@ -118,12 +125,14 @@ function renderizarTablaComprobantesVenta() {
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50';
         tr.innerHTML = `
-            <td class="px-6 py-4 font-semibold text-slate-900">CV-${String(cv.id_comprobante_venta_cliente).padStart(5, '0')}</td>
-            <td class="px-6 py-4">${cv.clienteObj ? cv.clienteObj.nombre : '-'}</td>
-            <td class="px-6 py-4">${cv.clienteObj ? cv.clienteObj.apellido : '-'}</td>
+            <td class="px-6 py-4 font-semibold text-slate-900">${formatearIdentificador("CV", String(cv.id_comprobante_venta_cliente).padStart(4, '0'))}</td>
+            <td class="px-6 py-4 text-slate-500 whitespace-nowrap">${formatearIdentificador('PED', cv.id_orden_pedido_cliente)}</td>
+            <td class="px-6 py-4">${cv.clienteObj ? cv.clienteObj.nombreMostrado : (cv.cliente || '-')}</td>
             <td class="px-6 py-4 text-slate-500">${cv.clienteObj ? cv.clienteObj.tipo_documento : '-'}</td>
             <td class="px-6 py-4 text-slate-500">${cv.clienteObj ? cv.clienteObj.numero_documento : '-'}</td>
             <td class="px-6 py-4">${badgeTipoCliente(cv.clienteObj ? cv.clienteObj.tipo_cliente : '-')}</td>
+            <td class="px-6 py-4">${badgeTipoPedido(cv)}</td>
+            <td class="px-6 py-4 text-slate-500 whitespace-nowrap">${TIPO_COMPROBANTE_VENTA[cv.id_tipo_comprobante_venta] || '-'}</td>
             <td class="px-6 py-4 text-slate-500">${fechaFormateada}</td>
             <td class="px-6 py-4 text-right font-medium whitespace-nowrap">$ ${cv.total.toLocaleString()}</td>
             <td class="px-6 py-4 text-center"><span class="px-2.5 py-1 ${coloresEstadoCV[estado]} text-xs font-semibold rounded-full whitespace-nowrap">${estado}</span></td>
@@ -131,12 +140,26 @@ function renderizarTablaComprobantesVenta() {
                 <div class="flex items-center justify-start gap-1.5">
                     <button onclick="verComprobanteVentaDesdeListado(${cv.id_comprobante_venta_cliente})" title="Ver comprobante" class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition"><i data-lucide="eye" class="w-4 h-4"></i></button>
                     ${comprobanteVentaEsCobrable(cv) ? `<button onclick="irARegistrarCobroDesdeVentas(${cv.id_comprobante_venta_cliente})" title="Registrar cobro" class="p-2 rounded-lg text-blue-600 hover:bg-blue-50 transition"><i data-lucide="hand-coins" class="w-4 h-4"></i></button>` : ''}
+                    ${!cv.es_anulado ? `<button onclick="anularComprobanteVentaListado(${cv.id_comprobante_venta_cliente})" title="Anular comprobante" class="p-2 rounded-lg text-red-500 hover:bg-red-50 transition"><i data-lucide="ban" class="w-4 h-4"></i></button>` : ''}
                 </div>
             </td>
         `;
         tbody.appendChild(tr);
     });
     lucide.createIcons();
+}
+
+// Anular desde el listado: además de marcar el comprobante como anulado, cancela el pedido asociado
+// para que ambos queden siempre consistentes (mismo criterio que ya usa cancelarPedidoListado, a la inversa).
+function anularComprobanteVentaListado(idComprobante) {
+    const cv = listaComprobantesVenta.find(c => c.id_comprobante_venta_cliente === idComprobante);
+    if (!cv || cv.es_anulado) return;
+    if (!confirm(`¿Anular el comprobante ${formatearIdentificador("CV", String(idComprobante).padStart(4, '0'))}? Esto también cancela el pedido ${formatearIdentificador("PED", cv.id_orden_pedido_cliente)} asociado.`)) return;
+    cv.es_anulado = true;
+    const pedido = listaPedidos.find(p => p.id === cv.id_orden_pedido_cliente);
+    if (pedido && pedido.estado !== 'Cancelado' && pedido.estado !== 'Entregado' && pedido.estado !== 'Devuelto') pedido.estado = 'Cancelado';
+    guardarDatos();
+    renderizarTablaComprobantesVenta();
 }
 
 function alternarOrdenComprobantesVenta(campo) {
@@ -147,7 +170,7 @@ function alternarOrdenComprobantesVenta(campo) {
 }
 
 function actualizarIconosOrdenComprobantesVenta() {
-    ['nombre', 'apellido'].forEach(campo => {
+    ['cliente'].forEach(campo => {
         const boton = document.getElementById(`btn-orden-${campo}-cv`);
         if (!boton) return;
         const activo = ordenCVCampo === campo;
@@ -157,18 +180,35 @@ function actualizarIconosOrdenComprobantesVenta() {
     });
 }
 
-// Filtro externo a la tabla (chips "Todos / Eventos / Donaciones"), independiente de la columna Tipo Cliente.
-function elegirSegmentoComprobantesVenta(valor) {
-    segmentoCVSeleccionado = valor;
+function elegirFiltroTipoComprobanteCV(valor) {
+    filtroCVTipoComprobanteSeleccionado = valor;
+    document.getElementById('pop-tipo-comprobante-cv').classList.add('hidden');
     renderizarTablaComprobantesVenta();
 }
+function actualizarIconoFiltroTipoComprobanteCV() {
+    const boton = document.getElementById('btn-filtro-tipo-comprobante-cv');
+    if (!boton) return;
+    boton.className = `normal-case transition ${filtroCVTipoComprobanteSeleccionado ? 'text-red-600' : 'text-slate-400 hover:text-slate-700'}`;
+    document.querySelectorAll('.opcion-filtro-tipo-comprobante-cv').forEach(op => {
+        op.classList.toggle('bg-red-50', op.dataset.valor === filtroCVTipoComprobanteSeleccionado);
+        op.classList.toggle('text-red-700', op.dataset.valor === filtroCVTipoComprobanteSeleccionado);
+        op.classList.toggle('font-medium', op.dataset.valor === filtroCVTipoComprobanteSeleccionado);
+    });
+}
 
-function actualizarSegmentoComprobantesVenta() {
-    ['', 'Evento', 'Donacion'].forEach(valor => {
-        const boton = document.getElementById(`segmento-cv-${valor}`);
-        if (!boton) return;
-        const activo = segmentoCVSeleccionado === valor;
-        boton.className = `segmento-cv px-3 py-1.5 rounded-md font-semibold transition ${activo ? 'bg-red-600 text-white' : 'text-slate-500 hover:bg-white'}`;
+function elegirFiltroTipoPedidoComprobantesVenta(valor) {
+    filtroCVTipoPedidoSeleccionado = valor;
+    document.getElementById('pop-tipo-pedido-cv').classList.add('hidden');
+    renderizarTablaComprobantesVenta();
+}
+function actualizarIconoFiltroTipoPedidoComprobantesVenta() {
+    const boton = document.getElementById('btn-filtro-tipo-pedido-cv');
+    if (!boton) return;
+    boton.className = `normal-case transition ${filtroCVTipoPedidoSeleccionado ? 'text-red-600' : 'text-slate-400 hover:text-slate-700'}`;
+    document.querySelectorAll('.opcion-filtro-tipo-pedido-cv').forEach(op => {
+        op.classList.toggle('bg-red-50', op.dataset.valor === filtroCVTipoPedidoSeleccionado);
+        op.classList.toggle('text-red-700', op.dataset.valor === filtroCVTipoPedidoSeleccionado);
+        op.classList.toggle('font-medium', op.dataset.valor === filtroCVTipoPedidoSeleccionado);
     });
 }
 
@@ -226,6 +266,7 @@ function verComprobanteVentaDesdeListado(idComprobante) {
     const cv = listaComprobantesVenta.find(c => c.id_comprobante_venta_cliente === idComprobante);
     if (!cv) return;
     document.getElementById('area-comprobante-venta-detalle').innerHTML = construirHTMLComprobanteVenta(cv);
+    lucide.createIcons();
     mostrarSubvistaVentas('comprobante-venta-detalle');
 }
 
@@ -255,7 +296,7 @@ function filtrarClientesAutocompletado() {
 
     if (!termino) { cont.classList.add('hidden'); cont.innerHTML = ''; return; }
 
-    const filtrados = listaClientes.filter(c => normalizarTexto(`${c.nombre} ${c.apellido}`).includes(termino) || normalizarTexto(c.numero_documento).includes(termino));
+    const filtrados = listaClientes.filter(c => normalizarTexto(`${c.nombre || ''} ${c.apellido || ''} ${c.razon_social || ''}`).includes(termino) || normalizarTexto(c.numero_documento).includes(termino));
     if (!filtrados.length) {
         cont.innerHTML = `<p class="px-3 py-2 text-xs text-slate-400">Sin resultados.</p>`;
         cont.classList.remove('hidden');
@@ -279,9 +320,11 @@ document.addEventListener('click', (e) => {
 
 function elegirClientePedido(idx) {
     clienteSeleccionadoPedido = listaClientes[idx];
+    if (!clienteSeleccionadoPedido) return;
     document.getElementById('cliente-autocompletar').value = clienteSeleccionadoPedido.nombreMostrado;
     document.getElementById('select-cliente-pedido').value = idx;
     document.getElementById('cliente-autocompletar-opciones').classList.add('hidden');
+    cerrarModalNuevoCliente();
     mostrarFichaClientePedido();
     calcularTotalPedido();
 }
@@ -292,11 +335,11 @@ function mostrarFichaClientePedido() {
     if (!c) { ficha.classList.add('hidden'); return; }
     ficha.innerHTML = `
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
-            <p><b class="text-slate-700">Categoría:</b> <span class="inline-block bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-medium">${c.tipo_cliente}</span></p>
-            <p><b class="text-slate-700">Documento:</b> ${c.documentoCompleto}</p>
-            <p><b class="text-slate-700">Condición IVA:</b> ${c.condicion_iva}</p>
-            <p><b class="text-slate-700">Dirección:</b> ${c.direccionCompleta}</p>
-            <p><b class="text-slate-700">Límite de crédito:</b> $ ${c.limite_credito.toLocaleString()}</p>
+            <p><b class="text-slate-700">Categoría:</b> <span class="inline-block bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-medium">${c.tipo_cliente || '-'}</span></p>
+            <p><b class="text-slate-700">Documento:</b> ${c.documentoCompleto || '-'}</p>
+            <p><b class="text-slate-700">Condición IVA:</b> ${c.condicion_iva || '-'}</p>
+            <p><b class="text-slate-700">Dirección:</b> ${c.direccionCompleta || '-'}</p>
+            <p><b class="text-slate-700">Límite de crédito:</b> $ ${Number(c.limite_credito || 0).toLocaleString()}</p>
         </div>`;
     ficha.classList.remove('hidden');
 }
@@ -317,16 +360,17 @@ function resetDomicilioEntregaPedido() {
     document.getElementById('pedEntrega-cp').value = '';
 }
 
-let destinoModalNuevoCliente = 'pedido'; // 'pedido' | 'presupuesto' — a qué formulario vuelve el cliente recién creado
+let destinoModalNuevoCliente = 'pedido'; // 'pedido' | 'presupuesto' - a qué formulario vuelve el cliente recién creado
 
 function abrirModalNuevoCliente(destino = 'pedido') {
     destinoModalNuevoCliente = destino;
     document.getElementById('mcli-tipo-cliente').selectedIndex = 0;
-    ['mcli-nombre', 'mcli-apellido', 'mcli-razon-social', 'mcli-numero-documento', 'mcli-telefono', 'mcli-email', 'mcli-altura', 'mcli-cp'].forEach(id => document.getElementById(id).value = '');
+    ['mcli-nombre', 'mcli-apellido', 'mcli-razon-social', 'mcli-numero-documento', 'mcli-telefono', 'mcli-email', 'mcli-altura', 'mcli-cp', 'mcli-usuario', 'mcli-contrasena'].forEach(id => document.getElementById(id).value = '');
     limpiarCamposTelefono('mcli');
     document.getElementById('mcli-cuenta-corriente').checked = false;
     document.getElementById('mcli-limite').value = 0;
     actualizarVisibilidadLimiteCliente('mcli');
+    actualizarVisibilidadRazonSocialCliente('mcli');
     document.getElementById('mcli-provincia').selectedIndex = 0;
     cargarLocalidadesCascada('mcli');
     document.getElementById('modal-nuevo-cliente-pedido').classList.remove('hidden');
@@ -353,17 +397,23 @@ function guardarClienteDesdePedido() {
     const iva = document.getElementById('mcli-iva').value;
     const cuentaCorriente = document.getElementById('mcli-cuenta-corriente').checked;
     const limite = parseFloat(document.getElementById('mcli-limite').value) || 0;
+    const usuario = document.getElementById('mcli-usuario').value.trim();
+    const contrasena = document.getElementById('mcli-contrasena').value;
 
     if (!tipoCliente) return alert('Seleccioná el tipo de cliente.');
-    if (!nombre || !apellido || !numeroDocumento) return alert('Completá Nombre, Apellido y Número de Documento.');
+    if (!numeroDocumento) return alert('Completá el Número de Documento.');
+    if (tipoCliente !== 'Mayorista' && (!nombre || !apellido)) return alert('Completá Nombre y Apellido.');
     if (!provincia || !localidad || !calleObj || !altura) return alert('Completá Provincia, Localidad, Calle y Altura.');
     if (!telefono) return alert('Completá el Teléfono.');
     if (!email) return alert('Completá el Email.');
     if (!iva) return alert('Seleccioná la Condición Frente al IVA.');
     if (cuentaCorriente && limite <= 0) return alert('Indicá el Límite de Crédito Permitido para la cuenta corriente.');
+    if (tipoCliente === 'Mayorista' && !razonSocial) return alert('La Razón Social es obligatoria para clientes Mayoristas.');
+    if (!usuario) return alert('Completá el Nombre de Usuario.');
+    if (!contrasena) return alert('Completá la Contraseña.');
 
     const fechaAlta = new Date().toISOString().slice(0, 10);
-    const nuevo = new Cliente(nombre, apellido, tipoDocumento, numeroDocumento, calleObj, altura, telefono, email, iva, tipoCliente, limite, razonSocial, fechaAlta, cuentaCorriente, telefonosAdicionales);
+    const nuevo = new Cliente(nombre, apellido, tipoDocumento, numeroDocumento, calleObj, altura, telefono, email, iva, tipoCliente, limite, razonSocial, fechaAlta, cuentaCorriente, telefonosAdicionales, usuario, contrasena);
     listaClientes.unshift(nuevo);
     renderizarClientesUI();
     guardarDatos();
@@ -563,6 +613,10 @@ function resetFormularioPedido() {
     document.getElementById('pedido-bonificacion').value = 0;
     document.getElementById('pedido-observaciones').value = '';
     document.getElementById('pedido-fecha-entrega-estimada').value = '';
+    document.getElementById('pedido-hora-entrega-estimada').value = '';
+    const ahoraPedido = new Date();
+    document.getElementById('pedido-fecha-emision').value = ahoraPedido.toISOString().slice(0, 10);
+    document.getElementById('pedido-hora-emision').value = ahoraPedido.toTimeString().slice(0, 5);
     resetDomicilioEntregaPedido();
     document.getElementById('prod-autocompletar').value = '';
     document.getElementById('prod-select').value = '';
@@ -575,6 +629,7 @@ function resetFormularioPedido() {
 function validarDatosObligatoriosPedido() {
     if (!clienteSeleccionadoPedido) { alert('Buscá y seleccioná el cliente del pedido.'); return false; }
     if (itemsPedidoActual.length === 0) { alert('Añadí al menos un producto al pedido.'); return false; }
+    if (!document.getElementById('pedido-fecha-entrega-estimada').value || !document.getElementById('pedido-hora-entrega-estimada').value) { alert('Completá la fecha y hora estimadas de entrega.'); return false; }
     return true;
 }
 
@@ -589,6 +644,10 @@ function confirmarPedido() {
     const bonificacion = parseFloat(document.getElementById('pedido-bonificacion').value) || 0;
     const observaciones = document.getElementById('pedido-observaciones').value.trim();
     const fechaEntregaEstimada = document.getElementById('pedido-fecha-entrega-estimada').value || null;
+    const horaEntregaEstimada = document.getElementById('pedido-hora-entrega-estimada').value || null;
+    const fechaEmision = document.getElementById('pedido-fecha-emision').value;
+    const horaEmision = document.getElementById('pedido-hora-emision').value;
+    if (!fechaEmision || !horaEmision) { alert('Completá la Fecha y Hora de emisión.'); return; }
     const detalle = itemsPedidoActual.map(i => ({ ...i }));
 
     // Domicilio de Entrega: "cliente" reusa el domicilio registrado del cliente; "nuevo" guarda uno propio de la orden.
@@ -606,20 +665,28 @@ function confirmarPedido() {
 
     if (pedidoEnEdicionId) {
         const pedido = listaPedidos.find(p => p.id === pedidoEnEdicionId);
-        Object.assign(pedido, { clienteObj: clienteSeleccionadoPedido, cliente: clienteSeleccionadoPedido.nombreMostrado, empleado, tipo, esEvento, esDonacion, bonificacion, observaciones, fechaEntregaEstimada, detalle, total, calleEntregaObj, alturaEntrega, id_calle_entrega: idCalleEntrega });
-        actualizarComprobanteVenta(pedido);
-        alert(`¡Pedido PED-${pedido.id} actualizado con éxito! El comprobante de venta asociado se actualizó.`);
+        // esWeb no se toca acá: un pedido Web solo puede originarse automáticamente (mock data), nunca editarse a/desde Web en este formulario.
+        Object.assign(pedido, { clienteObj: clienteSeleccionadoPedido, cliente: clienteSeleccionadoPedido.nombreMostrado, empleado, tipo, esEvento, esDonacion, bonificacion, observaciones, fechaEntregaEstimada, horaEntregaEstimada, detalle, total, calleEntregaObj, alturaEntrega, id_calle_entrega: idCalleEntrega, fecha: fechaEmision, hora: horaEmision });
+        // El comprobante recién nace cuando el pedido llega a "Listo"; si todavía está Pendiente, no hay nada que actualizar.
+        if (obtenerComprobanteVentaPorPedido(pedido.id)) actualizarComprobanteVenta(pedido);
+        alert(`¡Pedido ${formatearIdentificador("PED", pedido.id)} actualizado con éxito!`);
     } else {
-        const ahora = new Date();
+        // Un pedido Mostrador normal (ni evento ni donación) nace directamente "Listo" para facturar: es una venta
+        // de stock ya producido, no necesita pasar por el circuito de fabricación (Pendiente -> En preparación).
+        const naceListo = tipo === 'Mostrador' && !esEvento && !esDonacion;
         const nuevoPedido = {
             id: numPedidoContador++, clienteObj: clienteSeleccionadoPedido, cliente: clienteSeleccionadoPedido.nombreMostrado,
-            empleado, tipo, esEvento, esDonacion, bonificacion, observaciones, fechaEntregaEstimada, detalle, total, estado: 'Pendiente',
+            empleado, tipo, esEvento, esDonacion, esWeb: false, bonificacion, observaciones, fechaEntregaEstimada, horaEntregaEstimada, detalle, total,
+            estado: naceListo ? 'Listo' : 'Pendiente',
             calleEntregaObj, alturaEntrega, id_calle_entrega: idCalleEntrega,
-            fecha: ahora.toISOString().slice(0, 10), hora: ahora.toTimeString().slice(0, 5)
+            idPresupuestoOrigen: presupuestoEnConversionId,
+            fecha: fechaEmision, hora: horaEmision
         };
         listaPedidos.unshift(nuevoPedido);
-        generarComprobanteVenta(nuevoPedido);
-        alert(`¡Pedido para "${clienteSeleccionadoPedido.nombreMostrado}" registrado! Se emitió el comprobante de venta correspondiente.`);
+        // El Comprobante de Venta se emite recién cuando el pedido llega a "Listo" (ver avanzarEstadoPedido y
+        // produccion.js > confirmarCierreOrden); si este pedido ya nace Listo, el comprobante se genera ahora mismo.
+        if (naceListo) generarComprobanteVenta(nuevoPedido);
+        alert(`¡Pedido para "${clienteSeleccionadoPedido.nombreMostrado}" registrado con éxito!`);
 
         // Si este pedido se generó a partir de un presupuesto, recién ahora (confirmado el pedido) se marca como Convertido.
         if (presupuestoEnConversionId) {
@@ -653,29 +720,35 @@ function renderizarTablaPedidosRegistrados() {
     document.getElementById('kpi-pedidos-ticket-promedio').innerText = `$ ${Math.round(ticketPromedio).toLocaleString()}`;
 
     const terminoNumPedido = normalizarTexto(document.getElementById('buscar-num-pedido')?.value || '').trim();
-    const terminoNombre = normalizarTexto(document.getElementById('buscar-nombre')?.value || '').trim();
-    const terminoApellido = normalizarTexto(document.getElementById('buscar-apellido')?.value || '').trim();
+    const terminoCliente = normalizarTexto(document.getElementById('buscar-cliente-pedido')?.value || '').trim();
     const terminoDocumento = normalizarTexto(document.getElementById('buscar-documento')?.value || '').trim();
+    const terminoPresupuesto = normalizarTexto(document.getElementById('buscar-presupuesto-pedido')?.value || '').trim();
+    const terminoEmpleado = normalizarTexto(document.getElementById('buscar-empleado-pedido')?.value || '').trim();
+    const fechaExacta = document.getElementById('buscar-fecha-pedido')?.value || '';
+    const montoDesde = document.getElementById('buscar-monto-desde-pedido')?.value || '';
+    const montoHasta = document.getElementById('buscar-monto-hasta-pedido')?.value || '';
 
     const pedidosFiltrados = listaPedidos.filter(p => {
-        const nombre = p.clienteObj ? p.clienteObj.nombre : '';
-        const apellido = p.clienteObj ? p.clienteObj.apellido : '';
+        const cliente = p.clienteObj ? p.clienteObj.nombreMostrado : (p.cliente || '');
         const documento = p.clienteObj ? p.clienteObj.numero_documento : '';
         const tipoDocumento = p.clienteObj ? p.clienteObj.tipo_documento : '';
         return (!terminoNumPedido || String(p.id).includes(terminoNumPedido)) &&
-            (!terminoNombre || normalizarTexto(nombre).includes(terminoNombre)) &&
-            (!terminoApellido || normalizarTexto(apellido).includes(terminoApellido)) &&
+            (!terminoCliente || normalizarTexto(cliente).includes(terminoCliente)) &&
             (!terminoDocumento || normalizarTexto(documento).includes(terminoDocumento)) &&
+            (!terminoPresupuesto || normalizarTexto(p.idPresupuestoOrigen ? String(p.idPresupuestoOrigen) : '').includes(terminoPresupuesto)) &&
+            (!terminoEmpleado || normalizarTexto(p.empleado).includes(terminoEmpleado)) &&
             (!filtroPedidoTipoDocSeleccionado || tipoDocumento === filtroPedidoTipoDocSeleccionado) &&
             (!filtroPedidoEstadoSeleccionado || p.estado === filtroPedidoEstadoSeleccionado) &&
             (!filtroPedidoTipoSeleccionado || p.tipo === filtroPedidoTipoSeleccionado) &&
-            (!segmentoPedidoSeleccionado || (segmentoPedidoSeleccionado === 'Evento' ? p.esEvento : p.esDonacion));
+            (!filtroPedidoTipoPedidoSeleccionado || tipoPedidoTexto(p) === filtroPedidoTipoPedidoSeleccionado) &&
+            coincideFechaExacta(fechaExacta, p.fecha) &&
+            coincideRangoMonto(montoDesde, montoHasta, p.total);
     });
 
     if (ordenHistorialCampo && ordenHistorialDireccion) {
         pedidosFiltrados.sort((a, b) => {
-            const va = (a.clienteObj ? a.clienteObj[ordenHistorialCampo] : '') || '';
-            const vb = (b.clienteObj ? b.clienteObj[ordenHistorialCampo] : '') || '';
+            const va = (a.clienteObj ? a.clienteObj.nombreMostrado : (a.cliente || '')) || '';
+            const vb = (b.clienteObj ? b.clienteObj.nombreMostrado : (b.cliente || '')) || '';
             const cmp = va.localeCompare(vb, 'es');
             return ordenHistorialDireccion === 'asc' ? cmp : -cmp;
         });
@@ -684,10 +757,10 @@ function renderizarTablaPedidosRegistrados() {
     actualizarIconoFiltroTipo();
     actualizarIconoFiltroTipoDoc();
     actualizarIconoFiltroEstado();
-    actualizarSegmentoPedidos();
+    actualizarIconoFiltroTipoPedido();
 
     if (!pedidosFiltrados.length) {
-        tbody.innerHTML = `<tr><td colspan="10" class="px-6 py-10 text-center text-slate-400 text-sm">No se encontraron pedidos con ese criterio.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="12" class="px-6 py-10 text-center text-slate-400 text-sm">No se encontraron pedidos con ese criterio.</td></tr>`;
     }
     pedidosFiltrados.forEach(p => {
         const tr = document.createElement('tr');
@@ -701,12 +774,14 @@ function renderizarTablaPedidosRegistrados() {
         const comprobanteVisible = comprobante && !comprobante.es_anulado && (p.estado === 'Listo' || p.estado === 'Entregado' || p.estado === 'Devuelto');
 
         tr.innerHTML = `
-            <td class="px-6 py-4 font-semibold text-slate-900">PED-${p.id}</td>
-            <td class="px-6 py-4">${p.clienteObj ? p.clienteObj.nombre : '-'}</td>
-            <td class="px-6 py-4">${p.clienteObj ? p.clienteObj.apellido : '-'}</td>
+            <td class="px-6 py-4 font-semibold text-slate-900">${formatearIdentificador('PED', p.id)}</td>
+            <td class="px-6 py-4 text-slate-500 whitespace-nowrap">${p.idPresupuestoOrigen ? formatearIdentificador('PRES', p.idPresupuestoOrigen) : '-'}</td>
+            <td class="px-6 py-4">${p.clienteObj ? p.clienteObj.nombreMostrado : (p.cliente || '-')}</td>
             <td class="px-6 py-4 text-slate-500">${p.clienteObj ? p.clienteObj.tipo_documento : '-'}</td>
             <td class="px-6 py-4 text-slate-500">${p.clienteObj ? p.clienteObj.numero_documento : '-'}</td>
             <td class="px-6 py-4">${badgeTipoCliente(p.tipo)}</td>
+            <td class="px-6 py-4">${badgeTipoPedido(p)}</td>
+            <td class="px-6 py-4 text-slate-500">${p.esWeb ? '-' : (p.empleado || '-')}</td>
             <td class="px-6 py-4 text-slate-500">${fechaFormateada}</td>
             <td class="px-6 py-4 text-right font-medium whitespace-nowrap">$ ${p.total.toLocaleString()}</td>
             <td class="px-6 py-4 text-center"><span class="px-2.5 py-1 ${COLOR_ESTADO_PEDIDO[p.estado]} text-xs font-semibold rounded-full whitespace-nowrap">${p.estado}</span></td>
@@ -741,7 +816,7 @@ function alternarOrdenHistorial(campo) {
 }
 
 function actualizarIconosOrdenHistorial() {
-    ['nombre', 'apellido'].forEach(campo => {
+    ['cliente'].forEach(campo => {
         const boton = document.getElementById(`btn-orden-${campo}`);
         if (!boton) return;
         const activo = ordenHistorialCampo === campo;
@@ -759,17 +834,20 @@ function elegirFiltroTipoHistorial(valor) {
 }
 
 // Filtro externo a la tabla (chips "Todos / Eventos / Donaciones"), independiente de la columna Tipo Cliente.
-function elegirSegmentoPedidos(valor) {
-    segmentoPedidoSeleccionado = valor;
+function elegirFiltroTipoPedido(valor) {
+    filtroPedidoTipoPedidoSeleccionado = valor;
+    document.getElementById('pop-tipo-pedido').classList.add('hidden');
     renderizarTablaPedidosRegistrados();
 }
 
-function actualizarSegmentoPedidos() {
-    ['', 'Evento', 'Donacion'].forEach(valor => {
-        const boton = document.getElementById(`segmento-pedidos-${valor}`);
-        if (!boton) return;
-        const activo = segmentoPedidoSeleccionado === valor;
-        boton.className = `segmento-pedidos px-3 py-1.5 rounded-md font-semibold transition ${activo ? 'bg-red-600 text-white' : 'text-slate-500 hover:bg-white'}`;
+function actualizarIconoFiltroTipoPedido() {
+    const boton = document.getElementById('btn-filtro-tipo-pedido');
+    if (!boton) return;
+    boton.className = `normal-case transition ${filtroPedidoTipoPedidoSeleccionado ? 'text-red-600' : 'text-slate-400 hover:text-slate-700'}`;
+    document.querySelectorAll('.opcion-filtro-tipo-pedido').forEach(op => {
+        op.classList.toggle('bg-red-50', op.dataset.valor === filtroPedidoTipoPedidoSeleccionado);
+        op.classList.toggle('text-red-700', op.dataset.valor === filtroPedidoTipoPedidoSeleccionado);
+        op.classList.toggle('font-medium', op.dataset.valor === filtroPedidoTipoPedidoSeleccionado);
     });
 }
 
@@ -834,6 +912,9 @@ function avanzarEstadoPedido(id) {
     }
     if (siguiente) {
         pedido.estado = siguiente;
+        // El Comprobante de Venta recién se emite cuando el pedido llega a "Listo" (no antes), para que
+        // no quede facturado algo que todavía ni empezó a prepararse.
+        if (siguiente === 'Listo') actualizarComprobanteVenta(pedido);
         if (siguiente === 'Entregado') {
             const ahora = new Date();
             pedido.fechaEntrega = ahora.toISOString().slice(0, 10);
@@ -845,7 +926,7 @@ function avanzarEstadoPedido(id) {
 }
 
 function cancelarPedidoListado(id) {
-    if (!confirm(`¿Confirma la cancelación del pedido PED-${id}? Se dejará constancia en el sistema.`)) return;
+    if (!confirm(`¿Confirma la cancelación del pedido ${formatearIdentificador("PED", id)}? Se dejará constancia en el sistema.`)) return;
     const pedido = listaPedidos.find(p => p.id === id);
     pedido.estado = 'Cancelado';
     anularComprobanteVentaDePedido(id);
@@ -860,7 +941,7 @@ function editarPedido(id) {
     pedidoEnEdicionId = id;
     itemsPedidoActual = pedido.detalle.map(i => ({ ...i }));
 
-    document.getElementById('titulo-form-pedido').innerText = `Editar Pedido PED-${id}`;
+    document.getElementById('titulo-form-pedido').innerText = `Editar Pedido ${formatearIdentificador("PED", id)}`;
     document.getElementById('btn-confirmar-pedido').innerHTML = '<i data-lucide="save" class="w-4 h-4"></i><span>Guardar Cambios</span>';
 
     elegirClientePedido(listaClientes.indexOf(pedido.clienteObj));
@@ -870,7 +951,10 @@ function editarPedido(id) {
     document.getElementById('pedido-es-donacion').checked = !!pedido.esDonacion;
     document.getElementById('pedido-bonificacion').value = pedido.bonificacion || 0;
     document.getElementById('pedido-observaciones').value = pedido.observaciones || '';
+    document.getElementById('pedido-fecha-emision').value = pedido.fecha || '';
+    document.getElementById('pedido-hora-emision').value = pedido.hora || '';
     document.getElementById('pedido-fecha-entrega-estimada').value = pedido.fechaEntregaEstimada || '';
+    document.getElementById('pedido-hora-entrega-estimada').value = pedido.horaEntregaEstimada || '';
 
     const esDomicilioPropio = pedido.calleEntregaObj && (!pedido.clienteObj || pedido.calleEntregaObj.id_calle !== pedido.clienteObj.calleObj?.id_calle || pedido.alturaEntrega !== pedido.clienteObj.altura);
     if (esDomicilioPropio) {
@@ -900,6 +984,7 @@ function verDetallePedido(id) {
     const fechaEntregaFormateada = p.fechaEntrega
         ? new Date(p.fechaEntrega + 'T00:00:00').toLocaleDateString('es-AR')
         : (p.fechaEntregaEstimada ? `${new Date(p.fechaEntregaEstimada + 'T00:00:00').toLocaleDateString('es-AR')} (estimativa)` : 'A confirmar');
+    const horaEntregaFormateada = p.horaEntrega || (p.horaEntregaEstimada ? `${p.horaEntregaEstimada} (estimativa)` : '-');
 
     const subtotalPedido = (p.detalle || []).reduce((acc, i) => acc + i.subtotal, 0);
     const descuentoPct = p.esDonacion ? 100 : (p.bonificacion || 0);
@@ -916,7 +1001,7 @@ function verDetallePedido(id) {
         const senaCubierta = cobrado >= senaMinima;
         bloqueSena = `
         <div class="${senaCubierta ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-amber-50 border-amber-200 text-amber-800'} border rounded-lg p-3 text-xs">
-            <b>Seña de Evento (50% mínimo):</b> ${senaCubierta ? 'Cubierta' : 'Pendiente'} — cobrado $ ${cobrado.toLocaleString()} de $ ${senaMinima.toLocaleString()} requeridos.
+            <b>Seña de Evento (50% mínimo):</b> ${senaCubierta ? 'Cubierta' : 'Pendiente'} - cobrado $ ${cobrado.toLocaleString()} de $ ${senaMinima.toLocaleString()} requeridos.
         </div>`;
     }
 
@@ -936,24 +1021,24 @@ function verDetallePedido(id) {
                 <h1 class="text-2xl font-bold text-red-600">FÁBRICA DE PASTAS</h1>
                 <p class="text-xs text-slate-500">Orden de Pedido de Cliente</p>
                 <div class="flex items-center gap-2 mt-2">
-                    <p class="text-sm font-bold text-slate-800">PED-${p.id}</p>
-                    <span class="px-2.5 py-1 ${COLOR_ESTADO_PEDIDO[p.estado]} text-xs font-semibold rounded-full whitespace-nowrap">${p.estado}</span>
+                    <p class="text-sm font-bold text-slate-800">${formatearIdentificador('PED', p.id)}</p>
+                    <span class="no-print px-2.5 py-1 ${COLOR_ESTADO_PEDIDO[p.estado]} text-xs font-semibold rounded-full whitespace-nowrap">${p.estado}</span>
                 </div>
             </div>
             <div class="text-left sm:text-right text-xs text-slate-500 space-y-0.5">
                 <p><b class="text-slate-700">Fecha de Pedido:</b> ${fechaPedidoFormateada}</p>
                 <p><b class="text-slate-700">Hora de Pedido:</b> ${p.hora || '-'}</p>
                 <p class="pt-1"><b class="text-slate-700">Fecha de Entrega:</b> ${fechaEntregaFormateada}</p>
-                <p><b class="text-slate-700">Hora de Entrega:</b> ${p.horaEntrega || '-'}</p>
+                <p><b class="text-slate-700">Hora de Entrega:</b> ${horaEntregaFormateada}</p>
                 <p><b class="text-slate-700">Responsable:</b> ${p.empleado}</p>
             </div>
         </div>
 
         <div class="grid grid-cols-1 gap-4">
             <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-1 text-xs">
-                <h3 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5"><i data-lucide="user" class="w-3.5 h-3.5"></i>Cliente</h3>
+                <h3 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5"><i data-lucide="user" class="w-3.5 h-3.5"></i>Cliente ${c ? badgeTipoCliente(c.tipo_cliente) : ''}</h3>
                 ${c ? `
-                <p><b class="text-slate-700">Nombre y Apellido:</b> ${c.nombre} ${c.apellido}</p>
+                <p><b class="text-slate-700">${c.tipo_cliente === 'Mayorista' ? 'Razón Social' : 'Nombre y Apellido'}:</b> ${c.tipo_cliente === 'Mayorista' ? (c.razon_social || c.nombreCompleto) : `${c.nombre} ${c.apellido}`}</p>
                 <p><b class="text-slate-700">Domicilio de Entrega:</b> ${direccionDesdeCalle(p.calleEntregaObj || c.calleObj, p.alturaEntrega || c.altura)}</p>
                 <p><b class="text-slate-700">Teléfono:</b> ${c.telefono || '-'}</p>
                 ` : `<p>${p.cliente}</p>`}
@@ -961,11 +1046,6 @@ function verDetallePedido(id) {
         </div>
 
         ${bloqueSena}
-
-        ${p.observaciones ? `
-        <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
-            <b>Observaciones:</b> ${p.observaciones}
-        </div>` : ''}
 
         <div>
             <h3 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Detalle de Productos</h3>
@@ -977,10 +1057,15 @@ function verDetallePedido(id) {
             </table>
         </div>
 
-        <div class="border-t border-slate-200 pt-4 space-y-1 text-right">
-            <p class="text-xs text-slate-500">Subtotal: $ ${subtotalPedido.toLocaleString()}</p>
-            <p class="text-xs text-emerald-600">${p.esDonacion ? 'Donación' : 'Descuento'} (${descuentoPct}%): -$ ${descuentoMonto.toLocaleString()}</p>
-            <p class="text-lg font-bold text-slate-900">Total: $ ${p.total.toLocaleString()}</p>
+        ${p.observaciones ? `
+        <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
+            <b>Observaciones:</b> ${p.observaciones}
+        </div>` : ''}
+
+        <div class="border-t border-slate-200 pt-4 space-y-1">
+            <p class="text-xs text-slate-500 text-right">Subtotal: $ ${subtotalPedido.toLocaleString()}</p>
+            <p class="text-xs text-emerald-600 text-right">${p.esDonacion ? 'Donación' : 'Descuento'} (${descuentoPct}%): -$ ${descuentoMonto.toLocaleString()}</p>
+            <div class="flex items-baseline gap-2"><span class="text-sm font-semibold text-slate-500">Total:</span><span class="text-lg font-bold text-slate-900">$ ${p.total.toLocaleString()}</span></div>
         </div>
 
         ${(p.devoluciones || []).length ? `
@@ -989,7 +1074,7 @@ function verDetallePedido(id) {
             <div class="space-y-1.5 text-xs text-slate-600">
                 ${p.devoluciones.map(d => `
                 <div class="bg-slate-50 border border-slate-200 rounded-lg p-2.5">
-                    <p class="font-semibold text-slate-700">${new Date(d.fecha + 'T00:00:00').toLocaleDateString('es-AR')} ${d.hora} — registrado por ${d.registradoPor}</p>
+                    <p class="font-semibold text-slate-700">${new Date(d.fecha + 'T00:00:00').toLocaleDateString('es-AR')} ${d.hora} - registrado por ${d.registradoPor}</p>
                     <p>${d.items.map(i => `${i.cantidad} × ${i.nombre}`).join(', ')}</p>
                     ${d.motivo ? `<p class="italic text-slate-400">"${d.motivo}"</p>` : ''}
                 </div>`).join('')}
@@ -1012,6 +1097,7 @@ function verComprobanteVenta(idPedido) {
     if (!cv) return alert('Este pedido todavía no tiene un comprobante de venta asociado.');
 
     document.getElementById('area-comprobante-venta').innerHTML = construirHTMLComprobanteVenta(cv);
+    lucide.createIcons();
     mostrarSubvistaVentas('comprobante-venta');
 }
 
@@ -1025,9 +1111,8 @@ let presupuestoEnEdicionId = null;
 let ordenPresupuestoCampo = null;
 let ordenPresupuestoDireccion = null;
 let filtroPresupuestoTipoSeleccionado = '';
-let filtroPresupuestoTipoEventoSeleccionado = ''; // '' | 'Evento' | 'Normal' — filtra por la columna "Tipo de Presupuesto"
+let filtroPresupuestoTipoEventoSeleccionado = ''; // '' | 'Evento' | 'Normal' - filtra por la columna "Tipo de Presupuesto"
 let filtroPresupuestoTipoDocSeleccionado = '';
-let segmentoPresupuestoSeleccionado = ''; // '' | 'Evento' — filtro externo a la tabla, fuera de la columna Tipo Cliente
 let filtroPresupuestoEstadoSeleccionado = '';
 
 function filtrarClientesAutocompletadoPresupuesto() {
@@ -1041,7 +1126,7 @@ function filtrarClientesAutocompletadoPresupuesto() {
 
     if (!termino) { cont.classList.add('hidden'); cont.innerHTML = ''; return; }
 
-    const filtrados = listaClientes.filter(c => normalizarTexto(`${c.nombre} ${c.apellido}`).includes(termino) || normalizarTexto(c.numero_documento).includes(termino));
+    const filtrados = listaClientes.filter(c => normalizarTexto(`${c.nombre || ''} ${c.apellido || ''} ${c.razon_social || ''}`).includes(termino) || normalizarTexto(c.numero_documento).includes(termino));
     if (!filtrados.length) {
         cont.innerHTML = `<p class="px-3 py-2 text-xs text-slate-400">Sin resultados.</p>`;
         cont.classList.remove('hidden');
@@ -1065,17 +1150,19 @@ document.addEventListener('click', (e) => {
 
 function elegirClientePresupuesto(idx) {
     clienteSeleccionadoPresupuesto = listaClientes[idx];
+    if (!clienteSeleccionadoPresupuesto) return;
     document.getElementById('presup-cliente-autocompletar').value = clienteSeleccionadoPresupuesto.nombreMostrado;
     document.getElementById('select-presup-cliente').value = idx;
     document.getElementById('presup-cliente-autocompletar-opciones').classList.add('hidden');
+    cerrarModalNuevoCliente();
 
     const ficha = document.getElementById('ficha-cliente-presupuesto');
     const c = clienteSeleccionadoPresupuesto;
     ficha.innerHTML = `
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
-            <p><b class="text-slate-700">Categoría:</b> <span class="inline-block bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-medium">${c.tipo_cliente}</span></p>
-            <p><b class="text-slate-700">Documento:</b> ${c.documentoCompleto}</p>
-            <p><b class="text-slate-700">Dirección:</b> ${c.direccionCompleta}</p>
+            <p><b class="text-slate-700">Categoría:</b> <span class="inline-block bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-medium">${c.tipo_cliente || '-'}</span></p>
+            <p><b class="text-slate-700">Documento:</b> ${c.documentoCompleto || '-'}</p>
+            <p><b class="text-slate-700">Dirección:</b> ${c.direccionCompleta || '-'}</p>
         </div>`;
     ficha.classList.remove('hidden');
     calcularTotalPresupuesto();
@@ -1198,6 +1285,18 @@ function calcularTotalPresupuesto() {
     return total;
 }
 
+// Fecha/Hora de emisión se autocompletan con el momento actual pero quedan editables (ej. para cargar
+// un presupuesto que en realidad se emitió antes, por teléfono o en papel).
+function autocompletarFechaHoraEmisionPresupuesto() {
+    const ahora = new Date();
+    document.getElementById('presup-fecha-emision').value = ahora.toISOString().slice(0, 10);
+    document.getElementById('presup-hora-emision').value = ahora.toTimeString().slice(0, 5);
+}
+
+function mostrarEmpleadoAutoasignadoPresupuesto() {
+    document.getElementById('presup-empleado-nombre').textContent = `${usuarioInternoActual.nombre} (${usuarioInternoActual.rol})`;
+}
+
 function resetFormularioPresupuesto() {
     itemsPresupuestoActual = [];
     clienteSeleccionadoPresupuesto = null;
@@ -1207,6 +1306,9 @@ function resetFormularioPresupuesto() {
     document.getElementById('presup-cliente-autocompletar').value = '';
     document.getElementById('select-presup-cliente').value = '';
     document.getElementById('ficha-cliente-presupuesto').classList.add('hidden');
+    autocompletarFechaHoraEmisionPresupuesto();
+    document.getElementById('presup-fecha-vencimiento').value = '';
+    mostrarEmpleadoAutoasignadoPresupuesto();
     document.getElementById('presup-es-evento').checked = false;
     document.getElementById('presup-bonificacion').value = 0;
     document.getElementById('presup-observaciones').value = '';
@@ -1237,10 +1339,14 @@ function editarPresupuesto(id) {
     presupuestoEnEdicionId = id;
     itemsPresupuestoActual = presupuesto.detalle.map(i => ({ ...i }));
 
-    document.getElementById('titulo-form-presupuesto').innerText = `Editar Presupuesto PRES-${id}`;
+    document.getElementById('titulo-form-presupuesto').innerText = `Editar Presupuesto ${formatearIdentificador("PRES", id)}`;
     document.getElementById('btn-guardar-presupuesto').innerHTML = '<i data-lucide="save" class="w-4 h-4"></i><span>Guardar Cambios</span>';
 
     elegirClientePresupuesto(listaClientes.indexOf(presupuesto.clienteObj));
+    document.getElementById('presup-fecha-emision').value = presupuesto.fecha || '';
+    document.getElementById('presup-hora-emision').value = presupuesto.hora || '';
+    document.getElementById('presup-fecha-vencimiento').value = presupuesto.fecha_vencimiento || '';
+    document.getElementById('presup-empleado-nombre').textContent = presupuesto.creadoPor || '-';
     document.getElementById('presup-es-evento').checked = !!presupuesto.esEvento;
     document.getElementById('presup-bonificacion').value = presupuesto.bonificacion || 0;
     document.getElementById('presup-observaciones').value = presupuesto.observaciones || '';
@@ -1259,6 +1365,13 @@ function guardarPresupuesto() {
     if (!clienteSeleccionadoPresupuesto) return alert('Buscá y seleccioná el cliente del presupuesto.');
     if (itemsPresupuestoActual.length === 0) return alert('Añadí al menos un producto al presupuesto.');
 
+    const fechaEmision = document.getElementById('presup-fecha-emision').value;
+    const horaEmision = document.getElementById('presup-hora-emision').value;
+    const fechaVencimiento = document.getElementById('presup-fecha-vencimiento').value;
+    if (!fechaEmision || !horaEmision) return alert('Completá la Fecha y la Hora de Emisión.');
+    if (!fechaVencimiento) return alert('Completá la Fecha de Vencimiento.');
+    if (fechaVencimiento < fechaEmision) return alert('La Fecha de Vencimiento no puede ser anterior a la Fecha de Emisión.');
+
     const tipo = clienteSeleccionadoPresupuesto.tipo_cliente;
     const esEvento = document.getElementById('presup-es-evento').checked;
     const bonificacion = parseFloat(document.getElementById('presup-bonificacion').value) || 0;
@@ -1268,11 +1381,10 @@ function guardarPresupuesto() {
 
     if (presupuestoEnEdicionId) {
         const presupuesto = listaPresupuestos.find(p => p.id === presupuestoEnEdicionId);
-        Object.assign(presupuesto, { clienteObj: clienteSeleccionadoPresupuesto, cliente: clienteSeleccionadoPresupuesto.nombreMostrado, tipo, esEvento, bonificacion, observaciones, detalle, total });
+        Object.assign(presupuesto, { clienteObj: clienteSeleccionadoPresupuesto, cliente: clienteSeleccionadoPresupuesto.nombreMostrado, tipo, esEvento, bonificacion, observaciones, detalle, total, fecha: fechaEmision, hora: horaEmision, fecha_vencimiento: fechaVencimiento });
         guardarDatos();
-        alert(`¡Presupuesto PRES-${presupuesto.id} actualizado con éxito!`);
+        alert(`¡Presupuesto ${formatearIdentificador("PRES", presupuesto.id)} actualizado con éxito!`);
     } else {
-        const ahora = new Date();
         const nuevoPresupuesto = {
             id: numPresupuestoContador++,
             clienteObj: clienteSeleccionadoPresupuesto,
@@ -1281,11 +1393,11 @@ function guardarPresupuesto() {
             estado: 'Pendiente',
             idPedidoGenerado: null,
             creadoPor: usuarioInternoActual.nombre,
-            fecha: ahora.toISOString().slice(0, 10), hora: ahora.toTimeString().slice(0, 5)
+            fecha: fechaEmision, hora: horaEmision, fecha_vencimiento: fechaVencimiento
         };
         listaPresupuestos.unshift(nuevoPresupuesto);
         guardarDatos();
-        alert(`¡Presupuesto PRES-${nuevoPresupuesto.id} guardado para "${nuevoPresupuesto.cliente}"!`);
+        alert(`¡Presupuesto ${formatearIdentificador("PRES", nuevoPresupuesto.id)} guardado para "${nuevoPresupuesto.cliente}"!`);
     }
     volverAPresupuestos();
 }
@@ -1295,30 +1407,35 @@ function renderizarTablaPresupuestos() {
     tbody.innerHTML = '';
 
     const terminoNumPresupuesto = normalizarTexto(document.getElementById('buscar-num-presupuesto')?.value || '').trim();
-    const terminoNombre = normalizarTexto(document.getElementById('buscar-nombre-presupuesto')?.value || '').trim();
-    const terminoApellido = normalizarTexto(document.getElementById('buscar-apellido-presupuesto')?.value || '').trim();
+    const terminoCliente = normalizarTexto(document.getElementById('buscar-cliente-presupuesto')?.value || '').trim();
     const terminoDocumento = normalizarTexto(document.getElementById('buscar-documento-presupuesto')?.value || '').trim();
+    const terminoEmpleado = normalizarTexto(document.getElementById('buscar-empleado-presupuesto')?.value || '').trim();
+    const fechaExacta = document.getElementById('buscar-fecha-presupuesto')?.value || '';
+    const montoDesde = document.getElementById('buscar-monto-desde-presupuesto')?.value || '';
+    const montoHasta = document.getElementById('buscar-monto-hasta-presupuesto')?.value || '';
+    const fechaVencimientoExacta = document.getElementById('buscar-vencimiento-presupuesto')?.value || '';
 
     const presupuestosFiltrados = listaPresupuestos.filter(pr => {
-        const nombre = pr.clienteObj ? pr.clienteObj.nombre : '';
-        const apellido = pr.clienteObj ? pr.clienteObj.apellido : '';
+        const cliente = pr.clienteObj ? pr.clienteObj.nombreMostrado : (pr.cliente || '');
         const documento = pr.clienteObj ? pr.clienteObj.numero_documento : '';
         const tipoDocumento = pr.clienteObj ? pr.clienteObj.tipo_documento : '';
         return (!terminoNumPresupuesto || String(pr.id).includes(terminoNumPresupuesto)) &&
-            (!terminoNombre || normalizarTexto(nombre).includes(terminoNombre)) &&
-            (!terminoApellido || normalizarTexto(apellido).includes(terminoApellido)) &&
+            (!terminoCliente || normalizarTexto(cliente).includes(terminoCliente)) &&
             (!terminoDocumento || normalizarTexto(documento).includes(terminoDocumento)) &&
+            (!terminoEmpleado || normalizarTexto(pr.creadoPor).includes(terminoEmpleado)) &&
             (!filtroPresupuestoTipoDocSeleccionado || tipoDocumento === filtroPresupuestoTipoDocSeleccionado) &&
-            (!filtroPresupuestoEstadoSeleccionado || pr.estado === filtroPresupuestoEstadoSeleccionado) &&
+            (!filtroPresupuestoEstadoSeleccionado || estadoPresupuesto(pr) === filtroPresupuestoEstadoSeleccionado) &&
             (!filtroPresupuestoTipoSeleccionado || pr.tipo === filtroPresupuestoTipoSeleccionado) &&
             (!filtroPresupuestoTipoEventoSeleccionado || (filtroPresupuestoTipoEventoSeleccionado === 'Evento' ? pr.esEvento : !pr.esEvento)) &&
-            (!segmentoPresupuestoSeleccionado || pr.esEvento);
+            coincideFechaExacta(fechaExacta, pr.fecha) &&
+            coincideRangoMonto(montoDesde, montoHasta, pr.total) &&
+            coincideFechaExacta(fechaVencimientoExacta, pr.fecha_vencimiento);
     });
 
     if (ordenPresupuestoCampo && ordenPresupuestoDireccion) {
         presupuestosFiltrados.sort((a, b) => {
-            const va = (a.clienteObj ? a.clienteObj[ordenPresupuestoCampo] : '') || '';
-            const vb = (b.clienteObj ? b.clienteObj[ordenPresupuestoCampo] : '') || '';
+            const va = (a.clienteObj ? a.clienteObj.nombreMostrado : (a.cliente || '')) || '';
+            const vb = (b.clienteObj ? b.clienteObj.nombreMostrado : (b.cliente || '')) || '';
             const cmp = va.localeCompare(vb, 'es');
             return ordenPresupuestoDireccion === 'asc' ? cmp : -cmp;
         });
@@ -1328,37 +1445,50 @@ function renderizarTablaPresupuestos() {
     actualizarIconoFiltroTipoEventoPresupuestos();
     actualizarIconoFiltroTipoDocPresupuestos();
     actualizarIconoFiltroEstadoPresupuestos();
-    actualizarSegmentoPresupuestos();
 
     if (!presupuestosFiltrados.length) {
-        tbody.innerHTML = `<tr><td colspan="11" class="px-6 py-10 text-center text-slate-400 text-sm">No se encontraron presupuestos con ese criterio.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="12" class="px-6 py-10 text-center text-slate-400 text-sm">No se encontraron presupuestos con ese criterio.</td></tr>`;
     }
+    const coloresEstadoPresupuesto = { 'Convertido': 'bg-emerald-100 text-emerald-800', 'Pendiente': 'bg-amber-100 text-amber-800', 'Vencido': 'bg-red-100 text-red-700', 'Anulado': 'bg-slate-200 text-slate-600' };
     presupuestosFiltrados.forEach(pr => {
         const fechaFormateada = pr.fecha ? new Date(pr.fecha + 'T00:00:00').toLocaleDateString('es-AR') : '-';
+        const vencimientoFormateado = pr.fecha_vencimiento ? new Date(pr.fecha_vencimiento + 'T00:00:00').toLocaleDateString('es-AR') : '-';
+        const estado = estadoPresupuesto(pr);
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50';
         tr.innerHTML = `
-            <td class="px-6 py-4 font-semibold text-slate-900">PRES-${pr.id}</td>
-            <td class="px-6 py-4">${pr.clienteObj ? pr.clienteObj.nombre : '-'}</td>
-            <td class="px-6 py-4">${pr.clienteObj ? pr.clienteObj.apellido : '-'}</td>
+            <td class="px-6 py-4 font-semibold text-slate-900">${formatearIdentificador("PRES", pr.id)}</td>
+            <td class="px-6 py-4">${pr.clienteObj ? pr.clienteObj.nombreMostrado : (pr.cliente || '-')}</td>
             <td class="px-6 py-4 text-slate-500">${pr.clienteObj ? pr.clienteObj.tipo_documento : '-'}</td>
             <td class="px-6 py-4 text-slate-500">${pr.clienteObj ? pr.clienteObj.numero_documento : '-'}</td>
             <td class="px-6 py-4">${badgeTipoCliente(pr.tipo)}</td>
             <td class="px-6 py-4"><span class="text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${pr.esEvento ? 'bg-violet-100 text-violet-800' : 'bg-slate-100 text-slate-600'}">${pr.esEvento ? 'Evento' : 'Normal'}</span></td>
+            <td class="px-6 py-4 text-slate-500">${pr.creadoPor || '-'}</td>
             <td class="px-6 py-4 text-slate-500">${fechaFormateada}</td>
+            <td class="px-6 py-4 text-slate-500">${vencimientoFormateado}</td>
             <td class="px-6 py-4 text-right font-medium whitespace-nowrap">$ ${pr.total.toLocaleString()}</td>
-            <td class="px-6 py-4 text-center"><span class="px-2.5 py-1 ${pr.estado === 'Convertido' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'} text-xs font-semibold rounded-full whitespace-nowrap">${pr.estado}</span></td>
+            <td class="px-6 py-4 text-center"><span class="px-2.5 py-1 ${coloresEstadoPresupuesto[estado]} text-xs font-semibold rounded-full whitespace-nowrap">${estado}</span></td>
             <td class="px-6 py-4">
                 <div class="flex items-center justify-start gap-1.5">
                     <button onclick="verPresupuesto(${pr.id})" title="Ver presupuesto" class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition"><i data-lucide="eye" class="w-4 h-4"></i></button>
                     ${pr.estado === 'Pendiente' ? `<button onclick="editarPresupuesto(${pr.id})" title="Editar presupuesto" class="p-2 rounded-lg text-amber-600 hover:bg-amber-50 transition"><i data-lucide="pencil" class="w-4 h-4"></i></button>` : ''}
                     ${pr.estado === 'Pendiente' ? `<button onclick="generarPedidoDesdePresupuesto(${pr.id})" title="Generar pedido a partir de este presupuesto" class="p-2 rounded-lg text-blue-600 hover:bg-blue-50 transition"><i data-lucide="arrow-right-circle" class="w-4 h-4"></i></button>` : ''}
+                    ${pr.estado === 'Pendiente' ? `<button onclick="anularPresupuesto(${pr.id})" title="Anular presupuesto" class="p-2 rounded-lg text-red-500 hover:bg-red-50 transition"><i data-lucide="ban" class="w-4 h-4"></i></button>` : ''}
                 </div>
             </td>
         `;
         tbody.appendChild(tr);
     });
     lucide.createIcons();
+}
+
+function anularPresupuesto(id) {
+    const pr = listaPresupuestos.find(p => p.id === id);
+    if (!pr || pr.estado !== 'Pendiente') return;
+    if (!confirm(`¿Anular el presupuesto ${formatearIdentificador("PRES", id)}? Esta acción no se puede deshacer.`)) return;
+    pr.estado = 'Anulado';
+    guardarDatos();
+    renderizarTablaPresupuestos();
 }
 
 function alternarOrdenPresupuestos(campo) {
@@ -1375,7 +1505,7 @@ function alternarOrdenPresupuestos(campo) {
 }
 
 function actualizarIconosOrdenPresupuestos() {
-    ['nombre', 'apellido'].forEach(campo => {
+    ['cliente'].forEach(campo => {
         const boton = document.getElementById(`btn-orden-${campo}-presupuesto`);
         if (!boton) return;
         const activo = ordenPresupuestoCampo === campo;
@@ -1406,20 +1536,6 @@ function actualizarIconoFiltroTipoEventoPresupuestos() {
         op.classList.toggle('bg-red-50', op.dataset.valor === filtroPresupuestoTipoEventoSeleccionado);
         op.classList.toggle('text-red-700', op.dataset.valor === filtroPresupuestoTipoEventoSeleccionado);
         op.classList.toggle('font-medium', op.dataset.valor === filtroPresupuestoTipoEventoSeleccionado);
-    });
-}
-
-function elegirSegmentoPresupuestos(valor) {
-    segmentoPresupuestoSeleccionado = valor;
-    renderizarTablaPresupuestos();
-}
-
-function actualizarSegmentoPresupuestos() {
-    ['', 'Evento'].forEach(valor => {
-        const boton = document.getElementById(`segmento-presupuestos-${valor}`);
-        if (!boton) return;
-        const activo = segmentoPresupuestoSeleccionado === valor;
-        boton.className = `segmento-presupuestos px-3 py-1.5 rounded-md font-semibold transition ${activo ? 'bg-red-600 text-white' : 'text-slate-500 hover:bg-white'}`;
     });
 }
 
@@ -1472,21 +1588,19 @@ function verPresupuesto(id) {
     const pr = listaPresupuestos.find(p => p.id === id);
     if (!pr) return;
     const fechaFormateada = pr.fecha ? new Date(pr.fecha + 'T00:00:00').toLocaleDateString('es-AR') : '-';
+    const vencimientoFormateado = pr.fecha_vencimiento ? new Date(pr.fecha_vencimiento + 'T00:00:00').toLocaleDateString('es-AR') : '-';
 
     const c = pr.clienteObj;
-    // Franja de datos del cliente, mismo estilo visual que los comprobantes fiscales (franjaClienteComprobanteHTML),
-    // con un campo extra de Teléfono porque acá no hay condición de venta/pago que mostrar.
-    document.getElementById('presupuesto-cliente-franja').innerHTML = `
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600 border-b border-slate-200 pb-3">
-            <p><b class="text-slate-700">Nombre:</b> ${c ? c.nombreMostrado : pr.cliente}</p>
-            <p><b class="text-slate-700">Documento:</b> ${c ? c.documentoCompleto : '-'}</p>
-            <p class="sm:col-span-2"><b class="text-slate-700">Domicilio:</b> ${c ? c.direccionCompleta : '-'}</p>
-            <p><b class="text-slate-700">Condición frente al IVA:</b> ${c ? c.condicion_iva : '-'}</p>
-            <p><b class="text-slate-700">Tipo de Cliente:</b> ${c ? c.tipo_cliente : '-'}</p>
-            <p><b class="text-slate-700">Teléfono:</b> ${c ? (c.telefono || '-') : '-'}</p>
-        </div>`;
-    document.getElementById('presupuesto-numero').innerText = `PRES-${String(pr.id).padStart(5, '0')}`;
-    document.getElementById('presupuesto-fecha').innerText = `Fecha: ${fechaFormateada}`;
+    // Tarjeta de cliente estilo "Pedidos" (misma caja usada en Comprobante de Venta), con Tipo de Cliente y Teléfono extra.
+    document.getElementById('presupuesto-cliente-franja').innerHTML = tarjetaClienteHTML(c, pr.cliente, c ? [
+        `<b class="text-slate-700">Teléfono:</b> ${c.telefono || '-'}`
+    ] : []);
+    document.getElementById('presupuesto-numero').innerText = `${formatearIdentificador("PRES", String(pr.id).padStart(4, '0'))}`;
+    document.getElementById('presupuesto-fecha').innerHTML = `
+        <span class="block">Fecha: ${fechaFormateada}</span>
+        <span class="block">Hora: ${pr.hora || '-'}</span>
+        <span class="block">Vencimiento: ${vencimientoFormateado}</span>
+        <span class="block">Responsable: ${pr.creadoPor || '-'}</span>`;
 
     // Para Mayoristas o presupuestos de Evento, el % de bonificación se exhibe de forma destacada junto al estado.
     const badgeBonif = document.getElementById('presupuesto-bonificacion-badge');
@@ -1506,18 +1620,21 @@ function verPresupuesto(id) {
             <td class="py-2 text-right">$ ${i.precioUnitario.toLocaleString()}</td>
             <td class="py-2 text-right">$ ${i.subtotal.toLocaleString()}</td>
         </tr>`).join('');
+    document.getElementById('presupuesto-observaciones-wrap').innerHTML = pr.observaciones
+        ? `<p class="text-xs text-slate-500"><b class="text-slate-700">Observaciones:</b> ${pr.observaciones}</p>`
+        : '';
     const subtotalPresupuesto = pr.detalle.reduce((acc, i) => acc + i.subtotal, 0);
     const bonifMonto = subtotalPresupuesto * ((pr.bonificacion || 0) / 100);
-    document.getElementById('presupuesto-total-monto').innerHTML = (pr.bonificacion
-        ? `<span class="block text-xs font-normal text-slate-500">Subtotal: $ ${subtotalPresupuesto.toLocaleString()}</span>
-           <span class="block text-xs font-normal text-emerald-600">Bonificación (${pr.bonificacion}%): -$ ${bonifMonto.toLocaleString()}</span>`
-        : '') + `Total Presupuestado: $ ${pr.total.toLocaleString()}`;
+    document.getElementById('presupuesto-desglose-monto').innerHTML = `
+        <span class="block text-xs font-normal text-slate-500">Subtotal: $ ${subtotalPresupuesto.toLocaleString()}</span>
+        <span class="block text-xs font-normal text-emerald-600">Bonificación (${pr.bonificacion || 0}%): -$ ${bonifMonto.toLocaleString()}</span>`;
+    document.getElementById('presupuesto-total-monto').innerText = `$ ${pr.total.toLocaleString()}`;
 
     const wrapGenerar = document.getElementById('presupuesto-generar-pedido-wrap');
     wrapGenerar.innerHTML = pr.estado === 'Pendiente'
         ? `<button type="button" onclick="editarPresupuesto(${pr.id})" class="bg-slate-100 border border-slate-300 text-slate-700 px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-200 flex items-center space-x-2"><i data-lucide="pencil" class="w-4 h-4"></i><span>Editar</span></button>
            <button type="button" onclick="generarPedidoDesdePresupuesto(${pr.id})" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2"><i data-lucide="arrow-right-circle" class="w-4 h-4"></i><span>Generar Pedido</span></button>`
-        : pr.idPedidoGenerado ? `<p class="text-xs text-slate-500">Convertido en el pedido PED-${pr.idPedidoGenerado}.</p>` : '';
+        : pr.idPedidoGenerado ? `<p class="text-xs text-slate-500">Convertido en el pedido ${formatearIdentificador("PED", pr.idPedidoGenerado)}.</p>` : '';
     lucide.createIcons();
     mostrarSubvistaVentas('presupuesto');
 }
@@ -1558,7 +1675,7 @@ function abrirModalDevolucion(id) {
     if (!pedido || (pedido.estado !== 'Entregado' && pedido.estado !== 'Devuelto')) return;
 
     pedidoParaDevolucion = pedido;
-    document.getElementById('devolucion-pedido-id').innerText = `PED-${pedido.id}`;
+    document.getElementById('devolucion-pedido-id').innerText = `${formatearIdentificador("PED", pedido.id)}`;
     document.getElementById('devolucion-pedido-cliente').innerText = pedido.clienteObj ? pedido.clienteObj.nombreMostrado : pedido.cliente;
     document.getElementById('devolucion-motivo').value = '';
     renderizarTablaItemsDevolucion();
@@ -1596,7 +1713,7 @@ function renderizarHistorialDevoluciones() {
     if (!devoluciones.length) { wrap.classList.add('hidden'); return; }
     lista.innerHTML = devoluciones.map(d => `
         <div class="border border-slate-200 rounded-lg p-2.5">
-            <p class="font-semibold text-slate-700">${new Date(d.fecha + 'T00:00:00').toLocaleDateString('es-AR')} ${d.hora} — registrado por ${d.registradoPor}</p>
+            <p class="font-semibold text-slate-700">${new Date(d.fecha + 'T00:00:00').toLocaleDateString('es-AR')} ${d.hora} - registrado por ${d.registradoPor}</p>
             <p class="text-slate-500">${d.items.map(i => `${i.cantidad} × ${i.nombre}`).join(', ')}</p>
             ${d.motivo ? `<p class="text-slate-400 italic">"${d.motivo}"</p>` : ''}
         </div>`).join('');
@@ -1629,7 +1746,7 @@ function registrarDevolucion() {
     // Cualquier devolución, aunque sea parcial, marca el pedido como "Devuelto".
     pedidoParaDevolucion.estado = 'Devuelto';
     guardarDatos();
-    alert(`¡Devolución registrada para el pedido PED-${pedidoParaDevolucion.id}!`);
+    alert(`¡Devolución registrada para el pedido ${formatearIdentificador("PED", pedidoParaDevolucion.id)}!`);
     document.getElementById('devolucion-motivo').value = '';
     renderizarTablaItemsDevolucion();
     renderizarHistorialDevoluciones();

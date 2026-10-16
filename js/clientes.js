@@ -2,7 +2,7 @@
 // MÓDULO DE GESTIÓN DE CLIENTES
 // ==========================================
 const SUBVISTAS_CLIENTES = ['historial', 'registrar', 'detalle'];
-let ordenClientesCampo = null; // 'nombre' | 'apellido' | null
+let ordenClientesCampo = null;
 let ordenClientesDireccion = null; // null | 'asc' | 'desc'
 let filtroCliTipoDocSeleccionado = '';
 let filtroCliTipoSeleccionado = '';
@@ -20,7 +20,7 @@ function mostrarSubvistaClientes(subvista) {
 function irASubvistaDesdeHashClientes() {
     const hash = (window.location.hash || '').replace('#', '') || 'historial';
     if (hash === 'registrar') {
-        // Si no hay una edición en curso (clienteEnEdicionIdx ya seteado por editarCliente), arranca en blanco —
+        // Si no hay una edición en curso (clienteEnEdicionIdx ya seteado por editarCliente), arranca en blanco -
         // cubre tanto el botón "Registrar Cliente" como el link del submenú lateral.
         if (clienteEnEdicionIdx === null) {
             resetFormularioCliente();
@@ -103,7 +103,10 @@ function editarCliente(idx) {
     document.getElementById('cli-fecha-alta').value = cli.fecha_alta || '';
     document.getElementById('cli-cuenta-corriente').checked = !!cli.tiene_cuenta_corriente;
     document.getElementById('cli-limite').value = cli.limite_credito || 0;
+    document.getElementById('cli-usuario').value = cli.usuario || '';
+    document.getElementById('cli-contrasena').value = cli.contrasena || '';
     actualizarVisibilidadLimiteCliente();
+    actualizarVisibilidadRazonSocialCliente();
 
     document.getElementById('titulo-form-cliente').innerText = 'Editar Cliente';
     document.getElementById('texto-btn-guardar-cliente').innerText = 'Guardar Cambios';
@@ -116,7 +119,7 @@ function renderizarTablaClientes(lista) {
     tbody.innerHTML = '';
 
     if (!lista.length) {
-        tbody.innerHTML = `<tr><td colspan="13" class="p-6 text-center text-slate-400">No se encontraron clientes con ese criterio.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="14" class="p-6 text-center text-slate-400">No se encontraron clientes con ese criterio.</td></tr>`;
         return;
     }
 
@@ -125,14 +128,15 @@ function renderizarTablaClientes(lista) {
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50';
         tr.innerHTML = `
+            <td class="px-6 py-3 font-semibold text-slate-500">${formatearIdentificador('CLI', idx + 1)}</td>
             <td class="px-6 py-3 font-semibold text-slate-800">${cli.nombre}</td>
             <td class="px-6 py-3">${cli.apellido || '-'}</td>
             <td class="px-6 py-3 text-slate-500">${cli.razon_social || '-'}</td>
             <td class="px-6 py-3 text-slate-500">${cli.tipo_documento}</td>
-            <td class="px-6 py-3 font-mono">${cli.numero_documento}</td>
+            <td class="px-6 py-3">${cli.numero_documento}</td>
             <td class="px-6 py-3"><span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-medium whitespace-nowrap">${cli.tipo_cliente}</span></td>
             <td class="px-6 py-3 whitespace-nowrap">${cli.condicion_iva}</td>
-            <td class="px-6 py-3 whitespace-nowrap">${cli.fecha_alta || '-'}</td>
+            <td class="px-6 py-3 whitespace-nowrap">${cli.fecha_alta ? new Date(cli.fecha_alta + 'T00:00:00').toLocaleDateString('es-AR') : '-'}</td>
             <td class="px-6 py-3 text-center">${cli.tiene_cuenta_corriente ? '<span class="text-emerald-600 font-semibold">Sí</span>' : '<span class="text-slate-400">No</span>'}</td>
             <td class="px-6 py-3">${badgeTelefonos(cli)}</td>
             <td class="px-6 py-3 text-slate-600">${cli.email || '-'}</td>
@@ -165,14 +169,25 @@ function renderizarStatsClientes() {
 }
 
 function aplicarFiltroClientes() {
+    const terminoNumero = normalizarTexto(document.getElementById('buscar-cli-numero')?.value || '').trim();
     const terminoNombre = normalizarTexto(document.getElementById('buscar-cli-nombre')?.value || '').trim();
     const terminoApellido = normalizarTexto(document.getElementById('buscar-cli-apellido')?.value || '').trim();
     const terminoDocumento = normalizarTexto(document.getElementById('buscar-cli-documento')?.value || '').trim();
+    const terminoTelefono = normalizarTexto(document.getElementById('buscar-cli-telefono')?.value || '').trim();
+    const terminoEmail = normalizarTexto(document.getElementById('buscar-cli-email')?.value || '').trim();
+    const fechaAlta = document.getElementById('buscar-cli-fecha-alta')?.value || '';
+    const limiteDesde = document.getElementById('buscar-cli-limite-desde')?.value || '';
+    const limiteHasta = document.getElementById('buscar-cli-limite-hasta')?.value || '';
 
     let filtrados = listaClientes.filter(cli =>
+        (!terminoNumero || normalizarTexto(formatearIdentificador('CLI', listaClientes.indexOf(cli) + 1)).includes(terminoNumero)) &&
         (!terminoNombre || normalizarTexto(cli.nombre).includes(terminoNombre)) &&
         (!terminoApellido || normalizarTexto(cli.apellido).includes(terminoApellido)) &&
         (!terminoDocumento || normalizarTexto(cli.numero_documento).includes(terminoDocumento)) &&
+        (!terminoTelefono || normalizarTexto(cli.telefonosCompletos.join(' ')).includes(terminoTelefono)) &&
+        (!terminoEmail || normalizarTexto(cli.email).includes(terminoEmail)) &&
+        coincideFechaExacta(fechaAlta, cli.fecha_alta) &&
+        coincideRangoMonto(limiteDesde, limiteHasta, Number(cli.limite_credito) || 0) &&
         (!filtroCliTipoDocSeleccionado || cli.tipo_documento === filtroCliTipoDocSeleccionado) &&
         (!filtroCliTipoSeleccionado || cli.tipo_cliente === filtroCliTipoSeleccionado) &&
         (!filtroCliIvaSeleccionado || cli.condicion_iva === filtroCliIvaSeleccionado) &&
@@ -181,9 +196,11 @@ function aplicarFiltroClientes() {
 
     if (ordenClientesCampo && ordenClientesDireccion) {
         filtrados = [...filtrados].sort((a, b) => {
-            const va = a[ordenClientesCampo] || '';
-            const vb = b[ordenClientesCampo] || '';
-            const cmp = va.localeCompare(vb, 'es');
+            const va = ordenClientesCampo === 'telefono' ? a.telefonosCompletos.join(' ') : a[ordenClientesCampo];
+            const vb = ordenClientesCampo === 'telefono' ? b.telefonosCompletos.join(' ') : b[ordenClientesCampo];
+            const cmp = ordenClientesCampo === 'limite_credito'
+                ? (Number(va) || 0) - (Number(vb) || 0)
+                : String(va || '').localeCompare(String(vb || ''), 'es');
             return ordenClientesDireccion === 'asc' ? cmp : -cmp;
         });
     }
@@ -204,8 +221,8 @@ function alternarOrdenClientes(campo) {
 }
 
 function actualizarIconosOrdenClientes() {
-    ['nombre', 'apellido'].forEach(campo => {
-        const boton = document.getElementById(`btn-orden-${campo}`);
+    ['nombre', 'apellido', 'telefono', 'email', 'limite_credito'].forEach(campo => {
+        const boton = document.getElementById(campo === 'telefono' || campo === 'email' || campo === 'limite_credito' ? `btn-orden-${campo}-cli` : `btn-orden-${campo}`);
         if (!boton) return;
         const activo = ordenClientesCampo === campo;
         const icono = activo && ordenClientesDireccion === 'asc' ? 'arrow-up' : activo && ordenClientesDireccion === 'desc' ? 'arrow-down' : 'arrow-up-down';
@@ -250,9 +267,12 @@ function guardarNuevoCliente() {
     const fechaAlta = document.getElementById('cli-fecha-alta').value;
     const cuentaCorriente = document.getElementById('cli-cuenta-corriente').checked;
     const limite = parseFloat(document.getElementById('cli-limite').value) || 0;
+    const usuario = document.getElementById('cli-usuario').value.trim();
+    const contrasena = document.getElementById('cli-contrasena').value;
 
-    if (!nombre || !apellido || !numeroDocumento) {
-        alert('Por favor complete Nombre, Apellido y Número de Documento del cliente.');
+    if (!numeroDocumento) { alert('Por favor complete el Número de Documento del cliente.'); return; }
+    if (tipo !== 'Mayorista' && (!nombre || !apellido)) {
+        alert('Por favor complete Nombre y Apellido del cliente.');
         return;
     }
     if (!provincia || !localidad || !calleObj || !altura) {
@@ -266,10 +286,13 @@ function guardarNuevoCliente() {
         alert('Indicá el Límite de Crédito Permitido para la cuenta corriente.');
         return;
     }
+    if (tipo === 'Mayorista' && !razonSocial) { alert('La Razón Social es obligatoria para clientes Mayoristas.'); return; }
+    if (!usuario) { alert('Por favor complete el Nombre de Usuario.'); return; }
+    if (!contrasena) { alert('Por favor complete la Contraseña.'); return; }
 
     if (clienteEnEdicionIdx !== null) {
         const cli = listaClientes[clienteEnEdicionIdx];
-        Object.assign(cli, { nombre, apellido, razon_social: razonSocial, tipo_documento: tipoDocumento, numero_documento: numeroDocumento, calleObj, altura, telefono, telefonos_adicionales: telefonosAdicionales, email, condicion_iva: iva, tipo_cliente: tipo, fecha_alta: fechaAlta, tiene_cuenta_corriente: cuentaCorriente, limite_credito: limite });
+        Object.assign(cli, { nombre, apellido, razon_social: razonSocial, tipo_documento: tipoDocumento, numero_documento: numeroDocumento, calleObj, altura, telefono, telefonos_adicionales: telefonosAdicionales, email, condicion_iva: iva, tipo_cliente: tipo, fecha_alta: fechaAlta, tiene_cuenta_corriente: cuentaCorriente, limite_credito: limite, usuario, contrasena });
         guardarDatos();
         clienteEnEdicionIdx = null;
         renderizarClientesUI();
@@ -278,7 +301,7 @@ function guardarNuevoCliente() {
         return;
     }
 
-    const nuevoCliente = new Cliente(nombre, apellido, tipoDocumento, numeroDocumento, calleObj, altura, telefono, email, iva, tipo, limite, razonSocial, fechaAlta, cuentaCorriente, telefonosAdicionales);
+    const nuevoCliente = new Cliente(nombre, apellido, tipoDocumento, numeroDocumento, calleObj, altura, telefono, email, iva, tipo, limite, razonSocial, fechaAlta, cuentaCorriente, telefonosAdicionales, usuario, contrasena);
     listaClientes.unshift(nuevoCliente);
     guardarDatos();
 
@@ -301,6 +324,10 @@ function resetFormularioCliente() {
     document.getElementById('cli-fecha-alta').value = new Date().toISOString().slice(0, 10);
     document.getElementById('cli-cuenta-corriente').checked = false;
     document.getElementById('wrap-cli-limite').classList.add('hidden');
+    document.getElementById('cli-usuario').value = '';
+    document.getElementById('cli-contrasena').value = '';
+    document.getElementById('cli-tipo').selectedIndex = 0;
+    actualizarVisibilidadRazonSocialCliente();
 }
 
 function initPaginaClientes() {

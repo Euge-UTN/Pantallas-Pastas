@@ -63,6 +63,13 @@
                                 <tr>
                                     <th class="px-6 py-3">
                                         <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>N° Cliente</span>
+                                            <button type="button" onclick="togglePopoverColumna('pop-cli-numero')" title="Buscar N° Cliente" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-cli-numero" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input type="text" id="buscar-cli-numero" oninput="aplicarFiltroClientes()" placeholder="Buscar N° Cliente..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500"></div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
                                             <span>Nombre</span>
                                             <button type="button" id="btn-orden-nombre" onclick="alternarOrdenClientes('nombre')" title="Ordenar de la A a la Z" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button>
                                             <button type="button" onclick="togglePopoverColumna('pop-cli-nombre')" title="Buscar nombre" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
@@ -91,7 +98,6 @@
                                                 <button type="button" onclick="elegirFiltroCliTipoDoc('DNI')" class="opcion-filtro-cli-tipo-doc block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="DNI">DNI</button>
                                                 <button type="button" onclick="elegirFiltroCliTipoDoc('CUIT')" class="opcion-filtro-cli-tipo-doc block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="CUIT">CUIT</button>
                                                 <button type="button" onclick="elegirFiltroCliTipoDoc('CUIL')" class="opcion-filtro-cli-tipo-doc block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="CUIL">CUIL</button>
-                                                <button type="button" onclick="elegirFiltroCliTipoDoc('Pasaporte')" class="opcion-filtro-cli-tipo-doc block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Pasaporte">Pasaporte</button>
                                             </div>
                                         </div>
                                     </th>
@@ -128,7 +134,7 @@
                                             </div>
                                         </div>
                                     </th>
-                                    <th class="px-6 py-3">Fecha Alta</th>
+                                    <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Fecha Alta</span><button type="button" onclick="togglePopoverColumna('pop-cli-fecha-alta')" title="Filtrar Fecha Alta" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="calendar-search" class="w-3.5 h-3.5"></i></button><div id="pop-cli-fecha-alta" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-cli-fecha-alta" type="date" onchange="aplicarFiltroClientes()" class="border border-slate-300 rounded-md px-2 py-1.5 text-xs"></div></div></th>
                                     <th class="px-6 py-3 text-center">
                                         <div class="flex items-center justify-center gap-1.5 popover-trigger">
                                             <span>Cta. Cte.</span>
@@ -140,9 +146,9 @@
                                             </div>
                                         </div>
                                     </th>
-                                    <th class="px-6 py-3">Teléfono</th>
-                                    <th class="px-6 py-3">Email</th>
-                                    <th class="px-6 py-3 text-right">Límite Crédito</th>
+                                    <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Teléfono</span><button type="button" id="btn-orden-telefono-cli" onclick="alternarOrdenClientes('telefono')" title="Ordenar teléfono" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button><button type="button" onclick="togglePopoverColumna('pop-cli-telefono')" title="Buscar teléfono" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-cli-telefono" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-cli-telefono" oninput="aplicarFiltroClientes()" placeholder="Buscar teléfono..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs"></div></div></th>
+                                    <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Email</span><button type="button" id="btn-orden-email-cli" onclick="alternarOrdenClientes('email')" title="Ordenar email" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button><button type="button" onclick="togglePopoverColumna('pop-cli-email')" title="Buscar email" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-cli-email" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-cli-email" oninput="aplicarFiltroClientes()" placeholder="Buscar email..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs"></div></div></th>
+                                    <th class="px-6 py-3 text-right"><div class="flex items-center justify-end gap-1.5 popover-trigger"><span>Límite Crédito</span><button type="button" id="btn-orden-limite-cli" onclick="alternarOrdenClientes('limite_credito')" title="Ordenar por límite de crédito" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button><button type="button" onclick="togglePopoverColumna('pop-cli-limite')" title="Filtrar por límite de crédito" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button><div id="pop-cli-limite" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case text-left space-y-1.5"><label class="block text-[11px] text-slate-500">Desde $<input id="buscar-cli-limite-desde" type="number" oninput="aplicarFiltroClientes()" class="w-28 border border-slate-300 rounded-md px-2 py-1 text-xs"></label><label class="block text-[11px] text-slate-500">Hasta $<input id="buscar-cli-limite-hasta" type="number" oninput="aplicarFiltroClientes()" class="w-28 border border-slate-300 rounded-md px-2 py-1 text-xs"></label></div></div></th>
                                     <th class="px-6 py-3">Acciones</th>
                                 </tr>
                             </thead>
@@ -166,15 +172,15 @@
                     <div class="max-w-3xl bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre *</label>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre<span id="cli-nombre-requerido"> *</span></label>
                                 <input type="text" id="cli-nombre" placeholder="Ej: Mario" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Apellido *</label>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Apellido<span id="cli-apellido-requerido"> *</span></label>
                                 <input type="text" id="cli-apellido" placeholder="Ej: Rossi" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Razón Social (si corresponde)</label>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Razón Social<span id="cli-razon-social-requerido" class="hidden text-red-500"> *</span><span class="text-slate-400"> (obligatoria para clientes Mayoristas)</span></label>
                                 <input type="text" id="cli-razon-social" placeholder="Ej: Trattoria Bella Italia" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
                             </div>
                             <div class="grid grid-cols-2 gap-2">
@@ -184,7 +190,6 @@
                                         <option value="DNI">DNI</option>
                                         <option value="CUIT">CUIT</option>
                                         <option value="CUIL">CUIL</option>
-                                        <option value="Pasaporte">Pasaporte</option>
                                     </select>
                                 </div>
                                 <div>
@@ -244,7 +249,7 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo de Cliente *</label>
-                                <select id="cli-tipo" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                <select id="cli-tipo" onchange="actualizarVisibilidadRazonSocialCliente()" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
                                     <option value="Mayorista">Mayorista (Restaurante / Hotel)</option>
                                     <option value="Mostrador">Consumidor Final (Mostrador)</option>
                                 </select>
@@ -260,6 +265,14 @@
                             <div id="wrap-cli-limite" class="hidden">
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Límite de Crédito Permitido ($) *</label>
                                 <input type="number" id="cli-limite" placeholder="50000" value="50000" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre de Usuario *</label>
+                                <input type="text" id="cli-usuario" placeholder="Ej: mrossi" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Contraseña *</label>
+                                <input type="password" id="cli-contrasena" placeholder="••••••••" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
                             </div>
                         </div>
 

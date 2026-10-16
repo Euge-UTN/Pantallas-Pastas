@@ -7,6 +7,7 @@ let ordenEmpleadosDireccion = null;
 let filtroEmpCargoSeleccionado = '';
 let filtroEmpTurnoSeleccionado = '';
 let filtroEmpEstadoSeleccionado = '';
+let filtroEmpTipoDocumentoSeleccionado = '';
 let empleadoEnEdicionIdx = null; // índice en listaEmpleados del empleado que se está editando, o null en alta
 
 function mostrarSubvistaEmpleados(subvista) {
@@ -55,7 +56,7 @@ function construirFichaEmpleado(emp) {
         <div class="flex items-center justify-between border-b border-slate-100 pb-4">
             <div>
                 <h3 class="text-xl font-bold text-slate-900">${emp.nombreCompleto}</h3>
-                <p class="text-xs text-slate-500 font-mono">${emp.legajo}</p>
+                <p class="text-xs text-slate-500">${formatearIdentificador('EMP', emp.legajo)}</p>
             </div>
             <span class="${emp.estado_activo ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'} px-2.5 py-1 rounded-full text-xs font-semibold">${emp.estado_activo ? 'Activo' : 'Inactivo'}</span>
         </div>
@@ -139,7 +140,7 @@ function renderizarTablaEmpleados(lista) {
     tbody.innerHTML = '';
 
     if (!lista.length) {
-        tbody.innerHTML = `<tr><td colspan="13" class="p-6 text-center text-slate-400">No se encontraron empleados con ese criterio.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="15" class="p-6 text-center text-slate-400">No se encontraron empleados con ese criterio.</td></tr>`;
         return;
     }
 
@@ -148,17 +149,18 @@ function renderizarTablaEmpleados(lista) {
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50';
         tr.innerHTML = `
-            <td class="px-6 py-3 font-mono text-slate-500">${emp.legajo}</td>
+            <td class="px-6 py-3 text-slate-500">${formatearIdentificador('EMP', emp.legajo)}</td>
             <td class="px-6 py-3 font-semibold text-slate-800">${emp.nombre}</td>
             <td class="px-6 py-3">${emp.apellido}</td>
-            <td class="px-6 py-3 font-mono">${emp.documentoCompleto}</td>
+            <td class="px-6 py-3 text-slate-500">${emp.tipo_documento || '-'}</td>
+            <td class="px-6 py-3">${emp.numero_documento || '-'}</td>
             <td class="px-6 py-3"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-medium whitespace-nowrap">${emp.cargo}</span></td>
             <td class="px-6 py-3 whitespace-nowrap">${emp.turno || '-'}</td>
             <td class="px-6 py-3">${badgeTelefonos(emp)}</td>
             <td class="px-6 py-3 text-slate-600">${emp.email || '-'}</td>
-            <td class="px-6 py-3 whitespace-nowrap">${emp.fecha_nacimiento || '-'}</td>
-            <td class="px-6 py-3 whitespace-nowrap">${emp.fecha_alta || '-'}</td>
-            <td class="px-6 py-3 whitespace-nowrap">${emp.fecha_ingreso || '-'}</td>
+            <td class="px-6 py-3 whitespace-nowrap">${emp.fecha_nacimiento ? new Date(emp.fecha_nacimiento + 'T00:00:00').toLocaleDateString('es-AR') : '-'}</td>
+            <td class="px-6 py-3 whitespace-nowrap">${emp.fecha_alta ? new Date(emp.fecha_alta + 'T00:00:00').toLocaleDateString('es-AR') : '-'}</td>
+            <td class="px-6 py-3 whitespace-nowrap">${emp.fecha_ingreso ? new Date(emp.fecha_ingreso + 'T00:00:00').toLocaleDateString('es-AR') : '-'}</td>
             <td class="px-6 py-3 text-right font-medium text-slate-900 whitespace-nowrap">$ ${emp.sueldo.toLocaleString()}</td>
             <td class="px-6 py-3 text-center"><span class="${emp.estado_activo ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'} px-2 py-0.5 rounded-full font-medium whitespace-nowrap">${emp.estado_activo ? 'Activo' : 'Inactivo'}</span></td>
             <td class="px-6 py-3">
@@ -182,15 +184,36 @@ function poblarFiltroCargoEmpleados() {
         cargosUnicos.map(c => `<button type="button" onclick="elegirFiltroEmpCargo('${c.replace(/'/g, "\\'")}')" class="opcion-filtro-emp-cargo block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="${c}">${c}</button>`).join('');
 }
 
+function poblarFiltroTipoDocumentoEmpleados() {
+    const cont = document.getElementById('pop-emp-tipo-doc');
+    if (!cont) return;
+    const tipos = [...new Set(listaEmpleados.map(emp => emp.tipo_documento).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+    cont.innerHTML = `<button type="button" onclick="elegirFiltroEmpTipoDocumento('')" class="opcion-filtro-emp-tipo-doc block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="">Todos</button>` +
+        tipos.map(tipo => `<button type="button" onclick="elegirFiltroEmpTipoDocumento('${tipo.replace(/'/g, "\\'")}')" class="opcion-filtro-emp-tipo-doc block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="${tipo}">${tipo}</button>`).join('');
+}
+
 function aplicarFiltroEmpleados() {
     const terminoLegajo = normalizarTexto(document.getElementById('buscar-emp-legajo')?.value || '').trim();
     const terminoNombre = normalizarTexto(document.getElementById('buscar-emp-nombre')?.value || '').trim();
     const terminoApellido = normalizarTexto(document.getElementById('buscar-emp-apellido')?.value || '').trim();
+    const terminoDocumento = normalizarTexto(document.getElementById('buscar-emp-documento')?.value || '').trim();
+    const terminoTelefono = normalizarTexto(document.getElementById('filtro-emp-telefono')?.value || '').trim();
+    const terminoEmail = normalizarTexto(document.getElementById('filtro-emp-email')?.value || '').trim();
+    const fechaNacimientoFiltro = document.getElementById('filtro-emp-fecha-nacimiento')?.value || '';
+    const fechaAltaFiltro = document.getElementById('filtro-emp-fecha-alta')?.value || '';
+    const sueldoMinimo = Number(document.getElementById('filtro-emp-sueldo')?.value || 0);
 
     let filtrados = listaEmpleados.filter(emp =>
-        (!terminoLegajo || normalizarTexto(emp.legajo).includes(terminoLegajo)) &&
+        (!terminoLegajo || normalizarTexto(formatearIdentificador('EMP', emp.legajo)).includes(terminoLegajo)) &&
         (!terminoNombre || normalizarTexto(emp.nombre).includes(terminoNombre)) &&
         (!terminoApellido || normalizarTexto(emp.apellido).includes(terminoApellido)) &&
+        (!terminoDocumento || normalizarTexto(emp.numero_documento).includes(terminoDocumento)) &&
+        (!filtroEmpTipoDocumentoSeleccionado || emp.tipo_documento === filtroEmpTipoDocumentoSeleccionado) &&
+        (!terminoTelefono || normalizarTexto(emp.telefonosCompletos.join(' ')).includes(terminoTelefono)) &&
+        (!terminoEmail || normalizarTexto(emp.email).includes(terminoEmail)) &&
+        (!fechaNacimientoFiltro || emp.fecha_nacimiento === fechaNacimientoFiltro) &&
+        (!fechaAltaFiltro || emp.fecha_alta === fechaAltaFiltro) &&
+        (!sueldoMinimo || emp.sueldo >= sueldoMinimo) &&
         (!filtroEmpCargoSeleccionado || emp.cargo === filtroEmpCargoSeleccionado) &&
         (!filtroEmpTurnoSeleccionado || emp.turno === filtroEmpTurnoSeleccionado) &&
         (!filtroEmpEstadoSeleccionado || (filtroEmpEstadoSeleccionado === 'activo' ? emp.estado_activo : !emp.estado_activo))
@@ -207,6 +230,7 @@ function aplicarFiltroEmpleados() {
 
     actualizarIconosOrdenEmpleados();
     actualizarIconoFiltroEmp('btn-filtro-emp-cargo', 'opcion-filtro-emp-cargo', filtroEmpCargoSeleccionado);
+    actualizarIconoFiltroEmp('btn-filtro-emp-tipo-doc', 'opcion-filtro-emp-tipo-doc', filtroEmpTipoDocumentoSeleccionado);
     actualizarIconoFiltroEmp('btn-filtro-emp-turno', 'opcion-filtro-emp-turno', filtroEmpTurnoSeleccionado);
     actualizarIconoFiltroEmp('btn-filtro-emp-estado', 'opcion-filtro-emp-estado', filtroEmpEstadoSeleccionado);
     renderizarTablaEmpleados(filtrados);
@@ -244,6 +268,7 @@ function actualizarIconoFiltroEmp(idBoton, claseOpciones, valorSeleccionado) {
 }
 
 function elegirFiltroEmpCargo(valor) { filtroEmpCargoSeleccionado = valor; document.getElementById('pop-emp-cargo').classList.add('hidden'); aplicarFiltroEmpleados(); }
+function elegirFiltroEmpTipoDocumento(valor) { filtroEmpTipoDocumentoSeleccionado = valor; document.getElementById('pop-emp-tipo-doc').classList.add('hidden'); aplicarFiltroEmpleados(); }
 function elegirFiltroEmpTurno(valor) { filtroEmpTurnoSeleccionado = valor; document.getElementById('pop-emp-turno').classList.add('hidden'); aplicarFiltroEmpleados(); }
 function elegirFiltroEmpEstado(valor) { filtroEmpEstadoSeleccionado = valor; document.getElementById('pop-emp-estado').classList.add('hidden'); aplicarFiltroEmpleados(); }
 
@@ -293,13 +318,13 @@ function guardarNuevoEmpleado() {
         return;
     }
 
-    const legajo = `EMP-00${numEmpleadoContador++}`;
+    const legajo = numEmpleadoContador++;
     const nuevoEmpleado = new Empleado(nombre, apellido, tipoDocumento, numeroDocumento, fechaNacimiento, calleObj, altura, telefono, email, legajo, cargo, fecha, sueldo, fechaAlta, turno, telefonosAdicionales);
     listaEmpleados.unshift(nuevoEmpleado);
     guardarDatos();
 
     renderizarEmpleadosUI();
-    alert(`¡Empleado "${nombre} ${apellido}" registrado con éxito bajo legajo ${legajo}!`);
+    alert(`¡Empleado "${nombre} ${apellido}" registrado con éxito bajo legajo ${formatearIdentificador('EMP', legajo)}!`);
     volverAlHistorialEmpleados();
 }
 
@@ -319,7 +344,9 @@ function resetFormularioEmpleado() {
 }
 
 function initPaginaEmpleados() {
+    listaEmpleados.forEach(emp => { emp.legajo = Number(String(emp.legajo || '').replace(/\D/g, '')) || 0; });
     inicializarCombosUbicacion();
+    poblarFiltroTipoDocumentoEmpleados();
     resetFormularioEmpleado();
     renderizarEmpleadosUI();
     irASubvistaDesdeHashEmpleados();

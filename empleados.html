@@ -20,7 +20,7 @@
                         <div class="flex items-center space-x-3">
                             <div class="p-2.5 bg-rose-100 text-rose-600 rounded-xl"><i data-lucide="id-card" class="w-5 h-5"></i></div>
                             <div>
-                                <h2 class="text-2xl font-bold text-slate-900">Nómina de Empleados</h2>
+                                <h2 class="text-2xl font-bold text-slate-900">Empleados Registrados</h2>
                                 <p class="text-sm text-slate-500">Gestión del personal de la empresa.</p>
                             </div>
                         </div>
@@ -55,7 +55,7 @@
 
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                         <div class="p-4 border-b border-slate-100">
-                            <h3 class="font-semibold text-slate-800">Nómina</h3>
+                            <h3 class="font-semibold text-slate-800">Listado de Empleados</h3>
                         </div>
                         <div class="overflow-x-auto">
                         <table class="w-full text-sm text-left">
@@ -63,7 +63,7 @@
                                 <tr>
                                     <th class="px-6 py-3">
                                         <div class="flex items-center gap-1.5 popover-trigger">
-                                            <span>Legajo</span>
+                                            <span>N° Empleado</span>
                                             <button type="button" onclick="togglePopoverColumna('pop-emp-legajo')" title="Buscar legajo" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
                                             <div id="pop-emp-legajo" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
                                                 <input type="text" id="buscar-emp-legajo" oninput="aplicarFiltroEmpleados()" placeholder="Buscar legajo..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
@@ -90,7 +90,8 @@
                                             </div>
                                         </div>
                                     </th>
-                                    <th class="px-6 py-3">CUIL / DNI</th>
+                                    <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Tipo Documento</span><button type="button" id="btn-filtro-emp-tipo-doc" onclick="togglePopoverColumna('pop-emp-tipo-doc')" title="Filtrar por tipo de documento" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button><div id="pop-emp-tipo-doc" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 min-w-[8rem] normal-case"></div></div></th>
+                                    <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>N° Documento</span><button type="button" onclick="togglePopoverColumna('pop-emp-documento')" title="Buscar N° Documento" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-emp-documento" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input type="text" id="buscar-emp-documento" oninput="aplicarFiltroEmpleados()" placeholder="Buscar documento..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500"></div></div></th>
                                     <th class="px-6 py-3">
                                         <div class="flex items-center gap-1.5 popover-trigger">
                                             <span>Puesto</span>
@@ -110,12 +111,12 @@
                                             </div>
                                         </div>
                                     </th>
-                                    <th class="px-6 py-3">Teléfono</th>
-                                    <th class="px-6 py-3">Email</th>
-                                    <th class="px-6 py-3">Fecha Nacimiento</th>
-                                    <th class="px-6 py-3">Fecha Alta</th>
+                                    <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Teléfono</span><button type="button" onclick="togglePopoverColumna('pop-emp-telefono')" title="Buscar teléfono" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-emp-telefono" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="filtro-emp-telefono" oninput="aplicarFiltroEmpleados()" placeholder="Buscar teléfono..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs"></div></div></th>
+                                    <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Email</span><button type="button" onclick="togglePopoverColumna('pop-emp-email')" title="Buscar email" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-emp-email" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="filtro-emp-email" oninput="aplicarFiltroEmpleados()" placeholder="Buscar email..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs"></div></div></th>
+                                    <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Fecha Nacimiento</span><button type="button" onclick="togglePopoverColumna('pop-emp-fecha-nacimiento')" title="Filtrar fecha de nacimiento" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="calendar-search" class="w-3.5 h-3.5"></i></button><div id="pop-emp-fecha-nacimiento" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="filtro-emp-fecha-nacimiento" type="date" oninput="aplicarFiltroEmpleados()" class="border border-slate-300 rounded-md px-2 py-1.5 text-xs"></div></div></th>
+                                    <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Fecha Alta</span><button type="button" onclick="togglePopoverColumna('pop-emp-fecha-alta')" title="Filtrar fecha de alta" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="calendar-search" class="w-3.5 h-3.5"></i></button><div id="pop-emp-fecha-alta" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="filtro-emp-fecha-alta" type="date" oninput="aplicarFiltroEmpleados()" class="border border-slate-300 rounded-md px-2 py-1.5 text-xs"></div></div></th>
                                     <th class="px-6 py-3">Fecha Ingreso</th>
-                                    <th class="px-6 py-3 text-right">Sueldo Básico</th>
+                                    <th class="px-6 py-3"><div class="flex items-center justify-end gap-1.5 popover-trigger"><span>Sueldo Básico</span><button type="button" onclick="togglePopoverColumna('pop-emp-sueldo')" title="Filtrar por sueldo mínimo" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button><div id="pop-emp-sueldo" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="filtro-emp-sueldo" type="number" oninput="aplicarFiltroEmpleados()" placeholder="Sueldo mínimo" class="w-32 border border-slate-300 rounded-md px-2 py-1.5 text-xs"></div></div></th>
                                     <th class="px-6 py-3 text-center">
                                         <div class="flex items-center justify-center gap-1.5 popover-trigger">
                                             <span>Estado</span>
@@ -164,7 +165,6 @@
                                         <option value="CUIL">CUIL</option>
                                         <option value="DNI">DNI</option>
                                         <option value="CUIT">CUIT</option>
-                                        <option value="Pasaporte">Pasaporte</option>
                                     </select>
                                 </div>
                                 <div>

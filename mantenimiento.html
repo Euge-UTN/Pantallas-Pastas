@@ -54,23 +54,18 @@
 
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                         <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center gap-3">
-                            <h3 class="font-semibold text-slate-800 sm:mr-auto">Histórico de Mantenimientos Realizados</h3>
-                            <input type="text" id="historial-buscador" oninput="renderizarHistorialMantenimiento()" placeholder="Buscar por código, máquina o tarea..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-xs outline-none w-full sm:w-64">
-                            <select id="historial-filtro-tipo" onchange="renderizarHistorialMantenimiento()" class="border border-slate-300 rounded-lg px-3 py-1.5 text-xs outline-none">
-                                <option value="">Todos los tipos</option>
-                                <option value="Preventivo">Preventivo</option>
-                                <option value="Correctivo">Correctivo</option>
-                            </select>
+                            <h3 class="font-semibold text-slate-800 sm:mr-auto">Listado de Órdenes de Mantenimiento</h3>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm text-left">
                                 <thead class="bg-slate-50 text-xs text-slate-500 border-b border-slate-200 uppercase">
                                     <tr>
-                                        <th class="px-6 py-3">Código</th>
-                                        <th class="px-6 py-3">Tipo</th>
-                                        <th class="px-6 py-3">Responsable</th>
-                                        <th class="px-6 py-3">Maquinaria(s) Intervenida(s)</th>
-                                        <th class="px-6 py-3">Período (Inicio - Fin)</th>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>N° Mantenimiento</span><button type="button" onclick="togglePopoverColumna('pop-mant-numero')" title="Buscar N° Mantenimiento" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-mant-numero" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-mant-numero" oninput="renderizarHistorialMantenimiento()" class="w-36 border rounded px-2 py-1 text-xs" placeholder="N° Mantenimiento"></div></div></th>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Tipo</span><button type="button" onclick="togglePopoverColumna('pop-mant-tipo')" title="Filtrar por tipo" class="text-slate-400 hover:text-slate-700"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button><div id="pop-mant-tipo" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 normal-case"><button type="button" onclick="elegirFiltroTipoMantenimiento('')" class="block w-full text-left px-2 py-1 text-xs">Todos</button><button type="button" onclick="elegirFiltroTipoMantenimiento('Preventivo')" class="block w-full text-left px-2 py-1 text-xs">Preventivo</button><button type="button" onclick="elegirFiltroTipoMantenimiento('Correctivo')" class="block w-full text-left px-2 py-1 text-xs">Correctivo</button></div></div></th>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Responsable</span><button type="button" onclick="ordenarListadoMantenimiento('empleado')" title="Ordenar" class="text-slate-400 hover:text-slate-700"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button><button type="button" onclick="togglePopoverColumna('pop-mant-empleado')" title="Buscar responsable" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-mant-empleado" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-mant-empleado" oninput="renderizarHistorialMantenimiento()" class="w-36 border rounded px-2 py-1 text-xs" placeholder="Responsable"></div></div></th>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Maquinaria</span><button type="button" onclick="togglePopoverColumna('pop-mant-maquina')" title="Buscar maquinaria" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-mant-maquina" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-mant-maquina" oninput="renderizarHistorialMantenimiento()" class="w-36 border rounded px-2 py-1 text-xs" placeholder="Maquinaria"></div></div></th>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Período inicio</span><button type="button" onclick="togglePopoverColumna('pop-mant-inicio')" title="Filtrar por fecha" class="text-slate-400 hover:text-slate-700"><i data-lucide="calendar-search" class="w-3.5 h-3.5"></i></button><div id="pop-mant-inicio" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><label class="block text-[11px]">Desde<input id="historial-inicio-desde" type="date" oninput="renderizarHistorialMantenimiento()" class="block border rounded px-2 py-1 text-xs"></label><label class="block text-[11px]">Hasta<input id="historial-inicio-hasta" type="date" oninput="renderizarHistorialMantenimiento()" class="block border rounded px-2 py-1 text-xs"></label></div></div></th>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Período fin</span><button type="button" onclick="togglePopoverColumna('pop-mant-fin')" title="Filtrar por fecha" class="text-slate-400 hover:text-slate-700"><i data-lucide="calendar-search" class="w-3.5 h-3.5"></i></button><div id="pop-mant-fin" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><label class="block text-[11px]">Desde<input id="historial-fin-desde" type="date" oninput="renderizarHistorialMantenimiento()" class="block border rounded px-2 py-1 text-xs"></label><label class="block text-[11px]">Hasta<input id="historial-fin-hasta" type="date" oninput="renderizarHistorialMantenimiento()" class="block border rounded px-2 py-1 text-xs"></label></div></div></th>
                                         <th class="px-6 py-3 text-center">Acciones</th>
                                     </tr>
                                 </thead>
@@ -96,20 +91,28 @@
                         </button>
                     </div>
 
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3"><div class="p-2.5 bg-violet-100 text-violet-600 rounded-lg"><i data-lucide="cog" class="w-5 h-5"></i></div><div><p id="kpi-maquinaria-total" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Total Máquinas</p></div></div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3"><div class="p-2.5 bg-emerald-100 text-emerald-600 rounded-lg"><i data-lucide="circle-check" class="w-5 h-5"></i></div><div><p id="kpi-maquinaria-operativa" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Operativas</p></div></div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3"><div class="p-2.5 bg-amber-100 text-amber-600 rounded-lg"><i data-lucide="wrench" class="w-5 h-5"></i></div><div><p id="kpi-maquinaria-reparacion" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">En Reparación</p></div></div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3"><div class="p-2.5 bg-red-100 text-red-600 rounded-lg"><i data-lucide="circle-x" class="w-5 h-5"></i></div><div><p id="kpi-maquinaria-fuera-servicio" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Fuera de Servicio</p></div></div>
+                    </div>
+
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                         <div class="p-4 border-b border-slate-100">
-                            <h3 class="font-semibold text-slate-800">Listado de Maquinarias</h3>
+                            <div class="flex items-center justify-between gap-3"><h3 class="font-semibold text-slate-800">Listado de Maquinarias</h3></div>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm text-left">
                                 <thead class="bg-slate-50 text-xs text-slate-500 border-b border-slate-200 uppercase">
                                     <tr>
-                                        <th class="px-6 py-3">Nombre</th>
-                                        <th class="px-6 py-3">Marca</th>
-                                        <th class="px-6 py-3">Modelo</th>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>N° Máquina</span><button type="button" onclick="togglePopoverColumna('pop-maq-numero')" title="Buscar N° Máquina" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-maq-numero" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-maq-numero" oninput="filtrarListadoMaquinaria()" class="w-36 border rounded px-2 py-1 text-xs" placeholder="N° Máquina"></div></div></th>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Nombre</span><button type="button" onclick="ordenarListadoMaquinaria('nombre')" title="Ordenar" class="text-slate-400 hover:text-slate-700"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button><button type="button" onclick="togglePopoverColumna('pop-maq-nombre')" title="Buscar nombre" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-maq-nombre" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-maq-nombre" oninput="filtrarListadoMaquinaria()" class="w-36 border rounded px-2 py-1 text-xs" placeholder="Nombre"></div></div></th>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Marca</span><button type="button" onclick="ordenarListadoMaquinaria('marca')" title="Ordenar" class="text-slate-400 hover:text-slate-700"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button><button type="button" onclick="togglePopoverColumna('pop-maq-marca')" title="Buscar marca" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-maq-marca" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-maq-marca" oninput="filtrarListadoMaquinaria()" class="w-36 border rounded px-2 py-1 text-xs" placeholder="Marca"></div></div></th>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Modelo</span><button type="button" onclick="ordenarListadoMaquinaria('modelo')" title="Ordenar" class="text-slate-400 hover:text-slate-700"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button><button type="button" onclick="togglePopoverColumna('pop-maq-modelo')" title="Buscar modelo" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-maq-modelo" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-maq-modelo" oninput="filtrarListadoMaquinaria()" class="w-36 border rounded px-2 py-1 text-xs" placeholder="Modelo"></div></div></th>
                                         <th class="px-6 py-3">Descripción</th>
-                                        <th class="px-6 py-3">Fecha Adquisición</th>
-                                        <th class="px-6 py-3 text-center">Estado</th>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Fecha Adquisición</span><button type="button" onclick="togglePopoverColumna('pop-maq-fecha')" title="Filtrar por fecha" class="text-slate-400 hover:text-slate-700"><i data-lucide="calendar-search" class="w-3.5 h-3.5"></i></button><div id="pop-maq-fecha" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-maq-fecha" type="date" onchange="filtrarListadoMaquinaria()" class="border rounded px-2 py-1 text-xs"></div></div></th>
+                                        <th class="px-6 py-3 text-center"><div class="flex items-center justify-center gap-1.5 popover-trigger"><span>Estado</span><button type="button" onclick="togglePopoverColumna('pop-maq-estado')" title="Filtrar por estado" class="text-slate-400 hover:text-slate-700"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button><div id="pop-maq-estado" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 normal-case"><button type="button" onclick="elegirFiltroEstadoMaquinaria('')" class="block w-full text-left px-2 py-1 text-xs">Todos</button><button type="button" onclick="elegirFiltroEstadoMaquinaria('Operativa')" class="block w-full text-left px-2 py-1 text-xs">Operativa</button><button type="button" onclick="elegirFiltroEstadoMaquinaria('En reparación')" class="block w-full text-left px-2 py-1 text-xs">En reparación</button><button type="button" onclick="elegirFiltroEstadoMaquinaria('Fuera de servicio')" class="block w-full text-left px-2 py-1 text-xs">Fuera de servicio</button></div></div></th>
                                         <th class="px-6 py-3 text-center">Acciones</th>
                                     </tr>
                                 </thead>
@@ -139,7 +142,7 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Marca *</label>
-                                <input id="maq-marca" type="text" placeholder="Ej: Imperia" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                <select id="maq-marca" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></select>
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Modelo *</label>
@@ -155,7 +158,7 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Estado</label>
-                                <select id="maq-estado" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                <select id="maq-estado" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
                                     <option>Operativa</option>
                                     <option>En reparación</option>
                                     <option>Fuera de servicio</option>
@@ -178,7 +181,7 @@
                             <i data-lucide="arrow-left" class="w-5 h-5"></i>
                         </button>
                         <div>
-                            <h2 id="historial-maquina-titulo" class="text-2xl font-bold text-slate-900">Histórico de Mantenimientos</h2>
+                            <h2 id="historial-maquina-titulo" class="text-2xl font-bold text-slate-900">Listado de Mantenimientos</h2>
                             <p class="text-sm text-slate-500">Registros de trabajos realizados sobre este equipo.</p>
                         </div>
                     </div>
@@ -212,7 +215,7 @@
                             </div>
                         </div>
                         <button type="button" onclick="volverAlHistorialMantenimiento()" class="text-sm font-semibold text-slate-500 hover:text-slate-700 flex items-center space-x-1">
-                            <i data-lucide="arrow-left" class="w-4 h-4"></i><span>Volver al historial</span>
+                            <i data-lucide="arrow-left" class="w-4 h-4"></i><span>Volver al listado</span>
                         </button>
                     </div>
 
@@ -226,7 +229,7 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Empleado responsable *</label>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Responsable *</label>
                                 <input type="text" id="mant-empleado" readonly class="w-full border border-slate-200 bg-slate-50 text-slate-700 rounded-lg p-2.5 text-sm font-medium outline-none cursor-not-allowed">
                             </div>
                         </div>
@@ -266,7 +269,7 @@
                                 </div>
                                 <div class="md:col-span-2">
                                     <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha próx. mant.</label>
-                                    <input id="mant-det-fecha-proximo" type="date" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
+                                    <input id="mant-det-fecha-proximo" type="date" required class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
                                 </div>
                                 <div class="md:col-span-6">
                                     <label class="block text-xs font-semibold text-slate-600 mb-1">Tareas realizadas / Repuestos reemplazados *</label>

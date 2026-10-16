@@ -61,6 +61,14 @@
                                 <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="credit-card" class="w-4 h-4"></i><span>Datos del Cobro</span></h4>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Registrado por</label>
+                                        <div id="cobro-empleado-display" class="w-full border border-slate-200 bg-slate-50 rounded-lg p-2.5 text-sm text-slate-600 flex items-center gap-2">
+                                            <i data-lucide="user-check" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                            <span id="cobro-empleado-nombre">-</span>
+                                        </div>
+                                        <input type="hidden" id="cobro-empleado" value="">
+                                    </div>
+                                    <div>
                                         <label class="block text-xs font-semibold text-slate-600 mb-1">Medio de Pago *</label>
                                         <select id="cobro-medio" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
                                             <option value="" disabled selected>Elegí un medio de pago</option>
@@ -85,11 +93,11 @@
                                         <p id="nota-saldo-cobro" class="hidden text-[11px] text-slate-400 mt-1"></p>
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha de Emisión *</label>
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha de Pago *</label>
                                         <input type="date" id="cobro-fecha" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Hora de Emisión *</label>
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Hora de Pago *</label>
                                         <input type="time" id="cobro-hora" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
                                     </div>
                                 </div>
@@ -126,7 +134,7 @@
                             <div class="p-2.5 bg-amber-100 text-amber-600 rounded-xl"><i data-lucide="wallet" class="w-5 h-5"></i></div>
                             <div>
                                 <h2 class="text-2xl font-bold text-slate-900">Pagos</h2>
-                                <p class="text-sm text-slate-500">Historial completo de comprobantes de pago registrados.</p>
+                                <p class="text-sm text-slate-500">Listado completo de comprobantes de pago registrados.</p>
                             </div>
                         </div>
                         <button onclick="irAReporteCaja()" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2 shadow-sm transition">
@@ -156,12 +164,7 @@
 
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                         <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center gap-3">
-                            <h3 class="font-semibold text-slate-800 sm:mr-auto">Historial de Pagos</h3>
-                            <div class="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs shrink-0">
-                                <button type="button" onclick="elegirSegmentoPagos('')" id="segmento-pagos-" class="segmento-pagos px-3 py-1.5 rounded-md font-semibold transition">Todos</button>
-                                <button type="button" onclick="elegirSegmentoPagos('Evento')" id="segmento-pagos-Evento" class="segmento-pagos px-3 py-1.5 rounded-md font-semibold transition">Eventos</button>
-                                <button type="button" onclick="elegirSegmentoPagos('Donacion')" id="segmento-pagos-Donacion" class="segmento-pagos px-3 py-1.5 rounded-md font-semibold transition">Donaciones</button>
-                            </div>
+                            <h3 class="font-semibold text-slate-800 sm:mr-auto">Listado de Pagos</h3>
                         </div>
                         <div class="overflow-x-auto">
                         <table class="w-full text-sm text-left">
@@ -169,38 +172,91 @@
                                 <tr>
                                     <th class="px-6 py-3">
                                         <div class="flex items-center gap-1.5 popover-trigger">
-                                            <span>N° Comprobante</span>
-                                            <button type="button" onclick="togglePopoverColumna('pop-num-pago')" title="Buscar N° de comprobante" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
+                                            <span>N° Pago</span>
+                                            <button type="button" onclick="togglePopoverColumna('pop-num-pago')" title="Buscar N° de pago" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
                                             <div id="pop-num-pago" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
-                                                <input type="text" id="buscar-num-pago" oninput="renderizarTablaPagos()" placeholder="Buscar N° comprobante..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
+                                                <input type="text" id="buscar-num-pago" oninput="renderizarTablaPagos()" placeholder="Buscar N° de pago..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
                                             </div>
                                         </div>
                                     </th>
                                     <th class="px-6 py-3">
                                         <div class="flex items-center gap-1.5 popover-trigger">
-                                            <span>Nombre</span>
-                                            <button type="button" id="btn-orden-nombre-pago" onclick="alternarOrdenPagos('nombre')" title="Ordenar de la A a la Z" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button>
-                                            <button type="button" onclick="togglePopoverColumna('pop-nombre-pago')" title="Buscar nombre" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
-                                            <div id="pop-nombre-pago" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
-                                                <input type="text" id="buscar-nombre-pago" oninput="renderizarTablaPagos()" placeholder="Buscar nombre..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
+                                            <span>N° Venta</span>
+                                            <button type="button" onclick="togglePopoverColumna('pop-venta-pago')" title="Buscar N° de venta" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-venta-pago" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
+                                                <input type="text" id="buscar-venta-pago" oninput="renderizarTablaPagos()" placeholder="Buscar N° de venta..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
                                             </div>
                                         </div>
                                     </th>
                                     <th class="px-6 py-3">
                                         <div class="flex items-center gap-1.5 popover-trigger">
-                                            <span>Apellido</span>
-                                            <button type="button" id="btn-orden-apellido-pago" onclick="alternarOrdenPagos('apellido')" title="Ordenar de la A a la Z" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button>
-                                            <button type="button" onclick="togglePopoverColumna('pop-apellido-pago')" title="Buscar apellido" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
-                                            <div id="pop-apellido-pago" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
-                                                <input type="text" id="buscar-apellido-pago" oninput="renderizarTablaPagos()" placeholder="Buscar apellido..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
+                                            <span>Cliente</span>
+                                            <button type="button" id="btn-orden-cliente-pago" onclick="alternarOrdenPagos('cliente')" title="Ordenar de la A a la Z" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button>
+                                            <button type="button" onclick="togglePopoverColumna('pop-cliente-pago')" title="Buscar cliente" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-cliente-pago" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
+                                                <input type="text" id="buscar-cliente-pago" oninput="renderizarTablaPagos()" placeholder="Buscar cliente..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
                                             </div>
                                         </div>
                                     </th>
-                                    <th class="px-6 py-3">Tipo Doc.</th>
-                                    <th class="px-6 py-3">N° Documento</th>
                                     <th class="px-6 py-3">
                                         <div class="flex items-center gap-1.5 popover-trigger">
-                                            <span>Medio de Pago</span>
+                                            <span>Tipo Doc.</span>
+                                            <button type="button" id="btn-filtro-tipo-doc-pago" onclick="togglePopoverColumna('pop-tipo-doc-pago')" title="Filtrar por tipo de documento" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-tipo-doc-pago" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 min-w-[9rem] normal-case">
+                                                <button type="button" onclick="elegirFiltroTipoDocPagos('')" class="opcion-filtro-tipo-doc-pago block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="">Todos</button>
+                                                <button type="button" onclick="elegirFiltroTipoDocPagos('DNI')" class="opcion-filtro-tipo-doc-pago block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="DNI">DNI</button>
+                                                <button type="button" onclick="elegirFiltroTipoDocPagos('CUIT')" class="opcion-filtro-tipo-doc-pago block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="CUIT">CUIT</button>
+                                                <button type="button" onclick="elegirFiltroTipoDocPagos('CUIL')" class="opcion-filtro-tipo-doc-pago block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="CUIL">CUIL</button>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>N° Documento</span>
+                                            <button type="button" onclick="togglePopoverColumna('pop-documento-pago')" title="Buscar N° de documento" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-documento-pago" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
+                                                <input type="text" id="buscar-documento-pago" oninput="renderizarTablaPagos()" placeholder="Buscar N° documento..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>Tipo Cliente</span>
+                                            <button type="button" id="btn-filtro-tipo-cliente-pago" onclick="togglePopoverColumna('pop-tipo-cliente-pago')" title="Filtrar por tipo de cliente" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-tipo-cliente-pago" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 min-w-[9rem] normal-case">
+                                                <button type="button" onclick="elegirFiltroTipoClientePagos('')" class="opcion-filtro-tipo-cliente-pago block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="">Todos los tipos</button>
+                                                <button type="button" onclick="elegirFiltroTipoClientePagos('Mostrador')" class="opcion-filtro-tipo-cliente-pago block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Mostrador">Mostrador</button>
+                                                <button type="button" onclick="elegirFiltroTipoClientePagos('Mayorista')" class="opcion-filtro-tipo-cliente-pago block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Mayorista">Mayorista</button>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>Tipo Pedido</span>
+                                            <button type="button" id="btn-filtro-tipo-pedido-pago" onclick="togglePopoverColumna('pop-tipo-pedido-pago')" title="Filtrar por tipo de pedido" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-tipo-pedido-pago" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 min-w-[9rem] normal-case">
+                                                <button type="button" onclick="elegirFiltroTipoPedidoPagos('')" class="opcion-filtro-tipo-pedido-pago block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="">Todos</button>
+                                                <button type="button" onclick="elegirFiltroTipoPedidoPagos('Normal')" class="opcion-filtro-tipo-pedido-pago block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Normal">Normal</button>
+                                                <button type="button" onclick="elegirFiltroTipoPedidoPagos('Web')" class="opcion-filtro-tipo-pedido-pago block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Web">Web</button>
+                                                <button type="button" onclick="elegirFiltroTipoPedidoPagos('Evento')" class="opcion-filtro-tipo-pedido-pago block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Evento">Evento</button>
+                                                <button type="button" onclick="elegirFiltroTipoPedidoPagos('Donación')" class="opcion-filtro-tipo-pedido-pago block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Donación">Donación</button>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>Condición Pago</span>
+                                            <button type="button" id="btn-filtro-condicion-pago" onclick="togglePopoverColumna('pop-condicion-pago')" title="Filtrar por condición de pago" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-condicion-pago" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 min-w-[10rem] normal-case text-left">
+                                                <button type="button" onclick="elegirFiltroCondicionPagos('')" class="opcion-filtro-condicion-pago block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="">Todas</button>
+                                                <button type="button" onclick="elegirFiltroCondicionPagos('Contado')" class="opcion-filtro-condicion-pago block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Contado">Contado</button>
+                                                <button type="button" onclick="elegirFiltroCondicionPagos('Cuenta Corriente')" class="opcion-filtro-condicion-pago block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Cuenta Corriente">Cuenta Corriente</button>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>Medio Pago</span>
                                             <button type="button" id="btn-filtro-medio-pago" onclick="togglePopoverColumna('pop-medio-pago')" title="Filtrar por medio de pago" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button>
                                             <div id="pop-medio-pago" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 min-w-[10rem] normal-case">
                                                 <button type="button" onclick="elegirFiltroMedioPago('')" class="opcion-filtro-medio-pago block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="">Todos</button>
@@ -211,8 +267,25 @@
                                             </div>
                                         </div>
                                     </th>
-                                    <th class="px-6 py-3">Fecha</th>
-                                    <th class="px-6 py-3 text-right">Importe</th>
+                                    <th class="px-6 py-3">
+                                        <div class="flex items-center gap-1.5 popover-trigger">
+                                            <span>Fecha Pago</span>
+                                            <button type="button" onclick="togglePopoverColumna('pop-fecha-pago')" title="Buscar fecha exacta" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="calendar-search" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-fecha-pago" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case">
+                                                <input type="date" id="buscar-fecha-pago" onchange="renderizarTablaPagos()" class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-red-500">
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3 text-right">
+                                        <div class="flex items-center justify-end gap-1.5 popover-trigger">
+                                            <span>Importe</span>
+                                            <button type="button" onclick="togglePopoverColumna('pop-monto-pago')" title="Filtrar por rango de monto" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button>
+                                            <div id="pop-monto-pago" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case text-left space-y-1.5">
+                                                <label class="block text-[11px] text-slate-500">Desde $<input type="number" id="buscar-monto-desde-pago" oninput="renderizarTablaPagos()" placeholder="0" class="w-24 ml-1 border border-slate-300 rounded-md px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-red-500"></label>
+                                                <label class="block text-[11px] text-slate-500">Hasta $<input type="number" id="buscar-monto-hasta-pago" oninput="renderizarTablaPagos()" placeholder="999999" class="w-24 ml-1 border border-slate-300 rounded-md px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-red-500"></label>
+                                            </div>
+                                        </div>
+                                    </th>
                                     <th class="px-6 py-3 text-center">
                                         <div class="flex items-center justify-center gap-1.5 popover-trigger">
                                             <span>Estado</span>
@@ -272,12 +345,13 @@
                         </div>
                         <table class="w-full text-sm text-left">
                             <thead class="border-b border-slate-300 uppercase text-slate-500 text-xs">
-                                <tr><th class="py-2">Medio de Pago</th><th class="py-2 text-right">Total Cobrado</th></tr>
+                                <tr><th class="py-2">Medio Pago</th><th class="py-2 text-right">Total Cobrado</th></tr>
                             </thead>
                             <tbody id="reporte-caja-body" class="divide-y divide-slate-100"></tbody>
                         </table>
-                        <div class="border-t border-slate-200 pt-4 text-right">
-                            <p id="reporte-caja-total" class="text-lg font-bold text-slate-900">Total: $ 0</p>
+                        <div class="border-t border-slate-200 pt-4 flex items-baseline gap-2">
+                            <span class="text-sm font-semibold text-slate-500">Total:</span>
+                            <span id="reporte-caja-total" class="text-lg font-bold text-slate-900">$ 0</span>
                         </div>
                     </div>
                 </div>

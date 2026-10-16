@@ -12,6 +12,20 @@ let ultimoRequerimientoMP = [];
 let idPedidoOrigenSeleccionado = null; // null = Producción interna
 let ordenDetalleActualId = null;
 let ordenEnCierreId = null; // id de la OP que se está cerrando
+let ordenListadoProduccion = { campo: '', direccion: '' };
+let filtroEstadoProduccion = '';
+
+function elegirFiltroEstadoProduccion(estado) {
+    filtroEstadoProduccion = estado;
+    document.getElementById('pop-prod-estado')?.classList.add('hidden');
+    renderizarHistorialProduccion();
+}
+
+function ordenarListadoProduccion(campo) {
+    ordenListadoProduccion.direccion = ordenListadoProduccion.campo === campo && ordenListadoProduccion.direccion === 'asc' ? 'desc' : 'asc';
+    ordenListadoProduccion.campo = campo;
+    renderizarHistorialProduccion();
+}
 
 // Función auxiliar para formatear fechas a DD/MM/AAAA
 function formatearFechaLatina(fechaStr) {
@@ -106,7 +120,7 @@ function filtrarPedidosOrigen() {
 
     const termino = normalizarTexto(input.value).trim();
     const opciones = [{ esStock: true }, ...pedidosOrigenDisponibles().map(p => ({ esStock: false, pedido: p }))]
-        .filter(o => o.esStock ? !termino : normalizarTexto(`PED-${o.pedido.id} ${o.pedido.cliente}`).includes(termino));
+        .filter(o => o.esStock ? !termino : normalizarTexto(`${formatearIdentificador("PED", o.pedido.id)} ${o.pedido.cliente}`).includes(termino));
 
     if (!opciones.length) {
         cont.innerHTML = `<p class="px-3 py-2 text-xs text-slate-400">Sin pedidos pendientes que coincidan con la búsqueda.</p>`;
@@ -119,7 +133,7 @@ function filtrarPedidosOrigen() {
                <span class="block text-[11px] text-slate-400">Producción no asociada a un pedido</span>
            </button>`
         : `<button type="button" onmousedown="event.preventDefault(); elegirPedidoOrigen(${o.pedido.id})" class="block w-full text-left px-3 py-2 text-sm hover:bg-slate-100">
-               <span class="block truncate">PED-${o.pedido.id} — ${o.pedido.cliente}</span>
+               <span class="block truncate">${formatearIdentificador("PED", o.pedido.id)} - ${o.pedido.cliente}</span>
                <span class="block text-[11px] text-slate-400">${(o.pedido.detalle || []).map(d => d.nombre).join(', ')}</span>
            </button>`
     ).join('');
@@ -135,7 +149,7 @@ function elegirPedidoOrigen(idPedido) {
     if (inputOculto) inputOculto.value = idPedido || '';
     if (inputMostrar) {
         const ped = typeof listaPedidos !== 'undefined' ? listaPedidos.find(p => p.id === idPedido) : null;
-        inputMostrar.value = (idPedido && ped) ? `PED-${idPedido} — ${ped.cliente}` : 'Producción interna';
+        inputMostrar.value = (idPedido && ped) ? `${formatearIdentificador("PED", idPedido)} - ${ped.cliente}` : 'Producción interna';
     }
     document.getElementById('prod-pedido-autocompletar-opciones')?.classList.add('hidden');
     if (btnPrecargar) btnPrecargar.classList.toggle('hidden', !idPedido);
@@ -365,7 +379,7 @@ function sincronizarMaquinariaSugerida() {
         listaMaquinaria.forEach(m => {
             itemsMaquinariaProduccionActual.push({
                 id_maquinaria: m.id_maquinaria,
-                nombre_maquinaria: m.nombre,
+                nombre_maquinaria: `${nombreMarca(m.id_marca)} - ${m.modelo}`,
                 estado: m.estado,
                 hora_inicio_planificada: document.getElementById('prod-hora-inicio')?.value || '08:00',
                 hora_fin_planificada: document.getElementById('prod-hora-fin')?.value || '17:00'
@@ -472,7 +486,7 @@ function registrarOrdenProduccion() {
     }
 
     const lotes = detalleProductos.map(d => d.numero_lote_proyectado).join(', ');
-    alert(`¡Orden de producción OP-${orden.id_orden_produccion} registrada! Lote(s) proyectado(s): ${lotes}.`);
+    alert(`¡Orden de producción ${formatearIdentificador("OP", orden.id_orden_produccion)} registrada! Lote(s) proyectado(s): ${lotes}.`);
     volverAlHistorialProduccion();
 }
 
@@ -510,19 +524,38 @@ function renderizarHistorialProduccion() {
     const tbody = document.getElementById('tabla-ordenes-produccion');
     if (!tbody) return;
 
-    const filtroEstado = document.getElementById('historial-filtro-estado')?.value || '';
+    const filtroEstado = filtroEstadoProduccion;
     const termino = normalizarTexto(document.getElementById('historial-buscador')?.value || '').trim();
+    const terminoNumero = normalizarTexto(document.getElementById('buscar-prod-numero')?.value || '').trim();
+    const terminoPedido = normalizarTexto(document.getElementById('buscar-prod-pedido')?.value || '').trim();
+    const terminoEmpleado = normalizarTexto(document.getElementById('buscar-prod-empleado')?.value || '').trim();
+    const terminoProducto = normalizarTexto(document.getElementById('buscar-prod-producto')?.value || '').trim();
+    const fechaDesde = document.getElementById('buscar-prod-fecha-desde')?.value || '';
+    const fechaHasta = document.getElementById('buscar-prod-fecha-hasta')?.value || '';
 
     const ordenes = listaOrdenesProduccion.filter(o => {
         if (filtroEstado && o.estado !== filtroEstado) return false;
-        if (!termino) return true;
-        const haystack = normalizarTexto([
-            `OP-${o.id_orden_produccion}`,
-            o.id_orden_pedido_cliente ? `PED-${o.id_orden_pedido_cliente}` : '',
-            ...o.detalleProductos.map(d => d.nombre_producto)
-        ].join(' '));
-        return haystack.includes(termino);
+        const numero = formatearIdentificador('OP', o.id_orden_produccion);
+        const pedido = o.id_orden_pedido_cliente ? formatearIdentificador('PED', o.id_orden_pedido_cliente) : 'Producción interna';
+        const producto = o.detalleProductos.map(d => d.nombre_producto).join(' ');
+        const haystack = normalizarTexto([numero, pedido, o.id_empleado, o.fecha_emision, o.estado, producto].join(' '));
+        return (!termino || haystack.includes(termino)) &&
+            (!terminoNumero || normalizarTexto(numero).includes(terminoNumero)) &&
+            (!terminoPedido || normalizarTexto(pedido).includes(terminoPedido)) &&
+            (!terminoEmpleado || normalizarTexto(o.id_empleado).includes(terminoEmpleado)) &&
+            (!terminoProducto || normalizarTexto(producto).includes(terminoProducto)) &&
+            coincideRangoFecha(fechaDesde, fechaHasta, o.fecha_emision);
     });
+
+    if (['empleado', 'producto', 'estado'].includes(ordenListadoProduccion.campo)) {
+        const campo = ordenListadoProduccion.campo;
+        ordenes.sort((a, b) => {
+            const va = campo === 'empleado' ? a.id_empleado : campo === 'estado' ? a.estado : a.detalleProductos.map(d => d.nombre_producto).join(' ');
+            const vb = campo === 'empleado' ? b.id_empleado : campo === 'estado' ? b.estado : b.detalleProductos.map(d => d.nombre_producto).join(' ');
+            const cmp = typeof va === 'number' ? va - vb : String(va || '').localeCompare(String(vb || ''), 'es');
+            return ordenListadoProduccion.direccion === 'asc' ? cmp : -cmp;
+        });
+    }
 
     tbody.innerHTML = '';
     if (ordenes.length === 0) {
@@ -540,7 +573,7 @@ function renderizarHistorialProduccion() {
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50 border-b border-slate-100';
         tr.innerHTML = `
-            <td class="px-6 py-3 font-semibold text-slate-800 whitespace-nowrap">OP-${o.id_orden_produccion}</td>
+            <td class="px-6 py-3 font-semibold text-slate-800 whitespace-nowrap">${formatearIdentificador("OP", o.id_orden_produccion)}</td>
             <td class="px-6 py-3 text-slate-600 whitespace-nowrap">${o.id_orden_pedido_cliente ? 'PED-' + o.id_orden_pedido_cliente : 'Producción interna'}</td>
             <td class="px-6 py-3 text-slate-600 whitespace-nowrap">${o.id_empleado}</td>
             <td class="px-6 py-3 text-slate-600">${prodTexto}</td>
@@ -559,7 +592,7 @@ function renderizarHistorialProduccion() {
 function cancelarOrdenProduccion(id) {
     const orden = listaOrdenesProduccion.find(o => o.id_orden_produccion === id);
     if (!orden) return;
-    if (!confirm(`¿Cancelar la orden OP-${id}? Esta acción no se puede deshacer.`)) return;
+    if (!confirm(`¿Cancelar la orden ${formatearIdentificador("OP", id)}? Esta acción no se puede deshacer.`)) return;
 
     if (orden.stockDescontado) {
         orden.detalleMateriaPrima.forEach(d => {
@@ -637,10 +670,10 @@ function renderizarDetalleOrdenProduccion() {
             <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
                 <div>
                     <div class="flex items-center space-x-3">
-                        <h3 class="text-xl font-bold text-slate-900">Orden de Producción OP-${o.id_orden_produccion}</h3>
+                        <h3 class="text-xl font-bold text-slate-900">Orden de Producción ${formatearIdentificador("OP", o.id_orden_produccion)}</h3>
                         <span class="text-xs px-2.5 py-0.5 rounded-full font-semibold ${COLOR_ESTADO_ORDEN_PRODUCCION[o.estado]}">${o.estado}</span>
                     </div>
-                    <p class="text-xs text-slate-500 mt-1">Origen: <span class="font-medium text-slate-700">${o.id_orden_pedido_cliente ? 'PED-' + o.id_orden_pedido_cliente : 'Producción interna'}</span> — Empleado Responsable: <span class="font-medium text-slate-700">${o.id_empleado}</span></p>
+                    <p class="text-xs text-slate-500 mt-1">Origen: <span class="font-medium text-slate-700">${o.id_orden_pedido_cliente ? 'PED-' + o.id_orden_pedido_cliente : 'Producción interna'}</span> - Responsable: <span class="font-medium text-slate-700">${o.id_empleado}</span></p>
                 </div>
                 ${o.estado === 'En Proceso' ? `
                     <button type="button" onclick="abrirModalCierreOrden(${o.id_orden_produccion})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center space-x-2 shadow-sm transition">
@@ -681,6 +714,7 @@ function renderizarDetalleOrdenProduccion() {
                     <tbody class="divide-y divide-slate-100">${filasMaquinaria}</tbody>
                 </table>
             </div>
+            ${o.observaciones ? `<div class="bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-700"><b>Observaciones:</b> ${o.observaciones}</div>` : ''}
         </div>
     `;
     if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -705,7 +739,7 @@ function abrirModalCierreOrden(id) {
 
     let html = `
         <div class="space-y-5 text-xs">
-            <p class="text-slate-500">Confirme los valores reales consumidos y producidos para cerrar la orden OP-${orden.id_orden_produccion}:</p>
+            <p class="text-slate-500">Confirme los valores reales consumidos y producidos para cerrar la orden ${formatearIdentificador("OP", orden.id_orden_produccion)}:</p>
 
             <!-- 1. Productos -->
             <div class="space-y-2">
@@ -805,14 +839,18 @@ function confirmarCierreOrden() {
 
     if (orden.id_orden_pedido_cliente && typeof listaPedidos !== 'undefined') {
         const pedido = listaPedidos.find(p => p.id === orden.id_orden_pedido_cliente);
-        if (pedido) pedido.estado = 'Listo';
+        if (pedido) {
+            pedido.estado = 'Listo';
+            // El Comprobante de Venta recién se emite acá (ver también avanzarEstadoPedido en js/ventas.js).
+            actualizarComprobanteVenta(pedido);
+        }
     }
 
     cerrarModalCierreOrden();
     renderizarHistorialProduccion();
     renderizarStatsProduccion();
     if (ordenDetalleActualId) renderizarDetalleOrdenProduccion();
-    alert(`Orden OP-${orden.id_orden_produccion} finalizada y cerrada exitosamente.`);
+    alert(`Orden ${formatearIdentificador("OP", orden.id_orden_produccion)} finalizada y cerrada exitosamente.`);
 }
 
 function cerrarModalCierreOrden() {

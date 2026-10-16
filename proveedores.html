@@ -54,13 +54,14 @@
                     </div>
 
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div class="p-4 border-b border-slate-100">
-                            <h3 class="font-semibold text-slate-800">Listado de Proveedores</h3>
+                        <div class="p-4 border-b border-slate-100 flex flex-wrap items-center gap-2">
+                            <h3 class="font-semibold text-slate-800 mr-auto">Listado de Proveedores</h3>
                         </div>
                         <div class="overflow-x-auto">
                         <table class="w-full text-sm text-left">
                             <thead class="bg-slate-50 text-xs text-slate-500 border-b border-slate-200 uppercase">
                                 <tr>
+                                    <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>N° Proveedor</span><button type="button" onclick="togglePopoverColumna('pop-prov-numero')" title="Buscar N° proveedor" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-prov-numero" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-prov-numero" oninput="aplicarFiltroProveedores()" placeholder="Buscar N° proveedor..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs"></div></div></th>
                                     <th class="px-6 py-3">
                                         <div class="flex items-center gap-1.5 popover-trigger">
                                             <span>Razón Social</span>
@@ -71,6 +72,7 @@
                                             </div>
                                         </div>
                                     </th>
+                                    <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Tipo Documento</span><button type="button" id="btn-filtro-prov-tipo-doc" onclick="togglePopoverColumna('pop-prov-tipo-doc')" title="Filtrar por tipo de documento" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button><div id="pop-prov-tipo-doc" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 min-w-[8rem] normal-case"></div></div></th>
                                     <th class="px-6 py-3">
                                         <div class="flex items-center gap-1.5 popover-trigger">
                                             <span>N° Documento</span>
@@ -80,7 +82,15 @@
                                             </div>
                                         </div>
                                     </th>
-                                    <th class="px-6 py-3">Rubro</th>
+                                    <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Rubro</span><button type="button" id="btn-filtro-prov-rubro" onclick="togglePopoverColumna('pop-prov-rubro')" title="Filtrar por rubro" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button><div id="pop-prov-rubro" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 min-w-[11rem] normal-case">
+                                                <button type="button" onclick="elegirFiltroProvRubro('')" class="opcion-filtro-prov-rubro block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="">Todos los rubros</button>
+                                                <button type="button" onclick="elegirFiltroProvRubro('Harinas y Sémolas')" class="opcion-filtro-prov-rubro block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Harinas y Sémolas">Harinas y Sémolas</button>
+                                                <button type="button" onclick="elegirFiltroProvRubro('Huevos Frescos')" class="opcion-filtro-prov-rubro block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Huevos Frescos">Huevos Frescos</button>
+                                                <button type="button" onclick="elegirFiltroProvRubro('Lácteos y Quesos')" class="opcion-filtro-prov-rubro block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Lácteos y Quesos">Lácteos y Quesos</button>
+                                                <button type="button" onclick="elegirFiltroProvRubro('Embalajes y Packaging')" class="opcion-filtro-prov-rubro block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Embalajes y Packaging">Embalajes y Packaging</button>
+                                                <button type="button" onclick="elegirFiltroProvRubro('Condimentos y Especias')" class="opcion-filtro-prov-rubro block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Condimentos y Especias">Condimentos y Especias</button>
+                                                <button type="button" onclick="elegirFiltroProvRubro('Logística y Transporte')" class="opcion-filtro-prov-rubro block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100" data-valor="Logística y Transporte">Logística y Transporte</button>
+                                            </div></div></th>
                                     <th class="px-6 py-3">
                                         <div class="flex items-center gap-1.5 popover-trigger">
                                             <span>Condición IVA</span>
@@ -93,10 +103,10 @@
                                             </div>
                                         </div>
                                     </th>
-                                    <th class="px-6 py-3">Fecha Alta</th>
-                                    <th class="px-6 py-3">Entrega Estimada</th>
-                                    <th class="px-6 py-3">Teléfono</th>
-                                    <th class="px-6 py-3">Email</th>
+                                    <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Fecha Alta</span><button type="button" onclick="togglePopoverColumna('pop-prov-fecha-alta')" title="Filtrar Fecha Alta" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="calendar-search" class="w-3.5 h-3.5"></i></button><div id="pop-prov-fecha-alta" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-prov-fecha-alta" type="date" onchange="aplicarFiltroProveedores()" class="border border-slate-300 rounded-md px-2 py-1.5 text-xs"></div></div></th>
+                                    <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Entrega Estimada</span><button type="button" onclick="togglePopoverColumna('pop-prov-entrega')" title="Buscar entrega estimada" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-prov-entrega" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-prov-entrega" oninput="aplicarFiltroProveedores()" placeholder="Buscar entrega..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs"></div></div></th>
+                                    <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Teléfono</span><button type="button" onclick="togglePopoverColumna('pop-prov-telefono')" title="Buscar teléfono" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-prov-telefono" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-prov-telefono" oninput="aplicarFiltroProveedores()" placeholder="Buscar teléfono..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs"></div></div></th>
+                                    <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Email</span><button type="button" onclick="togglePopoverColumna('pop-prov-email')" title="Buscar email" class="text-slate-400 hover:text-slate-700 normal-case"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-prov-email" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-prov-email" oninput="aplicarFiltroProveedores()" placeholder="Buscar email..." class="w-40 border border-slate-300 rounded-md px-2 py-1.5 text-xs"></div></div></th>
                                     <th class="px-6 py-3 text-center">
                                         <div class="flex items-center justify-center gap-1.5 popover-trigger">
                                             <span>Estado</span>
@@ -149,7 +159,6 @@
                                         <option value="CUIT">CUIT</option>
                                         <option value="DNI">DNI</option>
                                         <option value="CUIL">CUIL</option>
-                                        <option value="Pasaporte">Pasaporte</option>
                                     </select>
                                 </div>
                                 <div>

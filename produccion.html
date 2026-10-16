@@ -59,25 +59,19 @@
 
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                         <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center gap-3">
-                            <h4 class="font-semibold text-slate-800 text-sm sm:mr-auto">Órdenes de Producción Registradas</h4>
-                            <input type="text" id="historial-buscador" oninput="renderizarHistorialProduccion()" placeholder="Buscar por código, producto o pedido..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-xs outline-none w-full sm:w-64">
-                            <select id="historial-filtro-estado" onchange="renderizarHistorialProduccion()" class="border border-slate-300 rounded-lg px-3 py-1.5 text-xs outline-none">
-                                <option value="">Todos los estados</option>
-                                <option>En Proceso</option>
-                                <option>Finalizada</option>
-                                <option>Cancelada</option>
-                            </select>
+                            <h4 class="font-semibold text-slate-800 text-sm sm:mr-auto">Listado de Órdenes de Producción</h4>
+                            <input type="text" id="historial-buscador" oninput="renderizarHistorialProduccion()" placeholder="Buscar en órdenes..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-xs outline-none w-full sm:w-64">
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm text-left">
                                 <thead class="bg-slate-50 text-xs text-slate-500 border-b border-slate-200 uppercase">
                                     <tr>
-                                        <th class="px-6 py-3">Código</th>
-                                        <th class="px-6 py-3">Pedido asociado</th>
-                                        <th class="px-6 py-3">Empleado</th>
-                                        <th class="px-6 py-3">Producto(s)</th>
-                                        <th class="px-6 py-3">Fecha emisión</th>
-                                        <th class="px-6 py-3 text-center">Estado</th>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>N° Producción</span><button type="button" onclick="togglePopoverColumna('pop-prod-numero')" title="Buscar N° Producción" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-prod-numero" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-prod-numero" oninput="renderizarHistorialProduccion()" class="w-36 border border-slate-300 rounded px-2 py-1 text-xs" placeholder="N° Producción"></div></div></th>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>N° Pedido</span><button type="button" onclick="togglePopoverColumna('pop-prod-pedido')" title="Buscar N° Pedido" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-prod-pedido" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-prod-pedido" oninput="renderizarHistorialProduccion()" class="w-36 border border-slate-300 rounded px-2 py-1 text-xs" placeholder="N° Pedido"></div></div></th>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Empleado</span><button type="button" onclick="ordenarListadoProduccion('empleado')" title="Ordenar" class="text-slate-400 hover:text-slate-700"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button><button type="button" onclick="togglePopoverColumna('pop-prod-empleado')" title="Buscar empleado" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-prod-empleado" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-prod-empleado" oninput="renderizarHistorialProduccion()" class="w-36 border border-slate-300 rounded px-2 py-1 text-xs" placeholder="Empleado"></div></div></th>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Producto</span><button type="button" onclick="ordenarListadoProduccion('producto')" title="Ordenar" class="text-slate-400 hover:text-slate-700"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button><button type="button" onclick="togglePopoverColumna('pop-prod-producto')" title="Buscar producto" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-prod-producto" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-prod-producto" oninput="renderizarHistorialProduccion()" class="w-36 border border-slate-300 rounded px-2 py-1 text-xs" placeholder="Producto"></div></div></th>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Fecha emisión</span><button type="button" onclick="togglePopoverColumna('pop-prod-fecha')" title="Filtrar por fecha" class="text-slate-400 hover:text-slate-700"><i data-lucide="calendar-search" class="w-3.5 h-3.5"></i></button><div id="pop-prod-fecha" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><label class="block text-[11px]">Desde<input id="buscar-prod-fecha-desde" type="date" oninput="renderizarHistorialProduccion()" class="block border rounded px-2 py-1 text-xs"></label><label class="block text-[11px]">Hasta<input id="buscar-prod-fecha-hasta" type="date" oninput="renderizarHistorialProduccion()" class="block border rounded px-2 py-1 text-xs"></label></div></div></th>
+                                        <th class="px-6 py-3 text-center"><div class="flex items-center justify-center gap-1.5 popover-trigger"><span>Estado</span><button type="button" onclick="togglePopoverColumna('pop-prod-estado')" title="Filtrar por estado" class="text-slate-400 hover:text-slate-700"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button><div id="pop-prod-estado" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 normal-case"><button type="button" onclick="elegirFiltroEstadoProduccion('')" class="block w-full text-left px-2 py-1 text-xs">Todos</button><button type="button" onclick="elegirFiltroEstadoProduccion('En Proceso')" class="block w-full text-left px-2 py-1 text-xs">En Proceso</button><button type="button" onclick="elegirFiltroEstadoProduccion('Finalizada')" class="block w-full text-left px-2 py-1 text-xs">Finalizada</button><button type="button" onclick="elegirFiltroEstadoProduccion('Cancelada')" class="block w-full text-left px-2 py-1 text-xs">Cancelada</button></div></div></th>
                                         <th class="px-6 py-3 text-center">Acciones</th>
                                     </tr>
                                 </thead>
@@ -111,7 +105,7 @@
                                 <div id="prod-pedido-autocompletar-opciones" class="hidden absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-56 overflow-y-auto"></div>
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Empleado responsable *</label>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Responsable *</label>
                                 <input type="text" id="prod-empleado" readonly class="w-full border border-slate-200 bg-slate-50 text-slate-700 rounded-lg p-2.5 text-sm font-medium outline-none cursor-not-allowed">
                             </div>
                         </div>

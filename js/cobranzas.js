@@ -58,6 +58,12 @@ function resetFormularioCobro() {
     document.getElementById('cobro-hora').value = ahora.toTimeString().slice(0, 5);
     document.getElementById('cobro-observaciones').value = '';
     aplicarRestriccionCondicionPagoCobro();
+    mostrarEmpleadoAutoasignadoCobro();
+}
+
+function mostrarEmpleadoAutoasignadoCobro() {
+    document.getElementById('cobro-empleado').value = usuarioInternoActual.nombre;
+    document.getElementById('cobro-empleado-nombre').textContent = `${usuarioInternoActual.nombre} (${usuarioInternoActual.rol})`;
 }
 
 function irARegistrarCobro() {
@@ -114,7 +120,7 @@ function elegirClienteCobro(idx) {
     comprobantesClienteCobroActual = listaComprobantesVenta.filter(cv => cv.clienteObj === clienteSeleccionadoCobro && comprobanteVentaEsCobrable(cv));
     const selectComprobante = document.getElementById('cobro-comprobante-venta');
     selectComprobante.innerHTML = `<option value="" disabled selected>${comprobantesClienteCobroActual.length ? 'Elegí un comprobante' : 'Este cliente no tiene comprobantes pendientes'}</option>` +
-        comprobantesClienteCobroActual.map(cv => `<option value="${cv.id_comprobante_venta_cliente}">CV-${String(cv.id_comprobante_venta_cliente).padStart(5, '0')} — $ ${cv.total.toLocaleString()}</option>`).join('');
+        comprobantesClienteCobroActual.map(cv => `<option value="${cv.id_comprobante_venta_cliente}">${formatearIdentificador("CV", String(cv.id_comprobante_venta_cliente).padStart(4, '0'))} - $ ${cv.total.toLocaleString()}</option>`).join('');
 
     const btn = document.getElementById('btn-elegir-comprobante-cobro');
     btn.disabled = !comprobantesClienteCobroActual.length;
@@ -140,7 +146,7 @@ function aplicarRestriccionCondicionPagoCobro() {
     if (esMostrador && selectCondicion.value === 'Cuenta Corriente') selectCondicion.value = 'Contado';
 }
 
-// Abre el modal con la previsualización de cada comprobante cobrable del cliente elegido — muestra cliente,
+// Abre el modal con la previsualización de cada comprobante cobrable del cliente elegido - muestra cliente,
 // fecha, pedido asociado y detalle de productos, para distinguir comprobantes con el mismo monto sin
 // depender de memorizar el N° de comprobante.
 function abrirModalComprobantesCobro() {
@@ -152,10 +158,10 @@ function abrirModalComprobantesCobro() {
         return `
         <button type="button" onclick="elegirComprobanteCobroDesdeModal(${cv.id_comprobante_venta_cliente})" class="block w-full text-left border border-slate-200 rounded-lg p-3 hover:border-red-400 hover:bg-red-50/40 transition">
             <div class="flex items-center justify-between">
-                <span class="font-semibold text-slate-900 text-sm">CV-${String(cv.id_comprobante_venta_cliente).padStart(5, '0')}</span>
+                <span class="font-semibold text-slate-900 text-sm">${formatearIdentificador("CV", String(cv.id_comprobante_venta_cliente).padStart(4, '0'))}</span>
                 <span class="font-bold text-slate-900 text-sm">$ ${cv.total.toLocaleString()}</span>
             </div>
-            <p class="text-xs text-slate-500 mt-1">Pedido PED-${cv.id_orden_pedido_cliente} · ${fechaFormateada} · ${cv.condicion_venta}</p>
+            <p class="text-xs text-slate-500 mt-1">Pedido ${formatearIdentificador("PED", cv.id_orden_pedido_cliente)} · ${fechaFormateada} · ${cv.condicion_venta}</p>
             ${detalle ? `<p class="text-xs text-slate-400 mt-1">${detalle}</p>` : ''}
         </button>`;
     }).join('');
@@ -193,13 +199,13 @@ function seleccionarComprobanteVentaCobro() {
     const yaCobrado = totalCobradoComprobanteVenta(cv.id_comprobante_venta_cliente);
     const saldoPendiente = cv.total - yaCobrado;
 
-    if (textoBoton) textoBoton.textContent = `CV-${String(cv.id_comprobante_venta_cliente).padStart(5, '0')} — $ ${cv.total.toLocaleString()}`;
+    if (textoBoton) textoBoton.textContent = `${formatearIdentificador("CV", String(cv.id_comprobante_venta_cliente).padStart(4, '0'))} - $ ${cv.total.toLocaleString()}`;
 
     ficha.innerHTML = `
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
             <p><b class="text-slate-700">Fecha de Emisión:</b> ${fechaFormateada}</p>
             <p><b class="text-slate-700">Condición de Venta:</b> ${cv.condicion_venta}</p>
-            <p><b class="text-slate-700">Pedido Asociado:</b> PED-${cv.id_orden_pedido_cliente}</p>
+            <p><b class="text-slate-700">Pedido Asociado:</b> ${formatearIdentificador("PED", cv.id_orden_pedido_cliente)}</p>
             <p><b class="text-slate-700">Total del Comprobante:</b> $ ${cv.total.toLocaleString()}</p>
             ${yaCobrado > 0 ? `<p class="sm:col-span-2"><b class="text-slate-700">Ya cobrado (seña/pagos parciales):</b> $ ${yaCobrado.toLocaleString()}</p>` : ''}
         </div>`;
@@ -237,14 +243,14 @@ function procesarCobroYComprobante() {
     if (!comprobanteVentaSeleccionadoCobro) return alert('Seleccioná el comprobante de venta a cobrar.');
     if (!idMedioPago) return alert('Seleccioná el medio de pago.');
     if (!condicionPago) return alert('Seleccioná la condición de pago.');
-    if (!fechaPago) return alert('Seleccioná la Fecha de Emisión.');
-    if (!horaPago) return alert('Seleccioná la Hora de Emisión.');
+    if (!fechaPago) return alert('Seleccioná la Fecha de Pago.');
+    if (!horaPago) return alert('Seleccioná la Hora de Pago.');
     const saldoPendiente = comprobanteVentaSeleccionadoCobro.total - totalCobradoComprobanteVenta(comprobanteVentaSeleccionadoCobro.id_comprobante_venta_cliente);
     if (monto <= 0) return alert('Ingresá el monto a cobrar.');
     if (monto > saldoPendiente) return alert(`El monto no puede superar el saldo pendiente ($ ${saldoPendiente.toLocaleString()}).`);
 
     const comprobantePago = registrarComprobantePago({
-        comprobanteVenta: comprobanteVentaSeleccionadoCobro, idMedioPago, condicionPago, importe: monto, observaciones, fechaPago, horaPago
+        comprobanteVenta: comprobanteVentaSeleccionadoCobro, idMedioPago, condicionPago, importe: monto, observaciones, fechaPago, horaPago, empleado: usuarioInternoActual.nombre
     });
 
     guardarDatos();
@@ -259,7 +265,10 @@ let ordenPagosCampo = null;
 let ordenPagosDireccion = null;
 let filtroPagosMedioSeleccionado = '';
 let filtroPagosEstadoSeleccionado = '';
-let segmentoPagosSeleccionado = ''; // '' | 'Evento' | 'Donacion' — filtro externo a la tabla, fuera de la columna Tipo Cliente
+let filtroPagosTipoDocSeleccionado = '';
+let filtroPagosTipoClienteSeleccionado = '';
+let filtroPagosTipoPedidoSeleccionado = '';
+let filtroPagosCondicionSeleccionado = '';
 
 function renderizarTablaPagos() {
     const tbody = document.getElementById('tabla-pagos');
@@ -271,25 +280,37 @@ function renderizarTablaPagos() {
     document.getElementById('kpi-pagos-total-monto').innerText = `$ ${listaComprobantesPago.filter(cp => !cp.es_anulado).reduce((a, cp) => a + cp.importe, 0).toLocaleString()}`;
 
     const terminoNum = normalizarTexto(document.getElementById('buscar-num-pago')?.value || '').trim();
-    const terminoNombre = normalizarTexto(document.getElementById('buscar-nombre-pago')?.value || '').trim();
-    const terminoApellido = normalizarTexto(document.getElementById('buscar-apellido-pago')?.value || '').trim();
+    const terminoVenta = normalizarTexto(document.getElementById('buscar-venta-pago')?.value || '').trim();
+    const terminoCliente = normalizarTexto(document.getElementById('buscar-cliente-pago')?.value || '').trim();
+    const terminoDocumento = normalizarTexto(document.getElementById('buscar-documento-pago')?.value || '').trim();
+    const fechaPagoExacta = document.getElementById('buscar-fecha-pago')?.value || '';
+    const montoDesde = document.getElementById('buscar-monto-desde-pago')?.value || '';
+    const montoHasta = document.getElementById('buscar-monto-hasta-pago')?.value || '';
 
     let filtrados = listaComprobantesPago.filter(cp => {
-        const nombre = cp.clienteObj ? cp.clienteObj.nombre : '';
-        const apellido = cp.clienteObj ? cp.clienteObj.apellido : '';
+        const cliente = cp.clienteObj ? cp.clienteObj.nombreMostrado : (cp.cliente || '');
+        const documento = cp.clienteObj ? cp.clienteObj.numero_documento : '';
+        const tipoDocumento = cp.clienteObj ? cp.clienteObj.tipo_documento : '';
+        const tipoCliente = cp.clienteObj ? cp.clienteObj.tipo_cliente : '';
         const estado = cp.es_anulado ? 'Anulado' : 'Vigente';
         return (!terminoNum || String(cp.id_comprobante_pago_cliente).includes(terminoNum)) &&
-            (!terminoNombre || normalizarTexto(nombre).includes(terminoNombre)) &&
-            (!terminoApellido || normalizarTexto(apellido).includes(terminoApellido)) &&
+            (!terminoVenta || String(cp.id_comprobante_venta_cliente).includes(terminoVenta)) &&
+            (!terminoCliente || normalizarTexto(cliente).includes(terminoCliente)) &&
+            (!terminoDocumento || normalizarTexto(documento).includes(terminoDocumento)) &&
+            (!filtroPagosTipoDocSeleccionado || tipoDocumento === filtroPagosTipoDocSeleccionado) &&
+            (!filtroPagosTipoClienteSeleccionado || tipoCliente === filtroPagosTipoClienteSeleccionado) &&
+            (!filtroPagosTipoPedidoSeleccionado || tipoPedidoTexto(cp) === filtroPagosTipoPedidoSeleccionado) &&
+            (!filtroPagosCondicionSeleccionado || cp.condicion_pago === filtroPagosCondicionSeleccionado) &&
             (!filtroPagosMedioSeleccionado || String(cp.id_medio_pago) === filtroPagosMedioSeleccionado) &&
             (!filtroPagosEstadoSeleccionado || estado === filtroPagosEstadoSeleccionado) &&
-            (!segmentoPagosSeleccionado || (segmentoPagosSeleccionado === 'Evento' ? cp.esEvento : cp.esDonacion));
+            coincideFechaExacta(fechaPagoExacta, cp.fecha_pago) &&
+            coincideRangoMonto(montoDesde, montoHasta, cp.importe);
     });
 
     if (ordenPagosCampo && ordenPagosDireccion) {
         filtrados.sort((a, b) => {
-            const va = (a.clienteObj ? a.clienteObj[ordenPagosCampo] : '') || '';
-            const vb = (b.clienteObj ? b.clienteObj[ordenPagosCampo] : '') || '';
+            const va = (a.clienteObj ? a.clienteObj.nombreMostrado : (a.cliente || '')) || '';
+            const vb = (b.clienteObj ? b.clienteObj.nombreMostrado : (b.cliente || '')) || '';
             const cmp = va.localeCompare(vb, 'es');
             return ordenPagosDireccion === 'asc' ? cmp : -cmp;
         });
@@ -297,21 +318,27 @@ function renderizarTablaPagos() {
     actualizarIconosOrdenPagos();
     actualizarIconoFiltroMedioPago();
     actualizarIconoFiltroEstadoPagos();
-    actualizarSegmentoPagos();
+    actualizarIconoFiltroTipoDocPagos();
+    actualizarIconoFiltroTipoClientePagos();
+    actualizarIconoFiltroTipoPedidoPagos();
+    actualizarIconoFiltroCondicionPagos();
 
     if (!filtrados.length) {
-        tbody.innerHTML = `<tr><td colspan="10" class="px-6 py-10 text-center text-slate-400 text-sm">No se encontraron pagos con ese criterio.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="13" class="px-6 py-10 text-center text-slate-400 text-sm">No se encontraron pagos con ese criterio.</td></tr>`;
     }
     filtrados.forEach(cp => {
         const fechaFormateada = cp.fecha_pago ? new Date(cp.fecha_pago + 'T00:00:00').toLocaleDateString('es-AR') : '-';
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50';
         tr.innerHTML = `
-            <td class="px-6 py-4 font-semibold text-slate-900">CP-${String(cp.id_comprobante_pago_cliente).padStart(5, '0')}</td>
-            <td class="px-6 py-4">${cp.clienteObj ? cp.clienteObj.nombre : '-'}</td>
-            <td class="px-6 py-4">${cp.clienteObj ? cp.clienteObj.apellido : '-'}</td>
+            <td class="px-6 py-4 font-semibold text-slate-900">${formatearIdentificador("CP", String(cp.id_comprobante_pago_cliente).padStart(4, '0'))}</td>
+            <td class="px-6 py-4 text-slate-500 whitespace-nowrap">${formatearIdentificador("CV", String(cp.id_comprobante_venta_cliente).padStart(4, '0'))}</td>
+            <td class="px-6 py-4">${cp.clienteObj ? cp.clienteObj.nombreMostrado : (cp.cliente || '-')}</td>
             <td class="px-6 py-4 text-slate-500">${cp.clienteObj ? cp.clienteObj.tipo_documento : '-'}</td>
             <td class="px-6 py-4 text-slate-500">${cp.clienteObj ? cp.clienteObj.numero_documento : '-'}</td>
+            <td class="px-6 py-4">${cp.clienteObj ? badgeTipoCliente(cp.clienteObj.tipo_cliente) : '-'}</td>
+            <td class="px-6 py-4">${badgeTipoPedido(cp)}</td>
+            <td class="px-6 py-4 text-slate-500">${cp.condicion_pago || '-'}</td>
             <td class="px-6 py-4">${nombreMedioPago(cp.id_medio_pago)}</td>
             <td class="px-6 py-4 text-slate-500">${fechaFormateada}</td>
             <td class="px-6 py-4 text-right font-medium whitespace-nowrap">$ ${cp.importe.toLocaleString()}</td>
@@ -321,12 +348,88 @@ function renderizarTablaPagos() {
             <td class="px-6 py-4">
                 <div class="flex items-center justify-start gap-1.5">
                     <button onclick="verComprobantePago(${cp.id_comprobante_pago_cliente})" title="Ver comprobante" class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition"><i data-lucide="eye" class="w-4 h-4"></i></button>
+                    ${!cp.es_anulado ? `<button onclick="anularComprobantePagoListado(${cp.id_comprobante_pago_cliente})" title="Anular comprobante" class="p-2 rounded-lg text-red-500 hover:bg-red-50 transition"><i data-lucide="ban" class="w-4 h-4"></i></button>` : ''}
                 </div>
             </td>
         `;
         tbody.appendChild(tr);
     });
     lucide.createIcons();
+}
+
+function elegirFiltroTipoDocPagos(valor) {
+    filtroPagosTipoDocSeleccionado = valor;
+    document.getElementById('pop-tipo-doc-pago').classList.add('hidden');
+    renderizarTablaPagos();
+}
+function actualizarIconoFiltroTipoDocPagos() {
+    const boton = document.getElementById('btn-filtro-tipo-doc-pago');
+    if (!boton) return;
+    boton.className = `normal-case transition ${filtroPagosTipoDocSeleccionado ? 'text-red-600' : 'text-slate-400 hover:text-slate-700'}`;
+    document.querySelectorAll('.opcion-filtro-tipo-doc-pago').forEach(op => {
+        op.classList.toggle('bg-red-50', op.dataset.valor === filtroPagosTipoDocSeleccionado);
+        op.classList.toggle('text-red-700', op.dataset.valor === filtroPagosTipoDocSeleccionado);
+        op.classList.toggle('font-medium', op.dataset.valor === filtroPagosTipoDocSeleccionado);
+    });
+}
+
+function elegirFiltroTipoClientePagos(valor) {
+    filtroPagosTipoClienteSeleccionado = valor;
+    document.getElementById('pop-tipo-cliente-pago').classList.add('hidden');
+    renderizarTablaPagos();
+}
+function actualizarIconoFiltroTipoClientePagos() {
+    const boton = document.getElementById('btn-filtro-tipo-cliente-pago');
+    if (!boton) return;
+    boton.className = `normal-case transition ${filtroPagosTipoClienteSeleccionado ? 'text-red-600' : 'text-slate-400 hover:text-slate-700'}`;
+    document.querySelectorAll('.opcion-filtro-tipo-cliente-pago').forEach(op => {
+        op.classList.toggle('bg-red-50', op.dataset.valor === filtroPagosTipoClienteSeleccionado);
+        op.classList.toggle('text-red-700', op.dataset.valor === filtroPagosTipoClienteSeleccionado);
+        op.classList.toggle('font-medium', op.dataset.valor === filtroPagosTipoClienteSeleccionado);
+    });
+}
+
+function elegirFiltroTipoPedidoPagos(valor) {
+    filtroPagosTipoPedidoSeleccionado = valor;
+    document.getElementById('pop-tipo-pedido-pago').classList.add('hidden');
+    renderizarTablaPagos();
+}
+
+function elegirFiltroCondicionPagos(valor) {
+    filtroPagosCondicionSeleccionado = valor;
+    document.getElementById('pop-condicion-pago').classList.add('hidden');
+    renderizarTablaPagos();
+}
+function actualizarIconoFiltroCondicionPagos() {
+    const boton = document.getElementById('btn-filtro-condicion-pago');
+    if (!boton) return;
+    boton.className = `normal-case transition ${filtroPagosCondicionSeleccionado ? 'text-red-600' : 'text-slate-400 hover:text-slate-700'}`;
+    document.querySelectorAll('.opcion-filtro-condicion-pago').forEach(op => {
+        op.classList.toggle('bg-red-50', op.dataset.valor === filtroPagosCondicionSeleccionado);
+        op.classList.toggle('text-red-700', op.dataset.valor === filtroPagosCondicionSeleccionado);
+        op.classList.toggle('font-medium', op.dataset.valor === filtroPagosCondicionSeleccionado);
+    });
+}
+function actualizarIconoFiltroTipoPedidoPagos() {
+    const boton = document.getElementById('btn-filtro-tipo-pedido-pago');
+    if (!boton) return;
+    boton.className = `normal-case transition ${filtroPagosTipoPedidoSeleccionado ? 'text-red-600' : 'text-slate-400 hover:text-slate-700'}`;
+    document.querySelectorAll('.opcion-filtro-tipo-pedido-pago').forEach(op => {
+        op.classList.toggle('bg-red-50', op.dataset.valor === filtroPagosTipoPedidoSeleccionado);
+        op.classList.toggle('text-red-700', op.dataset.valor === filtroPagosTipoPedidoSeleccionado);
+        op.classList.toggle('font-medium', op.dataset.valor === filtroPagosTipoPedidoSeleccionado);
+    });
+}
+
+// Anular un pago no afecta al pedido/venta: simplemente deja de contar en totalCobradoComprobanteVenta,
+// por lo que el Comprobante de Venta asociado vuelve a figurar como "Pendiente" de cobro automáticamente.
+function anularComprobantePagoListado(idComprobantePago) {
+    const cp = listaComprobantesPago.find(c => c.id_comprobante_pago_cliente === idComprobantePago);
+    if (!cp || cp.es_anulado) return;
+    if (!confirm(`¿Anular el comprobante ${formatearIdentificador("CP", String(idComprobantePago).padStart(4, '0'))}?`)) return;
+    cp.es_anulado = true;
+    guardarDatos();
+    renderizarTablaPagos();
 }
 
 function alternarOrdenPagos(campo) {
@@ -337,28 +440,13 @@ function alternarOrdenPagos(campo) {
 }
 
 function actualizarIconosOrdenPagos() {
-    ['nombre', 'apellido'].forEach(campo => {
+    ['cliente'].forEach(campo => {
         const boton = document.getElementById(`btn-orden-${campo}-pago`);
         if (!boton) return;
         const activo = ordenPagosCampo === campo;
         const icono = activo && ordenPagosDireccion === 'asc' ? 'arrow-up' : activo && ordenPagosDireccion === 'desc' ? 'arrow-down' : 'arrow-up-down';
         boton.className = `normal-case transition ${activo ? 'text-red-600' : 'text-slate-400 hover:text-slate-700'}`;
         boton.innerHTML = `<i data-lucide="${icono}" class="w-3.5 h-3.5"></i>`;
-    });
-}
-
-// Filtro externo a la tabla (chips "Todos / Eventos / Donaciones"), independiente de la columna Tipo Cliente.
-function elegirSegmentoPagos(valor) {
-    segmentoPagosSeleccionado = valor;
-    renderizarTablaPagos();
-}
-
-function actualizarSegmentoPagos() {
-    ['', 'Evento', 'Donacion'].forEach(valor => {
-        const boton = document.getElementById(`segmento-pagos-${valor}`);
-        if (!boton) return;
-        const activo = segmentoPagosSeleccionado === valor;
-        boton.className = `segmento-pagos px-3 py-1.5 rounded-md font-semibold transition ${activo ? 'bg-red-600 text-white' : 'text-slate-500 hover:bg-white'}`;
     });
 }
 
@@ -412,15 +500,32 @@ function mostrarComprobantePago(idComprobantePago) {
     const cp = listaComprobantesPago.find(c => c.id_comprobante_pago_cliente === idComprobantePago);
     if (!cp) return;
     const cv = listaComprobantesVenta.find(c => c.id_comprobante_venta_cliente === cp.id_comprobante_venta_cliente);
-    const fechaFormateada = cp.fecha_pago ? new Date(cp.fecha_pago + 'T00:00:00').toLocaleDateString('es-AR') : '-';
+    const fechaEmisionCV = cv && cv.fecha_emision ? new Date(cv.fecha_emision + 'T00:00:00').toLocaleDateString('es-AR') : '-';
+    const fechaPagoFormateada = cp.fecha_pago ? new Date(cp.fecha_pago + 'T00:00:00').toLocaleDateString('es-AR') : '-';
 
     document.getElementById('area-comprobante-pago').innerHTML = `
-        ${encabezadoFiscalHTML({ letra: 'X', codigoAfip: '54', numero: `CP-${String(cp.id_comprobante_pago_cliente).padStart(5, '0')}`, fecha: fechaFormateada, hora: cp.hora_pago })}
-        ${franjaClienteComprobanteHTML(cp.clienteObj, cp.cliente, cp.condicion_pago, 'Condición de Pago')}
-        <div class="text-xs text-slate-400">
-            Comprobante de Venta Asociado: ${cv ? `CV-${String(cv.id_comprobante_venta_cliente).padStart(5, '0')} (PED-${cv.id_orden_pedido_cliente})` : '-'}
-            — Medio de Pago: ${nombreMedioPago(cp.id_medio_pago)}
-            ${cp.es_anulado ? ' — <span class="text-slate-600 font-semibold">Anulado</span>' : ''}
+        <div class="flex justify-between items-start border-b border-slate-200 pb-4">
+            <div class="text-xs text-slate-600 space-y-0.5">
+                <p class="text-sm font-bold text-slate-900">${DATOS_EMPRESA.razonSocial}</p>
+                <p>${DATOS_EMPRESA.domicilioComercial}</p>
+                <p>Condición frente al IVA: ${DATOS_EMPRESA.condicionIva}</p>
+                <p>CUIT: ${DATOS_EMPRESA.cuit}</p>
+                <p>Fecha de Inicio de Actividades: ${DATOS_EMPRESA.fechaInicioActividades}</p>
+            </div>
+            <div class="text-xs text-slate-600 text-right space-y-0.5">
+                <p class="text-sm font-bold text-slate-900">${formatearIdentificador("CP", String(cp.id_comprobante_pago_cliente).padStart(4, '0'))}</p>
+                <p>Fecha de Emisión: ${fechaEmisionCV}${cv && cv.hora_emision ? ` - ${cv.hora_emision}` : ''}</p>
+                <p>Fecha Pago: ${fechaPagoFormateada} - ${cp.hora_pago || '-'}</p>
+                <p>Responsable: ${cp.empleado || '-'}</p>
+            </div>
+        </div>
+        ${tarjetaClienteHTML(cp.clienteObj, cp.cliente, [
+            `<b class="text-slate-700">Condición Pago:</b> ${cp.condicion_pago}`,
+            `<b class="text-slate-700">Medio Pago:</b> ${nombreMedioPago(cp.id_medio_pago)}`
+        ])}
+        ${cp.es_anulado ? `<span class="inline-block px-2.5 py-1 bg-slate-200 text-slate-600 text-xs font-semibold rounded-full">Anulado</span>` : ''}
+        <div class="no-print text-xs text-slate-400">
+            Comprobante de Venta Asociado: ${cv ? `${formatearIdentificador("CV", String(cv.id_comprobante_venta_cliente).padStart(4, '0'))} (${formatearIdentificador("PED", cv.id_orden_pedido_cliente)})` : '-'}
         </div>
         ${cp.observaciones ? `<p class="text-xs text-slate-500"><b class="text-slate-700">Observaciones:</b> ${cp.observaciones}</p>` : ''}
         <div class="border-t border-slate-200 pt-4 text-right">
@@ -441,7 +546,7 @@ function volverDesdeComprobantePago() {
 }
 
 // ==========================================
-// REPORTE DE CAJA (reemplaza al antiguo "Cierre de Caja" — se recalcula en vivo, sin resetear nada)
+// REPORTE DE CAJA (reemplaza al antiguo "Cierre de Caja" - se recalcula en vivo, sin resetear nada)
 // ==========================================
 function irAReporteCaja() {
     const hoy = new Date().toISOString().slice(0, 10);
@@ -452,7 +557,7 @@ function irAReporteCaja() {
     document.getElementById('reporte-caja-body').innerHTML = totales.map(t => `
         <tr><td class="py-2">${t.medio}</td><td class="py-2 text-right">$ ${t.total.toLocaleString()}</td></tr>
     `).join('');
-    document.getElementById('reporte-caja-total').innerText = `Total: $ ${totalGeneral.toLocaleString()}`;
+    document.getElementById('reporte-caja-total').innerText = `$ ${totalGeneral.toLocaleString()}`;
     mostrarSubvistaCobranzas('reporte-caja');
 }
 

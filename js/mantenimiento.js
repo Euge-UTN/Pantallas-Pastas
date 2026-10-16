@@ -12,6 +12,36 @@ const SUBVISTAS_MANTENIMIENTO = [
 ];
 
 let itemsMantenimientoActual = [];
+let ordenListadoMantenimiento = { campo: '', direccion: '' };
+let ordenListadoMaquinaria = { campo: '', direccion: '' };
+let filtroTipoMantenimientoListado = '';
+let filtroEstadoMaquinariaListado = '';
+
+function ordenarListadoMantenimiento(campo) {
+    ordenListadoMantenimiento.direccion = ordenListadoMantenimiento.campo === campo && ordenListadoMantenimiento.direccion === 'asc' ? 'desc' : 'asc';
+    ordenListadoMantenimiento.campo = campo;
+    renderizarHistorialMantenimiento();
+}
+
+function ordenarListadoMaquinaria(campo) {
+    ordenListadoMaquinaria.direccion = ordenListadoMaquinaria.campo === campo && ordenListadoMaquinaria.direccion === 'asc' ? 'desc' : 'asc';
+    ordenListadoMaquinaria.campo = campo;
+    renderizarTablaMaquinaria();
+}
+
+function elegirFiltroTipoMantenimiento(tipo) {
+    filtroTipoMantenimientoListado = tipo;
+    document.getElementById('pop-mant-tipo')?.classList.add('hidden');
+    renderizarHistorialMantenimiento();
+}
+
+function elegirFiltroEstadoMaquinaria(estado) {
+    filtroEstadoMaquinariaListado = estado;
+    document.getElementById('pop-maq-estado')?.classList.add('hidden');
+    renderizarTablaMaquinaria();
+}
+
+function filtrarListadoMaquinaria() { renderizarTablaMaquinaria(); }
 
 // Carga inicial de datos de prueba asegurando fechas/horas de inicio y fin para todos
 if (typeof listaOrdenesMantenimiento === 'undefined' || !listaOrdenesMantenimiento.length) {
@@ -178,9 +208,16 @@ function resetFormularioMantenimiento() {
     renderizarTablaDetalleMantenimiento();
 }
 
+// Puebla el <select> de Marca (catálogo compartido dbMarcas) en el alta de maquinaria.
+function poblarSelectMarcaMaquinaria() {
+    const select = document.getElementById('maq-marca');
+    if (!select || typeof dbMarcas === 'undefined') return;
+    select.innerHTML = dbMarcas.map(m => `<option value="${m.id_marca}">${m.nombre}</option>`).join('');
+}
+
 function resetFormularioMaquinaria() {
     document.getElementById('maq-nombre').value = '';
-    document.getElementById('maq-marca').value = '';
+    poblarSelectMarcaMaquinaria();
     document.getElementById('maq-modelo').value = '';
     document.getElementById('maq-descripcion').value = '';
     document.getElementById('maq-fecha-adquisicion').value = '';
@@ -195,8 +232,8 @@ function poblarSelectMaquinariaDetalle() {
     if (typeof listaMaquinaria !== 'undefined') {
         listaMaquinaria.forEach(m => {
             const opt = document.createElement('option');
-            opt.value = m.id_maquinaria; 
-            opt.innerText = `${m.nombre} (${m.estado})`;
+            opt.value = m.id_maquinaria;
+            opt.innerText = `${nombreMarca(m.id_marca)} - ${m.modelo} (${m.estado})`;
             selectDetMaq.appendChild(opt);
         });
     }
@@ -207,26 +244,44 @@ function renderizarTablaMaquinaria() {
     if (!tbody) return;
 
     tbody.innerHTML = '';
+    renderizarStatsMaquinaria();
     if (typeof listaMaquinaria === 'undefined' || !listaMaquinaria.length) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">No hay maquinarias registradas.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-400">No hay maquinarias registradas.</td></tr>`;
         return;
     }
 
+    const estadoSeleccionado = filtroEstadoMaquinariaListado;
+    const filtrosColumna = {
+        numero: normalizarTexto(document.getElementById('buscar-maq-numero')?.value || '').trim(),
+        nombre: normalizarTexto(document.getElementById('buscar-maq-nombre')?.value || '').trim(),
+        marca: normalizarTexto(document.getElementById('buscar-maq-marca')?.value || '').trim(),
+        modelo: normalizarTexto(document.getElementById('buscar-maq-modelo')?.value || '').trim()
+    };
+    const fechaAdquisicion = document.getElementById('buscar-maq-fecha')?.value || '';
     const estadosMaquinaria = ['Operativa', 'En reparación', 'Fuera de servicio'];
-    listaMaquinaria.forEach(m => {
+    let maquinarias = listaMaquinaria.filter(m => (!filtrosColumna.numero || normalizarTexto(`${formatearIdentificador("MAQ", m.id_maquinaria)}`).includes(filtrosColumna.numero)) && (!filtrosColumna.nombre || normalizarTexto(m.nombre).includes(filtrosColumna.nombre)) && (!filtrosColumna.marca || normalizarTexto(nombreMarca(m.id_marca)).includes(filtrosColumna.marca)) && (!filtrosColumna.modelo || normalizarTexto(m.modelo).includes(filtrosColumna.modelo)) && (!fechaAdquisicion || m.fecha_adquisicion === fechaAdquisicion) && (!estadoSeleccionado || m.estado === estadoSeleccionado));
+    if (['nombre', 'marca', 'modelo'].includes(ordenListadoMaquinaria.campo)) {
+        const campo = ordenListadoMaquinaria.campo;
+        maquinarias.sort((a, b) => {
+            const va = campo === 'nombre' ? a.nombre : campo === 'marca' ? nombreMarca(a.id_marca) : a.modelo;
+            const vb = campo === 'nombre' ? b.nombre : campo === 'marca' ? nombreMarca(b.id_marca) : b.modelo;
+            const cmp = typeof va === 'number' ? va - vb : String(va || '').localeCompare(String(vb || ''), 'es');
+            return ordenListadoMaquinaria.direccion === 'asc' ? cmp : -cmp;
+        });
+    }
+    maquinarias.forEach(m => {
         const idx = listaMaquinaria.indexOf(m);
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50 border-b border-slate-100';
         tr.innerHTML = `
+            <td class="px-6 py-3 font-semibold text-slate-500">${formatearIdentificador("MAQ", String(m.id_maquinaria).padStart(4, '0'))}</td>
             <td class="px-6 py-3 font-semibold text-slate-800">${m.nombre}</td>
-            <td class="px-6 py-3 text-slate-600">${m.marca || '-'}</td>
+            <td class="px-6 py-3 text-slate-600">${nombreMarca(m.id_marca)}</td>
             <td class="px-6 py-3 text-slate-600">${m.modelo || '-'}</td>
             <td class="px-6 py-3 text-slate-500">${m.descripcion || '-'}</td>
             <td class="px-6 py-3 whitespace-nowrap text-slate-600">${formatearFechaLatina(m.fecha_adquisicion)}</td>
             <td class="px-6 py-3 text-center">
-                <select onchange="cambiarEstadoMaquinaria(${idx}, this.value)" title="Cambiar estado" class="text-xs border border-slate-300 rounded-md px-1.5 py-1 outline-none focus:ring-2 focus:ring-red-500 bg-white">
-                    ${estadosMaquinaria.map(e => `<option value="${e}" ${e === m.estado ? 'selected' : ''}>${e}</option>`).join('')}
-                </select>
+                <span class="text-xs px-2.5 py-1 rounded-full font-semibold whitespace-nowrap ${m.estado === 'Operativa' ? 'bg-emerald-100 text-emerald-800' : m.estado === 'En reparación' ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'}">${m.estado || 'Sin estado'}</span>
             </td>
             <td class="px-6 py-3 text-center">
                 <button type="button" onclick="verHistorialMaquina(${idx})" title="Ver historial de mantenimientos" class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition"><i data-lucide="eye" class="w-4 h-4"></i></button>
@@ -235,6 +290,15 @@ function renderizarTablaMaquinaria() {
         tbody.appendChild(tr);
     });
     if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function renderizarStatsMaquinaria() {
+    const maquinarias = typeof listaMaquinaria !== 'undefined' ? listaMaquinaria : [];
+    const set = (id, valor) => { const el = document.getElementById(id); if (el) el.textContent = valor; };
+    set('kpi-maquinaria-total', maquinarias.length);
+    set('kpi-maquinaria-operativa', maquinarias.filter(m => m.estado === 'Operativa').length);
+    set('kpi-maquinaria-reparacion', maquinarias.filter(m => m.estado === 'En reparación').length);
+    set('kpi-maquinaria-fuera-servicio', maquinarias.filter(m => m.estado === 'Fuera de servicio').length);
 }
 
 function cambiarEstadoMaquinaria(idx, nuevoEstado) {
@@ -248,7 +312,7 @@ function cambiarEstadoMaquinaria(idx, nuevoEstado) {
 function verHistorialMaquina(idx) {
     const maquina = listaMaquinaria[idx];
     if (!maquina) return;
-    document.getElementById('historial-maquina-titulo').innerText = `Histórico de Mantenimientos — ${maquina.nombre}`;
+    document.getElementById('historial-maquina-titulo').innerText = `Listado de Mantenimientos - ${maquina.nombre}`;
     const ordenes = listaOrdenesMantenimiento.filter(o => o.detalle && o.detalle.some(d => d.id_maquinaria === maquina.id_maquinaria));
     const tbody = document.getElementById('tabla-historial-maquina');
     
@@ -266,7 +330,7 @@ function verHistorialMaquina(idx) {
             const periodoStr = `${formatearFechaLatina(fIni)} ${hIni} - ${formatearFechaLatina(fFin)} ${hFin}`;
             html += `
                 <tr class="hover:bg-slate-50 border-b border-slate-100">
-                    <td class="px-6 py-3 font-mono font-semibold text-slate-800 whitespace-nowrap">MANT-${String(o.id_orden_mantenimiento).padStart(3, '0')}</td>
+                    <td class="px-6 py-3 font-semibold text-slate-800 whitespace-nowrap">${formatearIdentificador("MANT", String(o.id_orden_mantenimiento).padStart(4, '0'))}</td>
                     <td class="px-6 py-3"><span class="text-xs px-2.5 py-0.5 rounded-full whitespace-nowrap ${o.id_tipo_mantenimiento === 'Preventivo' ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'}">${o.id_tipo_mantenimiento}</span></td>
                     <td class="px-6 py-3 text-slate-600 whitespace-nowrap">${periodoStr}</td>
                     <td class="px-6 py-3 text-slate-600">${detMaq ? detMaq.tareas_realizadas : '-'}</td>
@@ -285,23 +349,24 @@ function volverDesdeHistorialMaquina() {
 
 function guardarMaquinaria() {
     const nombre = document.getElementById('maq-nombre').value.trim();
-    const marca = document.getElementById('maq-marca').value.trim();
+    const idMarca = parseInt(document.getElementById('maq-marca').value);
     const modelo = document.getElementById('maq-modelo').value.trim();
     const descripcion = document.getElementById('maq-descripcion').value.trim();
     const fechaAdquisicion = document.getElementById('maq-fecha-adquisicion').value;
     const estado = document.getElementById('maq-estado').value;
-    
+
     if (!nombre) return alert('Ingrese el nombre de la máquina.');
-    if (!marca) return alert('Ingrese la marca.');
+    if (!idMarca) return alert('Seleccione la marca.');
     if (!modelo) return alert('Ingrese el modelo.');
     if (!fechaAdquisicion) return alert('Seleccione la fecha de adquisición.');
+    if (!estado) return alert('Seleccione el estado de la maquinaria.');
 
     const idNueva = typeof numMaquinariaContador !== 'undefined' ? numMaquinariaContador++ : Date.now();
-    
+
     if (typeof Maquinaria === 'function') {
-        listaMaquinaria.push(new Maquinaria(idNueva, nombre, descripcion || 'Sin descripción', fechaAdquisicion, 'Horas', estado, marca, modelo));
+        listaMaquinaria.push(new Maquinaria(idNueva, nombre, descripcion || 'Sin descripción', fechaAdquisicion, 'Horas', estado, idMarca, modelo));
     } else {
-        listaMaquinaria.push({ id_maquinaria: idNueva, nombre, descripcion, fecha_adquisicion: fechaAdquisicion, id_unidad_tiempo: 'Horas', estado, marca, modelo });
+        listaMaquinaria.push({ id_maquinaria: idNueva, nombre, descripcion, fecha_adquisicion: fechaAdquisicion, id_unidad_tiempo: 'Horas', estado, id_marca: idMarca, modelo });
     }
     
     if (typeof guardarDatos === 'function') guardarDatos();
@@ -317,11 +382,12 @@ function agregarDetalleMantenimiento() {
     const tareas = document.getElementById('mant-det-tareas').value.trim();
 
     if (!maquina) return alert('Seleccione una maquinaria.');
+    if (!fechaProximo) return alert('Seleccione la fecha del próximo mantenimiento.');
     if (!tareas) return alert('Ingrese las tareas o intervenciones realizadas.');
 
     itemsMantenimientoActual.push({
         id_maquinaria: idMaquinaria,
-        nombre_maquinaria: maquina.nombre,
+        nombre_maquinaria: `${nombreMarca(maquina.id_marca)} - ${maquina.modelo}`,
         fecha_proximo_mantenimiento: fechaProximo,
         tareas_realizadas: tareas
     });
@@ -369,7 +435,7 @@ function registrarOrdenMantenimiento() {
     const horaFin = document.getElementById('mant-hora-fin')?.value;
     const observaciones = document.getElementById('mant-observaciones').value.trim();
 
-    if (!empleado) return alert('El empleado responsable debe estar identificado.');
+    if (!empleado) return alert('El responsable debe estar identificado.');
     if (!fechaInicio || !horaInicio || !fechaFin || !horaFin) return alert('Complete las fechas y horas de inicio y fin.');
     if (itemsMantenimientoActual.length === 0) return alert('Agregue al menos una maquinaria intervenida.');
 
@@ -400,7 +466,7 @@ function registrarOrdenMantenimiento() {
     listaOrdenesMantenimiento.unshift(orden);
     if (typeof guardarDatos === 'function') guardarDatos();
 
-    alert(`¡Registro de mantenimiento MANT-${String(orden.id_orden_mantenimiento).padStart(3, '0')} guardado exitosamente!`);
+    alert(`¡Registro de mantenimiento ${formatearIdentificador("MANT", String(orden.id_orden_mantenimiento).padStart(4, '0'))} guardado exitosamente!`);
     volverAlHistorialMantenimiento();
 }
 
@@ -409,21 +475,40 @@ function renderizarHistorialMantenimiento() {
     const tbody = document.getElementById('tabla-ordenes-mantenimiento');
     if (!tbody) return;
 
-    const filtroTipo = document.getElementById('historial-filtro-tipo')?.value || '';
-    const termino = typeof normalizarTexto === 'function' 
-        ? normalizarTexto(document.getElementById('historial-buscador')?.value || '').trim()
-        : (document.getElementById('historial-buscador')?.value || '').toLowerCase().trim();
+    const filtroTipo = filtroTipoMantenimientoListado;
+    const inicioDesde = document.getElementById('historial-inicio-desde')?.value || '';
+    const inicioHasta = document.getElementById('historial-inicio-hasta')?.value || '';
+    const finDesde = document.getElementById('historial-fin-desde')?.value || '';
+    const finHasta = document.getElementById('historial-fin-hasta')?.value || '';
+    const terminoNumero = normalizarTexto(document.getElementById('buscar-mant-numero')?.value || '').trim();
+    const terminoEmpleado = normalizarTexto(document.getElementById('buscar-mant-empleado')?.value || '').trim();
+    const terminoMaquina = normalizarTexto(document.getElementById('buscar-mant-maquina')?.value || '').trim();
 
     const ordenes = listaOrdenesMantenimiento.filter(o => {
         if (filtroTipo && o.id_tipo_mantenimiento !== filtroTipo) return false;
-        if (!termino) return true;
-        const haystack = `MANT-${String(o.id_orden_mantenimiento).padStart(3, '0')} ${o.id_empleado} ${o.detalle.map(d => `${d.nombre_maquinaria}${d.tareas_realizadas}`).join(' ')}`.toLowerCase();
-        return haystack.includes(termino);
+        const numero = `${formatearIdentificador("MANT", String(o.id_orden_mantenimiento).padStart(4, '0'))}`;
+        const maquinas = o.detalle.map(d => `${d.nombre_maquinaria} ${d.tareas_realizadas}`).join(' ');
+        if (terminoNumero && !normalizarTexto(numero).includes(terminoNumero)) return false;
+        if (terminoEmpleado && !normalizarTexto(o.id_empleado).includes(terminoEmpleado)) return false;
+        if (terminoMaquina && !normalizarTexto(maquinas).includes(terminoMaquina)) return false;
+        const fInicio = o.fecha_inicio || o.fecha_emision || o.fecha || '';
+        const fFin = o.fecha_fin || o.fecha_emision || o.fecha || '';
+        if (!coincideRangoFecha(inicioDesde, inicioHasta, fInicio) || !coincideRangoFecha(finDesde, finHasta, fFin)) return false;
+        return true;
     });
+    if (ordenListadoMantenimiento.campo === 'empleado') {
+        const campo = ordenListadoMantenimiento.campo;
+        ordenes.sort((a, b) => {
+            const valor = o => o.id_empleado;
+            const va = valor(a), vb = valor(b);
+            const cmp = typeof va === 'number' ? va - vb : String(va || '').localeCompare(String(vb || ''), 'es');
+            return ordenListadoMantenimiento.direccion === 'asc' ? cmp : -cmp;
+        });
+    }
 
     tbody.innerHTML = '';
     if (!ordenes.length) {
-        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400">No se encontraron registros de mantenimiento.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">No se encontraron registros de mantenimiento.</td></tr>`;
         return;
     }
 
@@ -441,11 +526,12 @@ function renderizarHistorialMantenimiento() {
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50 border-b border-slate-100';
         tr.innerHTML = `
-            <td class="px-6 py-3 font-semibold text-slate-800 font-mono whitespace-nowrap">MANT-${String(o.id_orden_mantenimiento).padStart(3, '0')}</td>
+            <td class="px-6 py-3 font-semibold text-slate-800 whitespace-nowrap">${formatearIdentificador("MANT", String(o.id_orden_mantenimiento).padStart(4, '0'))}</td>
             <td class="px-6 py-3"><span class="text-xs px-2.5 py-0.5 rounded-full whitespace-nowrap font-medium ${o.id_tipo_mantenimiento === 'Preventivo' ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'}">${o.id_tipo_mantenimiento}</span></td>
             <td class="px-6 py-3 text-slate-600 whitespace-nowrap">${o.id_empleado}</td>
             <td class="px-6 py-3 text-slate-600">${maquinas}</td>
-            <td class="px-6 py-3 text-slate-500 whitespace-nowrap text-xs">${periodoStr}</td>
+            <td class="px-6 py-3 text-slate-500 whitespace-nowrap text-xs">${formatearFechaLatina(fInicio)}</td>
+            <td class="px-6 py-3 text-slate-500 whitespace-nowrap text-xs">${formatearFechaLatina(fFin)}</td>
             <td class="px-6 py-3 text-center">
                 <button type="button" onclick="verOrdenMantenimiento(${o.id_orden_mantenimiento})" title="Ver detalle" class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition"><i data-lucide="eye" class="w-4 h-4"></i></button>
             </td>
@@ -494,7 +580,7 @@ function construirHTMLOrdenMantenimiento(o) {
                 <h1 class="text-2xl font-bold text-red-600">FÁBRICA DE PASTAS</h1>
                 <p class="text-xs text-slate-500">Registro de Mantenimiento Realizado</p>
                 <div class="flex items-center gap-2 mt-2">
-                    <p class="text-sm font-bold text-slate-800">MANT-${String(o.id_orden_mantenimiento).padStart(3, '0')}</p>
+                    <p class="text-sm font-bold text-slate-800">${formatearIdentificador("MANT", String(o.id_orden_mantenimiento).padStart(4, '0'))}</p>
                     <span class="px-2.5 py-0.5 ${o.id_tipo_mantenimiento === 'Preventivo' ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'} text-xs font-semibold rounded-full whitespace-nowrap">${o.id_tipo_mantenimiento}</span>
                 </div>
             </div>
@@ -505,10 +591,6 @@ function construirHTMLOrdenMantenimiento(o) {
                 <p><b class="text-slate-700">Responsable:</b> ${o.id_empleado}</p>
             </div>
         </div>
-        ${o.observaciones ? `
-        <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-700">
-            <b>Observaciones:</b> ${o.observaciones}
-        </div>` : ''}
         <div>
             <h3 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Máquinas Intervenidas</h3>
             <table class="w-full text-xs text-left">
@@ -521,7 +603,12 @@ function construirHTMLOrdenMantenimiento(o) {
                 </thead>
                 <tbody>${filas}</tbody>
             </table>
-        </div>`;
+        </div>
+        ${o.observaciones ? `
+        <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-700">
+            <b>Observaciones:</b> ${o.observaciones}
+        </div>` : ''}
+    `;
 }
 
 function volverDesdeOrdenMantenimiento() {
