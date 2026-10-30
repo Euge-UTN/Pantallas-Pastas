@@ -22,53 +22,43 @@ const ROLES_POR_MODULO = {
     compras: ['Administrador'],
     produccion: ['Administrador', 'Encargado de Producción'],
     mantenimiento: ['Administrador', 'Encargado de Producción'],
+    administracion: ['Administrador'],
     clientes: ['Administrador', 'Vendedor'],
     proveedores: ['Administrador'],
     empleados: ['Administrador']
 };
 
+// Un ítem de submenú vive, por defecto, en la misma página que su módulo (urlDeModulo(m.id)). Cuando un ítem
+// trae `pagina`, navega a esa otra página en cambio (ej. "Clientes" cuelga del módulo Ventas en el menú, pero
+// sigue siendo clientes.html con su propia lógica intacta) - ver plantillaNav/actualizarSubnavActivo.
 const MODULOS = [
     { id: 'inicio', nombre: 'Inicio', icono: 'home', grupo: null },
     { id: 'ventas', nombre: 'Ventas', icono: 'receipt-text', grupo: 'Módulo', submenu: [
         { id: 'presupuestos', nombre: 'Presupuestos', icono: 'file-text' },
-        { id: 'registrar-presupuesto', nombre: 'Registrar Presupuesto', icono: 'file-plus-2' },
         { id: 'dashboard', nombre: 'Pedidos', icono: 'layout-dashboard' },
-        { id: 'registrar', nombre: 'Registrar Pedido', icono: 'square-plus' },
-        { id: 'comprobantes-venta', nombre: 'Comprobantes de Venta', icono: 'file-stack' }
+        { id: 'comprobantes-venta', nombre: 'Comprobantes de Venta', icono: 'file-stack' },
+        { id: 'historial', nombre: 'Clientes', icono: 'users-round', pagina: 'clientes' }
     ] },
     { id: 'cobranzas', nombre: 'Cobranzas', icono: 'hand-coins', grupo: 'Módulo', submenu: [
-        { id: 'pagos', nombre: 'Comprobantes de Pago', icono: 'wallet' },
-        { id: 'registrar-cobro', nombre: 'Registrar Cobro', icono: 'hand-coins' }
+        { id: 'pagos', nombre: 'Comprobantes de Pago', icono: 'wallet' }
     ] },
     { id: 'compras', nombre: 'Compras', icono: 'shopping-basket', grupo: 'Módulo', submenu: [
         { id: 'presupuestos', nombre: 'Presupuestos', icono: 'file-text' },
-        { id: 'registrar-presupuesto', nombre: 'Registrar Presupuesto', icono: 'file-plus-2' },
         { id: 'ordenes-compra', nombre: 'Órdenes de Compra', icono: 'layout-dashboard' },
-        { id: 'registrar-orden-compra', nombre: 'Registrar Orden de Compra', icono: 'square-plus' },
         { id: 'remitos', nombre: 'Remitos', icono: 'truck' },
-        { id: 'registrar-remito', nombre: 'Registrar Remito', icono: 'file-plus-2' }
+        { id: 'historial', nombre: 'Proveedores', icono: 'warehouse', pagina: 'proveedores' }
     ] },
     { id: 'produccion', nombre: 'Producción', icono: 'chef-hat', grupo: 'Módulo', submenu: [
         { id: 'historial', nombre: 'Órdenes de Producción', icono: 'layout-dashboard' },
-        { id: 'nueva-orden', nombre: 'Registrar Orden de Producción', icono: 'square-plus' }
+        { id: 'productos', nombre: 'Productos', icono: 'package' },
+        { id: 'materias-primas', nombre: 'Materias Primas', icono: 'wheat' },
+        { id: 'maquinaria', nombre: 'Maquinarias', icono: 'cog' }
     ] },
     { id: 'mantenimiento', nombre: 'Mantenimiento', icono: 'wrench', grupo: 'Módulo', submenu: [
-        { id: 'historial', nombre: 'Órdenes de Mantenimiento', icono: 'layout-dashboard' },
-        { id: 'registrar', nombre: 'Registrar Orden de Mantenimiento', icono: 'square-plus' },
-        { id: 'maquinaria', nombre: 'Maquinaria', icono: 'cog' },
-        { id: 'registrar-maquinaria', nombre: 'Registrar Maquinaria', icono: 'plus-circle' }
+        { id: 'historial', nombre: 'Órdenes de Mantenimiento', icono: 'layout-dashboard' }
     ] },
-    { id: 'clientes', nombre: 'Clientes', icono: 'users-round', grupo: 'Gestión', submenu: [
-        { id: 'historial', nombre: 'Listado', icono: 'layout-dashboard' },
-        { id: 'registrar', nombre: 'Registrar Cliente', icono: 'user-plus' }
-    ] },
-    { id: 'proveedores', nombre: 'Proveedores', icono: 'warehouse', grupo: 'Gestión', submenu: [
-        { id: 'historial', nombre: 'Listado', icono: 'layout-dashboard' },
-        { id: 'registrar', nombre: 'Registrar Proveedor', icono: 'user-plus' }
-    ] },
-    { id: 'empleados', nombre: 'Empleados', icono: 'id-card', grupo: 'Gestión', submenu: [
-        { id: 'historial', nombre: 'Listado', icono: 'layout-dashboard' },
-        { id: 'registrar', nombre: 'Registrar Empleado', icono: 'user-plus' }
+    { id: 'administracion', nombre: 'Administración', icono: 'building-2', grupo: 'Módulo', submenu: [
+        { id: 'historial', nombre: 'Empleados', icono: 'id-card', pagina: 'empleados' }
     ] }
 ];
 
@@ -114,7 +104,7 @@ function plantillaNav(moduloActivo) {
             grupoActual = m.grupo;
             html += `<p class="sidebar-texto px-4 text-[10px] font-bold uppercase tracking-wider text-red-200/60 mb-1 ${m.grupo === 'Gestión' ? '!mt-5' : '!mt-4'}">${m.grupo}</p>`;
         }
-        const activo = m.id === moduloActivo;
+        const activo = m.id === moduloActivo || (m.submenu && m.submenu.some(s => (s.pagina || m.id) === moduloActivo));
 
         if (m.submenu && m.submenu.length) {
             html += `
@@ -130,7 +120,7 @@ function plantillaNav(moduloActivo) {
                 </button>
                 <div id="submenu-${m.id}" class="sidebar-texto nav-submenu ${activo ? '' : 'hidden'} mt-1 mb-2">
                     ${m.submenu.map(s => `
-                        <a href="${urlDeModulo(m.id)}#${s.id}" data-modulo="${m.id}" data-submodulo="${s.id}" class="nav-sublink flex items-center px-3 py-2 text-[13px] rounded-lg transition-colors">${s.nombre}</a>`).join('')}
+                        <a href="${urlDeModulo(s.pagina || m.id)}#${s.id}" data-modulo="${s.pagina || m.id}" data-submodulo="${s.id}" class="nav-sublink flex items-center px-3 py-2 text-[13px] rounded-lg transition-colors">${s.nombre}</a>`).join('')}
                 </div>
             </div>`;
         } else {

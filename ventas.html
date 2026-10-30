@@ -226,7 +226,7 @@
                             <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
                                 <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="clipboard-list" class="w-4 h-4"></i><span>Datos del Pedido</span></h4>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
+                                    <div class="md:col-span-2">
                                         <label class="block text-xs font-semibold text-slate-600 mb-1">Registrado por</label>
                                         <div id="pedido-empleado-display" class="w-full border border-slate-200 bg-slate-50 rounded-lg p-2.5 text-sm text-slate-600 flex items-center gap-2">
                                             <i data-lucide="user-check" class="w-4 h-4 text-slate-400 shrink-0"></i>
@@ -240,17 +240,17 @@
                                             <span class="text-sm font-semibold text-slate-700">Es para un evento</span>
                                         </label>
                                     </div>
-                                    <div class="flex items-center">
-                                        <label class="flex items-center gap-2 cursor-pointer select-none">
-                                            <input type="checkbox" id="pedido-es-donacion" onchange="calcularTotalPedido()" class="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500">
-                                            <span class="text-sm font-semibold text-slate-700">Es una donación</span>
-                                        </label>
-                                    </div>
                                     <div>
                                         <label class="block text-xs font-semibold text-slate-600 mb-1">Porcentaje de Bonificación (%)</label>
                                         <input type="number" id="pedido-bonificacion" value="0" min="0" max="100" onchange="calcularTotalPedido()" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed">
                                         <p id="nota-bonificacion-donacion" class="hidden text-[11px] text-slate-400 mt-1">No aplica: el pedido es una donación.</p>
                                         <p id="nota-bonificacion-restringida" class="hidden text-[11px] text-slate-400 mt-1">Disponible para clientes Mayoristas o pedidos marcados como Evento.</p>
+                                    </div>
+                                    <div class="md:col-span-2 flex items-center">
+                                        <label class="flex items-center gap-2 cursor-pointer select-none">
+                                            <input type="checkbox" id="pedido-es-donacion" onchange="calcularTotalPedido()" class="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500">
+                                            <span class="text-sm font-semibold text-slate-700">Es una donación</span>
+                                        </label>
                                     </div>
                                     <div>
                                         <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha estimada de entrega</label>
@@ -342,9 +342,9 @@
                                 <table class="w-full text-sm text-left bg-white rounded-lg overflow-hidden border border-slate-200">
                                     <thead class="bg-slate-100 text-xs text-slate-600 uppercase border-b border-slate-200">
                                         <tr>
+                                            <th class="p-3">Producto</th>
                                             <th class="p-3">Tipo</th>
                                             <th class="p-3">Subtipo</th>
-                                            <th class="p-3">Producto</th>
                                             <th class="p-3 text-center">Cant.</th>
                                             <th class="p-3 text-right">P. Unitario</th>
                                             <th class="p-3 text-right">Subtotal</th>
@@ -987,15 +987,15 @@
 
                 <!-- MODAL: NUEVO CLIENTE RÁPIDO (desde el registro de pedido) -->
                 <div id="modal-nuevo-cliente-pedido" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 no-print">
-                    <div class="bg-white rounded-xl p-6 w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto">
+                    <div class="bg-white rounded-xl p-6 w-full max-w-3xl max-h-[95vh] overflow-y-auto space-y-4">
                         <div class="flex items-center justify-between">
                             <h3 class="font-bold text-slate-900 flex items-center space-x-2"><i data-lucide="user-plus" class="w-5 h-5 text-red-600"></i><span>Registrar Cliente Nuevo</span></h3>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div class="md:col-span-2">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo de Cliente *</label>
                                 <select id="mcli-tipo-cliente" onchange="actualizarVisibilidadRazonSocialCliente('mcli')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
-                                    <option value="" disabled selected>Elegí un tipo de cliente</option>
+                                    <option value="" disabled selected>Elegí un tipo</option>
                                     <option value="Mostrador">Mostrador</option>
                                     <option value="Mayorista">Mayorista</option>
                                 </select>
@@ -1008,40 +1008,47 @@
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Apellido<span id="mcli-apellido-requerido"> *</span></label>
                                 <input type="text" id="mcli-apellido" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
                             </div>
-                            <div class="md:col-span-2">
+                            <div class="sm:col-span-3">
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Razón Social<span id="mcli-razon-social-requerido" class="hidden text-red-500"> *</span><span class="text-slate-400"> (obligatoria para clientes Mayoristas)</span></label>
                                 <input type="text" id="mcli-razon-social" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
                             </div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo Doc. *</label>
-                                    <select id="mcli-tipo-documento" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
-                                        <option value="DNI">DNI</option>
-                                        <option value="CUIT">CUIT</option>
-                                        <option value="CUIL">CUIL</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-600 mb-1">N° Documento *</label>
-                                    <input type="text" id="mcli-numero-documento" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
-                                </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo Doc. *</label>
+                                <select id="mcli-tipo-documento" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                    <option value="DNI">DNI</option>
+                                    <option value="CUIT">CUIT</option>
+                                    <option value="CUIL">CUIL</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">N° Documento *</label>
+                                <input type="text" id="mcli-numero-documento" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Condición Frente al IVA *</label>
+                                <select id="mcli-iva" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                    <option>Consumidor Final</option>
+                                    <option>Responsable Inscripto</option>
+                                    <option>Monotributo</option>
+                                    <option>Exento</option>
+                                </select>
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Provincia *</label>
                                 <select id="mcli-provincia" onchange="cargarLocalidadesCascada('mcli')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
-                                    <option value="" disabled selected>Seleccioná una provincia</option>
+                                    <option value="" disabled selected>Seleccioná</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Localidad *</label>
                                 <select id="mcli-localidad" onchange="cargarCallesCascada('mcli')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none" disabled>
-                                    <option value="" disabled selected>Seleccioná una localidad</option>
+                                    <option value="" disabled selected>Seleccioná</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Calle *</label>
                                 <select id="mcli-calle" onchange="actualizarCodigoPostal('mcli')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none" disabled>
-                                    <option value="" disabled selected>Seleccioná una calle</option>
+                                    <option value="" disabled selected>Seleccioná</option>
                                 </select>
                             </div>
                             <div>
@@ -1050,7 +1057,7 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Código Postal</label>
-                                <input type="text" id="mcli-cp" readonly placeholder="Se completa según la calle" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none bg-slate-100 text-slate-500">
+                                <input type="text" id="mcli-cp" readonly placeholder="Automático" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none bg-slate-100 text-slate-500">
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Teléfono *</label>
@@ -1066,29 +1073,20 @@
                                 <input type="email" id="mcli-email" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Condición Frente al IVA *</label>
-                                <select id="mcli-iva" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
-                                    <option>Consumidor Final</option>
-                                    <option>Responsable Inscripto</option>
-                                    <option>Monotributo</option>
-                                    <option>Exento</option>
-                                </select>
-                            </div>
-                            <div class="flex items-center gap-2 pt-6">
-                                <input type="checkbox" id="mcli-cuenta-corriente" onchange="actualizarVisibilidadLimiteCliente('mcli')" class="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500">
-                                <label for="mcli-cuenta-corriente" class="text-xs font-semibold text-slate-600">Tiene cuenta corriente habilitada</label>
-                            </div>
-                            <div id="wrap-mcli-limite" class="hidden">
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Límite de Crédito Permitido ($) *</label>
-                                <input type="number" id="mcli-limite" value="0" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
-                            </div>
-                            <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre de Usuario *</label>
                                 <input type="text" id="mcli-usuario" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Contraseña *</label>
                                 <input type="password" id="mcli-contrasena" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div class="flex items-center gap-2 pt-6">
+                                <input type="checkbox" id="mcli-cuenta-corriente" onchange="actualizarVisibilidadLimiteCliente('mcli')" class="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500">
+                                <label for="mcli-cuenta-corriente" class="text-xs font-semibold text-slate-600">Tiene cuenta corriente habilitada</label>
+                            </div>
+                            <div id="wrap-mcli-limite" class="hidden sm:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Límite de Crédito Permitido ($) *</label>
+                                <input type="number" id="mcli-limite" value="0" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
                             </div>
                         </div>
                         <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">

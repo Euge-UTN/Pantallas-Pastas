@@ -137,10 +137,16 @@
                                 <p class="text-sm text-slate-500">Listado completo de comprobantes de pago registrados.</p>
                             </div>
                         </div>
-                        <button onclick="irAReporteCaja()" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2 shadow-sm transition">
-                            <i data-lucide="file-bar-chart" class="w-4 h-4"></i>
-                            <span>Reporte de Caja</span>
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <button onclick="irARegistrarCobro()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2 shadow-sm transition">
+                                <i data-lucide="plus" class="w-4 h-4"></i>
+                                <span>Registrar Cobro</span>
+                            </button>
+                            <button onclick="irAReporteCaja()" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2 shadow-sm transition">
+                                <i data-lucide="file-bar-chart" class="w-4 h-4"></i>
+                                <span>Reporte de Caja</span>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">

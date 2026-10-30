@@ -472,7 +472,6 @@
                         <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3"><div class="p-2.5 bg-blue-100 text-blue-600 rounded-lg"><i data-lucide="files" class="w-5 h-5"></i></div><div><p id="kpi-pres-prov-total" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Total Presupuestos</p></div></div>
                         <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3"><div class="p-2.5 bg-amber-100 text-amber-600 rounded-lg"><i data-lucide="clock-3" class="w-5 h-5"></i></div><div><p id="kpi-pres-prov-pendientes" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Pendientes</p></div></div>
                         <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3"><div class="p-2.5 bg-sky-100 text-sky-600 rounded-lg"><i data-lucide="package" class="w-5 h-5"></i></div><div><p id="kpi-pres-prov-materia-prima" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Materia Prima</p></div></div>
-                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3"><div class="p-2.5 bg-violet-100 text-violet-600 rounded-lg"><i data-lucide="cog" class="w-5 h-5"></i></div><div><p id="kpi-pres-prov-maquinaria" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Maquinaria</p></div></div>
                     </div>
 
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -492,7 +491,6 @@
                                             </div>
                                         </div>
                                     </th>
-                                    <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Tipo Presupuesto</span><button type="button" onclick="togglePopoverColumna('pop-tipo-presupuesto-proveedor')" class="text-slate-400 hover:text-slate-700 normal-case" title="Filtrar tipo de presupuesto"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button><div id="pop-tipo-presupuesto-proveedor" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 min-w-[10rem] normal-case"><button type="button" onclick="elegirFiltroTipoPresupuestoProveedorListado('')" class="block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100">Todos</button><button type="button" onclick="elegirFiltroTipoPresupuestoProveedorListado('MateriaPrima')" class="block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100">Materia Prima</button><button type="button" onclick="elegirFiltroTipoPresupuestoProveedorListado('Maquinaria')" class="block w-full text-left px-2.5 py-1.5 text-xs rounded hover:bg-slate-100">Maquinaria</button></div></div></th>
                                     <th class="px-6 py-3">
                                         <div class="flex items-center gap-1.5 popover-trigger">
                                             <span>Proveedor</span>
@@ -574,14 +572,6 @@
 
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div class="lg:col-span-2 space-y-6">
-                            <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-3">
-                                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="list-checks" class="w-4 h-4"></i><span>¿Qué estás cotizando? *</span></h4>
-                                <div class="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-sm">
-                                    <button type="button" onclick="elegirTipoPresupuestoProveedor('MateriaPrima')" id="tipo-presupuesto-MateriaPrima" class="tipo-presupuesto-proveedor px-4 py-1.5 rounded-md font-semibold transition">Materia Prima</button>
-                                    <button type="button" onclick="elegirTipoPresupuestoProveedor('Maquinaria')" id="tipo-presupuesto-Maquinaria" class="tipo-presupuesto-proveedor px-4 py-1.5 rounded-md font-semibold transition">Maquinaria</button>
-                                </div>
-                            </div>
-
                             <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
                                 <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="truck" class="w-4 h-4"></i><span>Proveedor</span></h4>
                                 <div>
@@ -673,45 +663,6 @@
                                 </table>
                             </div>
 
-                            <div id="presup-seccion-maquinaria" class="hidden bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
-                                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="cog" class="w-4 h-4"></i><span>Maquinaria</span></h4>
-                                <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
-                                    <div class="md:col-span-4 relative">
-                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Maquinaria *</label>
-                                        <input type="text" id="presup-maq-autocompletar" autocomplete="off" oninput="filtrarMaquinariaAutocompletadoPresupuesto()" onfocus="filtrarMaquinariaAutocompletadoPresupuesto()" placeholder="Empezá a escribir para buscar..." class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white outline-none focus:ring-2 focus:ring-red-500">
-                                        <input type="hidden" id="presup-maq-select" value="">
-                                        <div id="presup-maq-autocompletar-opciones" class="hidden absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-56 overflow-y-auto"></div>
-                                    </div>
-                                    <div class="md:col-span-2">
-                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Cantidad *</label>
-                                        <input type="number" id="presup-maq-cant" value="1" min="1" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
-                                    </div>
-                                    <div class="md:col-span-3">
-                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Precio Unitario *</label>
-                                        <input type="number" id="presup-maq-precio" min="0" placeholder="$" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
-                                    </div>
-                                    <div class="md:col-span-3">
-                                        <label class="block text-xs font-semibold text-slate-600 mb-1">&nbsp;</label>
-                                        <button type="button" onclick="agregarMaquinariaPresupuesto()" title="Agregar maquinaria" class="w-full bg-slate-800 text-white rounded-lg p-2 text-sm font-semibold hover:bg-slate-900 transition flex items-center justify-center">
-                                            <i data-lucide="plus" class="w-4 h-4"></i>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <table class="w-full text-sm text-left bg-white rounded-lg overflow-hidden border border-slate-200">
-                                    <thead class="bg-slate-100 text-xs text-slate-600 uppercase border-b border-slate-200">
-                                        <tr>
-                                            <th class="p-3">Marca</th>
-                                            <th class="p-3">Maquinaria</th>
-                                            <th class="p-3 text-right">P. Unitario</th>
-                                            <th class="p-3 text-center">Cant.</th>
-                                            <th class="p-3 text-right">Subtotal</th>
-                                            <th class="p-3 text-center">Acción</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="tabla-items-presupuesto-maquinaria" class="divide-y divide-slate-100"></tbody>
-                                </table>
-                            </div>
                         </div>
 
                         <div class="space-y-4">
@@ -789,62 +740,26 @@
 
                 <!-- MODAL: AGREGAR PROVEEDOR RÁPIDO (desde Registrar Presupuesto u Registrar Orden de Compra) -->
                 <div id="modal-nuevo-proveedor" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 no-print">
-                    <div class="bg-white rounded-xl p-6 w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto">
+                    <div class="bg-white rounded-xl p-6 w-full max-w-3xl max-h-[95vh] overflow-y-auto space-y-4">
                         <div class="flex items-center justify-between">
                             <h3 class="font-bold text-slate-900 flex items-center space-x-2"><i data-lucide="truck" class="w-5 h-5 text-red-600"></i><span>Registrar Proveedor Nuevo</span></h3>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div class="md:col-span-2">
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre *</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div class="sm:col-span-3">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Razón Social *</label>
                                 <input type="text" id="mprov-razon-social" placeholder="Ej: Lácteos La Serenísima" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
                             </div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo Doc. *</label>
-                                    <select id="mprov-tipo-documento" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
-                                        <option value="CUIT">CUIT</option>
-                                        <option value="DNI">DNI</option>
-                                        <option value="CUIL">CUIL</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-600 mb-1">N° Documento *</label>
-                                    <input type="text" id="mprov-numero-documento" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
-                                </div>
-                            </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Provincia *</label>
-                                <select id="mprov-provincia" onchange="cargarLocalidadesCascada('mprov')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
-                                    <option value="" disabled selected>Seleccioná una provincia</option>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo Doc. *</label>
+                                <select id="mprov-tipo-documento" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                    <option value="CUIT">CUIT</option>
+                                    <option value="DNI">DNI</option>
+                                    <option value="CUIL">CUIL</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Localidad *</label>
-                                <select id="mprov-localidad" onchange="cargarCallesCascada('mprov')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none" disabled>
-                                    <option value="" disabled selected>Seleccioná una localidad</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Calle *</label>
-                                <select id="mprov-calle" onchange="actualizarCodigoPostal('mprov')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none" disabled>
-                                    <option value="" disabled selected>Seleccioná una calle</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Altura *</label>
-                                <input type="text" id="mprov-altura" placeholder="Ej: 1234" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Código Postal</label>
-                                <input type="text" id="mprov-cp" readonly placeholder="Se completa según la calle" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none bg-slate-100 text-slate-500">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Teléfono *</label>
-                                <input type="text" id="mprov-telefono" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Correo Electrónico *</label>
-                                <input type="email" id="mprov-email" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">N° Documento *</label>
+                                <input type="text" id="mprov-numero-documento" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Condición Frente al IVA *</label>
@@ -855,8 +770,42 @@
                                 </select>
                             </div>
                             <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Provincia *</label>
+                                <select id="mprov-provincia" onchange="cargarLocalidadesCascada('mprov')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                    <option value="" disabled selected>Seleccioná</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Localidad *</label>
+                                <select id="mprov-localidad" onchange="cargarCallesCascada('mprov')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none" disabled>
+                                    <option value="" disabled selected>Seleccioná</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Calle *</label>
+                                <select id="mprov-calle" onchange="actualizarCodigoPostal('mprov')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none" disabled>
+                                    <option value="" disabled selected>Seleccioná</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Altura *</label>
+                                <input type="text" id="mprov-altura" placeholder="Ej: 1234" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Código Postal</label>
+                                <input type="text" id="mprov-cp" readonly placeholder="Automático" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none bg-slate-100 text-slate-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Teléfono *</label>
+                                <input type="text" id="mprov-telefono" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Correo Electrónico *</label>
+                                <input type="email" id="mprov-email" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Rubro *</label>
-                                <input type="text" id="mprov-rubro" placeholder="Ej: Harinas, Quesos, Embalajes" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                <input type="text" id="mprov-rubro" placeholder="Ej: Harinas, Quesos" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha de Alta *</label>

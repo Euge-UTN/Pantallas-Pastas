@@ -60,8 +60,8 @@ function construirFichaCliente(cli) {
             <span class="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full text-xs font-semibold">${cli.tipo_cliente}</span>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            ${fila('Nombre', cli.nombre)}
-            ${fila('Apellido', cli.apellido)}
+            ${fila('Nombre', cli.nombre || '-')}
+            ${fila('Apellido', cli.apellido || '-')}
             ${fila('Razón Social', cli.razon_social)}
             ${fila('Documento', cli.documentoCompleto)}
             ${fila('Dirección', cli.calleObj ? `${cli.calleObj.nombre} ${cli.altura}` : '-')}
@@ -129,7 +129,7 @@ function renderizarTablaClientes(lista) {
         tr.className = 'hover:bg-slate-50';
         tr.innerHTML = `
             <td class="px-6 py-3 font-semibold text-slate-500">${formatearIdentificador('CLI', idx + 1)}</td>
-            <td class="px-6 py-3 font-semibold text-slate-800">${cli.nombre}</td>
+            <td class="px-6 py-3 font-semibold text-slate-800">${cli.nombre || '-'}</td>
             <td class="px-6 py-3">${cli.apellido || '-'}</td>
             <td class="px-6 py-3 text-slate-500">${cli.razon_social || '-'}</td>
             <td class="px-6 py-3 text-slate-500">${cli.tipo_documento}</td>

@@ -47,6 +47,55 @@ function coincideRangoFecha(desde, hasta, fechaCampo) {
     return true;
 }
 
+// ---------- Paginación de listados (5 registros por página) ----------
+// Cada listado sigue renderizando todas sus filas; un MutationObserver sobre el <tbody> oculta las que no
+// pertenecen a la página actual y dibuja los números de página debajo de la tabla. Si cambia la cantidad de
+// filas (filtro, alta, baja) vuelve a la página 1; si no (ordenar, cambiar un estado) se queda en la actual.
+const REGISTROS_POR_PAGINA = 5;
+const TABLAS_PAGINADAS = [
+    'tabla-presupuestos', 'tabla-pedidos-registrados', 'tabla-comprobantes-venta', 'tabla-lista-clientes',
+    'tabla-pagos', 'tabla-presupuestos-proveedor', 'tabla-ordenes-compra', 'tabla-remitos', 'tabla-lista-proveedores',
+    'tabla-ordenes-produccion', 'tabla-productos', 'tabla-materias-primas', 'tabla-maquinaria',
+    'tabla-ordenes-mantenimiento', 'tabla-lista-empleados'
+];
+const estadoPaginacion = {};
+
+function paginarTabla(tbody) {
+    const filas = [...tbody.rows];
+    const estado = estadoPaginacion[tbody.id] || (estadoPaginacion[tbody.id] = { pagina: 1, total: -1 });
+    if (filas.length !== estado.total) { estado.pagina = 1; estado.total = filas.length; }
+    const totalPaginas = Math.max(1, Math.ceil(filas.length / REGISTROS_POR_PAGINA));
+    estado.pagina = Math.min(estado.pagina, totalPaginas);
+
+    filas.forEach((tr, i) => tr.classList.toggle('hidden', Math.floor(i / REGISTROS_POR_PAGINA) + 1 !== estado.pagina));
+
+    let nav = document.getElementById(`paginacion-${tbody.id}`);
+    if (!nav) {
+        nav = document.createElement('nav');
+        nav.id = `paginacion-${tbody.id}`;
+        nav.className = 'no-print flex justify-center items-center gap-1.5 px-4 py-3 border-t border-slate-100';
+        (tbody.closest('.overflow-x-auto') || tbody.closest('table')).insertAdjacentElement('afterend', nav);
+    }
+    nav.classList.toggle('hidden', totalPaginas <= 1);
+    nav.innerHTML = totalPaginas <= 1 ? '' : Array.from({ length: totalPaginas }, (_, i) => i + 1).map(n => `
+        <button type="button" onclick="irAPaginaTabla('${tbody.id}', ${n})" aria-label="Página ${n}"${n === estado.pagina ? ' aria-current="page"' : ''}
+            class="min-w-[2rem] h-8 px-2 rounded-lg text-xs font-semibold transition ${n === estado.pagina ? 'bg-red-600 text-white' : 'text-slate-600 hover:bg-slate-100 border border-slate-200'}">${n}</button>`).join('');
+}
+
+function irAPaginaTabla(idTabla, pagina) {
+    estadoPaginacion[idTabla].pagina = pagina;
+    paginarTabla(document.getElementById(idTabla));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    TABLAS_PAGINADAS.forEach(id => {
+        const tbody = document.getElementById(id);
+        if (!tbody) return;
+        new MutationObserver(() => paginarTabla(tbody)).observe(tbody, { childList: true });
+        paginarTabla(tbody);
+    });
+});
+
 // ---------- Teléfonos múltiples (botón "+" en Clientes, Proveedores y Empleados) ----------
 // Agrega una fila de teléfono adicional al formulario identificado por "prefijo" (ej: 'cli', 'prov', 'emp').
 function agregarCampoTelefono(prefijo) {
@@ -301,6 +350,48 @@ class Maquinaria {
     }
 }
 
+// ---------- Producción: catálogos de Producto y Materia Prima (propios del módulo, independientes de los
+// catálogos simplificados que ya usan Ventas para vender y Compras/Producción para la lógica de stock) ----------
+const dbUnidadesMedida = [
+    { id_unidad_medida: 1, nombre: 'Kilogramo (Kg)' }, { id_unidad_medida: 2, nombre: 'Unidad (Un)' },
+    { id_unidad_medida: 3, nombre: 'Docena (Dz)' }, { id_unidad_medida: 4, nombre: 'Litro (Lt)' }
+];
+function nombreUnidadMedida(id_unidad_medida) {
+    const u = dbUnidadesMedida.find(x => x.id_unidad_medida === id_unidad_medida);
+    return u ? u.nombre : '-';
+}
+
+// Subtipo de Producto: mismo vocabulario Tipo/Subtipo que ya usan Pedidos, Presupuestos y Comprobantes de Venta.
+const dbSubtiposProducto = [
+    { id_subtipo_producto: 1, tipo: 'Pasta', subtipo: 'Fresca' }, { id_subtipo_producto: 2, tipo: 'Pasta', subtipo: 'Seca' },
+    { id_subtipo_producto: 3, tipo: 'Pasta', subtipo: 'Rellena' }, { id_subtipo_producto: 4, tipo: 'Salsa', subtipo: 'Clásica' }
+];
+function subtipoProducto(id_subtipo_producto) {
+    return dbSubtiposProducto.find(x => x.id_subtipo_producto === id_subtipo_producto) || null;
+}
+
+class Producto {
+    constructor(id_producto, id_subtipo_producto, id_unidad_medida, nombre, descripcion, precio_unitario, stock_actual, stock_minimo, estado_activo) {
+        this.id_producto = id_producto; this.id_subtipo_producto = id_subtipo_producto; this.id_unidad_medida = id_unidad_medida;
+        this.nombre = nombre; this.descripcion = descripcion || ''; this.precio_unitario = precio_unitario;
+        this.stock_actual = stock_actual || 0; this.stock_minimo = stock_minimo || 0;
+        this.estado_activo = estado_activo === undefined ? true : !!estado_activo;
+    }
+}
+
+class MateriaPrima {
+    constructor(id_materia_prima, id_unidad_medida, id_tipo_materia_prima, id_marca, nombre_materia_prima, descripcion, estado_activa, factor_conversion, stock_actual, stock_minimo, stock_maximo, tiene_vencimiento, fecha_vencimiento, precio_unitario) {
+        this.id_materia_prima = id_materia_prima; this.id_unidad_medida = id_unidad_medida; this.id_tipo_materia_prima = id_tipo_materia_prima;
+        this.id_marca = id_marca || null;
+        this.nombre_materia_prima = nombre_materia_prima; this.descripcion = descripcion || '';
+        this.estado_activa = estado_activa === undefined ? true : !!estado_activa;
+        this.factor_conversion = factor_conversion || 1;
+        this.stock_actual = stock_actual || 0; this.stock_minimo = stock_minimo || 0; this.stock_maximo = stock_maximo || 0;
+        this.tiene_vencimiento = !!tiene_vencimiento; this.fecha_vencimiento = fecha_vencimiento || null;
+        this.precio_unitario = precio_unitario;
+    }
+}
+
 const ESTADOS_PEDIDO = ['Pendiente', 'En preparación', 'Listo', 'Entregado'];
 const COLOR_ESTADO_PEDIDO = {
     'Pendiente': 'bg-amber-100 text-amber-800', 'En preparación': 'bg-blue-100 text-blue-800',
@@ -309,9 +400,9 @@ const COLOR_ESTADO_PEDIDO = {
 };
 
 // ---------- Producción: estados de Orden de Producción ----------
-const ESTADOS_ORDEN_PRODUCCION = ['Planificada', 'En Proceso', 'Finalizada', 'Cancelada'];
+const ESTADOS_ORDEN_PRODUCCION = ['A iniciar', 'En Proceso', 'Finalizada', 'Cancelada'];
 const COLOR_ESTADO_ORDEN_PRODUCCION = {
-    'Planificada': 'bg-slate-100 text-slate-700', 'En Proceso': 'bg-blue-100 text-blue-800',
+    'A iniciar': 'bg-amber-100 text-amber-800', 'En Proceso': 'bg-blue-100 text-blue-800',
     'Finalizada': 'bg-emerald-100 text-emerald-800', 'Cancelada': 'bg-red-100 text-red-700'
 };
 
@@ -638,8 +729,8 @@ const CLAVE_ALMACENAMIENTO = 'fabricaPastasDB_v1';
 
 function crearDatosIniciales() {
     const clientes = [
-        new Cliente('Hotel', 'Plaza S.A.', 'CUIT', '30712345678', dbCalles[0], '450', '(02392) 456789', 'compras@hotelplaza.com', 'Responsable Inscripto', 'Mayorista', 150000, 'Hotel Plaza S.A.', '2023-02-10', true, [], 'hotelplaza', 'hotelplaza123'),
-        new Cliente('Mariano', 'Mosa', 'CUIT', '30889911224', dbCalles[2], '890', '11-4567-1234', 'donmosa@gmail.com', 'Responsable Inscripto', 'Mayorista', 80000, 'Restaurante Don Mosa', '2023-06-18', true, [], 'donmosa', 'donmosa123'),
+        new Cliente('', '', 'CUIT', '30712345678', dbCalles[0], '450', '(02392) 456789', 'compras@hotelplaza.com', 'Responsable Inscripto', 'Mayorista', 150000, 'Hotel Plaza S.A.', '2023-02-10', true, [], 'hotelplaza', 'hotelplaza123'),
+        new Cliente('', '', 'CUIT', '30889911224', dbCalles[2], '890', '11-4567-1234', 'donmosa@gmail.com', 'Responsable Inscripto', 'Mayorista', 80000, 'Restaurante Don Mosa', '2023-06-18', true, [], 'donmosa', 'donmosa123'),
         new Cliente('María', 'Gómez', 'DNI', '28554433', dbCalles[1], '245', '11-2233-4455', 'mariagomez@gmail.com', 'Consumidor Final', 'Mostrador', 0, '', '2024-01-05', false, [], 'mariagomez', 'mariagomez123'),
         new Cliente('Lucas', 'Fernández', 'DNI', '35667788', dbCalles[4], '120', '0351-556677', 'lucasf@gmail.com', 'Consumidor Final', 'Mostrador', 0, '', '2024-03-22', false, [], 'lucasf', 'lucasf123')
     ];
@@ -664,6 +755,25 @@ function crearDatosIniciales() {
         new Maquinaria(2, 'Envasadora al Vacío', 'Envasado de productos frescos para conservación', '2021-07-22', 'Turnos', 'Operativa', 2, 'VMS-25'),
         new Maquinaria(3, 'Amasadora Doble Brazo', 'Amasado de grandes volúmenes de masa', '2017-11-05', 'Horas', 'En reparación', 3, 'DB-120'),
         new Maquinaria(4, 'Cortadora de Ravioles', 'Formado y corte de pastas rellenas', '2022-04-18', 'Turnos', 'Operativa', 4, 'RV-300')
+    ];
+    const productos = [
+        new Producto(1, 1, 1, 'Fideos Frescos al Huevo', 'Pasta fresca laminada, lista para cocinar.', 2600, 42, 15, true),
+        new Producto(2, 1, 1, 'Tagliatelle Fresco', 'Cinta ancha de pasta fresca al huevo.', 2900, 30, 15, true),
+        new Producto(3, 2, 1, 'Tallarines al Huevo', 'Pasta seca de larga duración.', 2800, 85, 20, true),
+        new Producto(4, 2, 1, 'Ñoquis de Papa', 'Pasta seca a base de papa.', 3000, 60, 20, true),
+        new Producto(5, 3, 1, 'Ravioles de Ricotta y Verdura', 'Pasta rellena, porción familiar.', 3500, 25, 10, true),
+        new Producto(6, 3, 1, 'Sorrentinos de Jamón y Queso', 'Pasta rellena, porción familiar.', 4200, 18, 10, true),
+        new Producto(7, 4, 4, 'Salsa Fileto en Pote', 'Salsa clásica de tomate.', 1200, 54, 15, true),
+        new Producto(8, 4, 4, 'Salsa Bolognesa en Pote', 'Salsa clásica con carne.', 1800, 8, 15, true),
+        new Producto(9, 3, 1, 'Sorrentinos de Jamón y Queso (edición anterior)', 'Receta descontinuada, reemplazada por la actual.', 3900, 0, 10, false)
+    ];
+    const materiasPrimas = [
+        new MateriaPrima(1, 1, 1, 5, 'Harina 0000', 'Harina de trigo tipo 0000 para masas.', true, 1, 89.4, 30, 200, false, null, 500),
+        new MateriaPrima(2, 3, 2, 6, 'Huevos Frescos', 'Huevos de granja para pasta al huevo.', true, 12, 79.8, 20, 150, true, '2026-11-05', 1500),
+        new MateriaPrima(3, 1, 3, 7, 'Ricotta Fresca', 'Ricotta fresca para rellenos.', true, 1, 47, 15, 80, true, '2026-10-28', 2800),
+        new MateriaPrima(4, 1, 3, 7, 'Queso Mozzarella', 'Mozzarella en bloque para rellenos.', true, 1, 12, 15, 60, true, '2026-11-10', 4400),
+        new MateriaPrima(5, 2, 4, 7, 'Cajas para Ravioles', 'Packaging de cartón para pastas rellenas.', true, 100, 340, 100, 1000, false, null, 85),
+        new MateriaPrima(6, 1, 1, 5, 'Sémola de Trigo', 'Sémola para pastas secas de mayor cuerpo.', false, 1, 0, 20, 150, false, null, 550)
     ];
     const recetas = [
         new Receta(1, 'Receta Ravioles de Ricotta', 'Ravioles de Ricotta y Verdura', [{ clave_mp: 'harina', cantidad_por_kg: 0.4 }, { clave_mp: 'ricotta', cantidad_por_kg: 0.3 }]),
@@ -715,12 +825,10 @@ function crearDatosIniciales() {
 
         { id: 1044, clienteObj: clientes[2], cliente: 'María Gómez', tipo: 'Mostrador', esDonacion: false, bonificacion: 0,
           empleado: 'Laura Rodríguez', observaciones: '', estado: 'En preparación', fecha: '2026-09-30', hora: '09:15',
-          idOrdenProduccionGenerada: 4,
           detalle: [{ id: 1, nombre: 'Tallarines al Huevo', tipo: 'Pastas Secas', cantidad: 2, precioUnitario: 2800, subtotal: 5600 }], total: 5600 },
 
         { id: 1043, clienteObj: clientes[3], cliente: 'Lucas Fernández', tipo: 'Mostrador', esDonacion: false, bonificacion: 0,
           empleado: 'Laura Rodríguez', observaciones: '', estado: 'En preparación', fecha: '2026-09-29', hora: '17:40',
-          idOrdenProduccionGenerada: 3,
           detalle: [{ id: 1, nombre: 'Ñoquis de Papa', tipo: 'Pastas Secas', cantidad: 3, precioUnitario: 3000, subtotal: 9000 }], total: 9000 },
 
         { id: 1042, clienteObj: clientes[1], cliente: 'Restaurante Don Mosa', tipo: 'Mayorista', esDonacion: false, bonificacion: 10,
@@ -880,55 +988,43 @@ function crearDatosIniciales() {
         });
     });
 
-    // Presupuestos de Proveedores: cotizaciones de materia prima y maquinaria previas a confirmar una orden.
+    // Presupuestos de Proveedores: cotizaciones de materia prima previas a confirmar una orden de compra.
     const presupuestosProveedor = [
         { id_presupuesto_proveedor: 6, proveedorObj: proveedores[2], proveedor: proveedores[2].nombreMostrado,
           fecha_emision: '2026-10-04', hora_emision: '10:00', condicion_entrega: 'Entrega en fábrica', fecha_vencimiento: '2026-10-25',
-          estado: 'Pendiente', empleado: 'Laura Rodríguez', tipo: 'MateriaPrima', idOrdenCompraGenerada: null, observaciones: '',
+          estado: 'Pendiente', empleado: 'Laura Rodríguez', idOrdenCompraGenerada: null, observaciones: '',
           detalle: [{ clave: 'ricotta', tipo: 'Ricotta', marca: 'Lácteos Santa Rosa', nombre: 'Ricotta Fresca (Balde 10kg)', cantidad: 6, precio_unitario: 15000, subtotal: 90000 }],
           total_estimado: 90000 },
 
         { id_presupuesto_proveedor: 5, proveedorObj: proveedores[4], proveedor: proveedores[4].nombreMostrado,
           fecha_emision: '2026-09-30', hora_emision: '15:40', condicion_entrega: 'Entrega en fábrica', fecha_vencimiento: '2026-10-18',
-          estado: 'Convertido', empleado: 'Carlos Gómez', tipo: 'MateriaPrima', idOrdenCompraGenerada: 104, observaciones: 'Reposición de condimentos para la línea de salsas.',
+          estado: 'Convertido', empleado: 'Carlos Gómez', idOrdenCompraGenerada: 104, observaciones: 'Reposición de condimentos para la línea de salsas.',
           detalle: [{ clave: 'condimentos', tipo: 'Condimentos', marca: 'Condimentos Córdoba', nombre: 'Surtido de Especias (Caja 20kg)', cantidad: 2, precio_unitario: 45000, subtotal: 90000 }],
           total_estimado: 90000 },
 
         { id_presupuesto_proveedor: 4, proveedorObj: proveedores[3], proveedor: proveedores[3].nombreMostrado,
           fecha_emision: '2026-09-18', hora_emision: '09:50', condicion_entrega: 'Retira el proveedor habitual', fecha_vencimiento: '2026-10-05',
-          estado: 'Pendiente', empleado: 'Martín Acosta', tipo: 'MateriaPrima', idOrdenCompraGenerada: null, observaciones: '',
+          estado: 'Pendiente', empleado: 'Martín Acosta', idOrdenCompraGenerada: null, observaciones: '',
           detalle: [{ clave: 'embalajes', tipo: 'Embalajes', marca: 'Embalajes del Norte', nombre: 'Cajas de Packaging (Pack x200)', cantidad: 3, precio_unitario: 30000, subtotal: 90000 }],
           total_estimado: 90000 },
 
         { id_presupuesto_proveedor: 3, proveedorObj: proveedores[1], proveedor: proveedores[1].nombreMostrado,
           fecha_emision: '2026-10-02', hora_emision: '09:30', condicion_entrega: 'Entrega en fábrica', fecha_vencimiento: '2026-10-20',
-          estado: 'Pendiente', empleado: 'Laura Rodríguez', tipo: 'MateriaPrima', idOrdenCompraGenerada: null, observaciones: '',
+          estado: 'Pendiente', empleado: 'Laura Rodríguez', idOrdenCompraGenerada: null, observaciones: '',
           detalle: [{ clave: 'huevos', tipo: 'Huevos', marca: 'Avícola Sur', nombre: 'Huevos Frescos (Cajón 30 dzn)', cantidad: 4, precio_unitario: 18000, subtotal: 72000 }],
           total_estimado: 72000 },
 
         { id_presupuesto_proveedor: 2, proveedorObj: proveedores[0], proveedor: proveedores[0].nombreMostrado,
           fecha_emision: '2026-09-28', hora_emision: '11:00', condicion_entrega: 'Retira el proveedor habitual', fecha_vencimiento: '2026-10-15',
-          estado: 'Convertido', empleado: 'Carlos Gómez', tipo: 'MateriaPrima', idOrdenCompraGenerada: 102, observaciones: 'Pedido mensual de harina.',
+          estado: 'Convertido', empleado: 'Carlos Gómez', idOrdenCompraGenerada: 102, observaciones: 'Pedido mensual de harina.',
           detalle: [{ clave: 'harina', tipo: 'Harina', marca: 'Molinos Cañuelas', nombre: 'Harina 0000 (Bolsa 50kg)', cantidad: 10, precio_unitario: 25000, subtotal: 250000 }],
           total_estimado: 250000 },
 
         { id_presupuesto_proveedor: 1, proveedorObj: proveedores[0], proveedor: proveedores[0].nombreMostrado,
           fecha_emision: '2026-09-15', hora_emision: '10:15', condicion_entrega: 'Entrega en fábrica', fecha_vencimiento: '2026-09-30',
-          estado: 'Pendiente', empleado: 'Martín Acosta', tipo: 'MateriaPrima', idOrdenCompraGenerada: null, observaciones: '',
+          estado: 'Pendiente', empleado: 'Martín Acosta', idOrdenCompraGenerada: null, observaciones: '',
           detalle: [{ clave: 'harina', tipo: 'Harina', marca: 'Molinos Cañuelas', nombre: 'Harina 0000 (Bolsa 50kg)', cantidad: 5, precio_unitario: 25000, subtotal: 125000 }],
-          total_estimado: 125000 },
-
-        { id_presupuesto_proveedor: 8, proveedorObj: proveedores[5], proveedor: proveedores[5].nombreMostrado,
-          fecha_emision: '2026-10-11', hora_emision: '09:20', condicion_entrega: 'Entrega en fábrica', fecha_vencimiento: '2026-11-10',
-          estado: 'Pendiente', empleado: 'Carlos Gómez', tipo: 'Maquinaria', idOrdenCompraGenerada: null, observaciones: 'Cotización para renovar el equipo de laminado.',
-          detalle: [{ id_maquinaria: 1, marca: 'Imperia', nombre: 'Sobadora Industrial', modelo: 'IM-450', cantidad: 1, precio_unitario: 1850000, subtotal: 1850000 }],
-          total_estimado: 1850000 },
-
-        { id_presupuesto_proveedor: 7, proveedorObj: proveedores[5], proveedor: proveedores[5].nombreMostrado,
-          fecha_emision: '2026-10-10', hora_emision: '14:10', condicion_entrega: 'Entrega en fábrica', fecha_vencimiento: '2026-11-09',
-          estado: 'Pendiente', empleado: 'Laura Rodríguez', tipo: 'Maquinaria', idOrdenCompraGenerada: null, observaciones: 'Presupuesto de equipo de envasado al vacío.',
-          detalle: [{ id_maquinaria: 2, marca: 'VacuumPack', nombre: 'Envasadora al Vacío', modelo: 'VMS-25', cantidad: 1, precio_unitario: 2450000, subtotal: 2450000 }],
-          total_estimado: 2450000 }
+          total_estimado: 125000 }
     ];
 
     // Órdenes de Compra: algunas surgen de un presupuesto ya convertido, otras se emiten directamente.
@@ -972,35 +1068,56 @@ function crearDatosIniciales() {
           detalle: [{ clave: 'huevos', tipo: 'Huevos', marca: 'Avícola Sur', nombre: 'Huevos Frescos (Cajón 30 dzn)', cantidad: 2 }] }
     ];
 
-    // Órdenes de Producción: datos de prueba para visualizar Historial y Seguimiento (toda OP arranca "En Proceso" y ya descontó stock).
+    // Órdenes de Producción: datos de prueba. Toda OP nace "A iniciar" (todavía sin descontar stock); al marcarla
+    // "En Proceso" descuenta la MP planificada, y las Finalizadas ya pasaron por el Cierre.
     const ordenesProduccion = [
-        { id_orden_produccion: 4, id_orden_pedido_cliente: 1044, id_empleado: 'Laura Rodríguez',
-          fecha_emision: '2026-10-07', hora_emision: '09:00', fecha_inicio: '2026-10-09', hora_inicio: '08:00', fecha_fin: '2026-10-09', hora_fin: '12:00',
-          estado: 'En Proceso', observaciones: '', stockDescontado: true,
+        { id_orden_produccion: 7, id_empleado: 'Carlos Gómez',
+          fecha_emision: '2026-10-12', hora_emision: '09:30', fecha_inicio: '2026-10-13', hora_inicio: '08:00', fecha_fin: '2026-10-13', hora_fin: '16:00',
+          fecha_vencimiento: '2026-11-12', estado: 'Finalizada', observaciones: 'Producción semanal de pastas secas.', stockDescontado: true,
+          detalleProductos: [
+              { id_receta: 2, nombre_producto: 'Tallarines al Huevo', nombre_receta: 'Receta Tallarines al Huevo', cantidad_planificada: 10, cantidad_real: 9.8, numero_lote_proyectado: 'LOT-8', numero_lote_definitivo: null, fecha_vencimiento: '2026-11-12' },
+              { id_receta: 3, nombre_producto: 'Ñoquis de Papa', nombre_receta: 'Receta Ñoquis de Papa', cantidad_planificada: 8, cantidad_real: 8, numero_lote_proyectado: 'LOT-9', numero_lote_definitivo: null, fecha_vencimiento: '2026-11-12' }
+          ],
+          detalleMateriaPrima: [{ clave_mp: 'harina', nombre: 'Harina 0000', cantidad_planificada: 8.4, cantidad_real: 8.6 }, { clave_mp: 'huevos', nombre: 'Huevos Frescos', cantidad_planificada: 1, cantidad_real: 1 }] },
+
+        { id_orden_produccion: 6, id_empleado: 'Laura Rodríguez',
+          fecha_emision: '2026-10-10', hora_emision: '11:00', fecha_inicio: '2026-10-11', hora_inicio: '07:30', fecha_fin: '2026-10-11', hora_fin: '13:00',
+          fecha_vencimiento: '2026-10-26', estado: 'Finalizada', observaciones: '', stockDescontado: true,
+          detalleProductos: [
+              { id_receta: 1, nombre_producto: 'Ravioles de Ricotta y Verdura', nombre_receta: 'Receta Ravioles de Ricotta', cantidad_planificada: 6, cantidad_real: 6, numero_lote_proyectado: 'LOT-6', numero_lote_definitivo: null, fecha_vencimiento: '2026-10-26' },
+              { id_receta: 3, nombre_producto: 'Ñoquis de Papa', nombre_receta: 'Receta Ñoquis de Papa', cantidad_planificada: 5, cantidad_real: 4.5, numero_lote_proyectado: 'LOT-7', numero_lote_definitivo: null, fecha_vencimiento: '2026-11-10' }
+          ],
+          detalleMateriaPrima: [{ clave_mp: 'harina', nombre: 'Harina 0000', cantidad_planificada: 3.9, cantidad_real: 3.9 }, { clave_mp: 'ricotta', nombre: 'Ricotta Fresca', cantidad_planificada: 1.8, cantidad_real: 1.9 }] },
+
+        { id_orden_produccion: 5, id_empleado: 'Carlos Gómez',
+          fecha_emision: '2026-10-08', hora_emision: '08:15', fecha_inicio: '2026-10-08', hora_inicio: '09:00', fecha_fin: '2026-10-08', hora_fin: '12:00',
+          fecha_vencimiento: '2026-11-07', estado: 'Finalizada', observaciones: 'Reposición de stock de pastas secas.', stockDescontado: true,
+          detalleProductos: [{ id_receta: 2, nombre_producto: 'Tallarines al Huevo', nombre_receta: 'Receta Tallarines al Huevo', cantidad_planificada: 5, cantidad_real: 5, numero_lote_proyectado: 'LOT-5', numero_lote_definitivo: null, fecha_vencimiento: '2026-11-07' }],
+          detalleMateriaPrima: [{ clave_mp: 'harina', nombre: 'Harina 0000', cantidad_planificada: 3, cantidad_real: 3.1 }, { clave_mp: 'huevos', nombre: 'Huevos Frescos', cantidad_planificada: 0.5, cantidad_real: 0.5 }] },
+
+        { id_orden_produccion: 4, id_empleado: 'Laura Rodríguez',
+          fecha_emision: '2026-10-07', hora_emision: '09:00', fecha_inicio: '2026-11-03', hora_inicio: '08:00', fecha_fin: '2026-11-03', hora_fin: '12:00',
+          estado: 'A iniciar', observaciones: '', stockDescontado: false,
           detalleProductos: [{ id_receta: 2, nombre_producto: 'Tallarines al Huevo', nombre_receta: 'Receta Tallarines al Huevo', cantidad_planificada: 2, cantidad_real: null, numero_lote_proyectado: 'LOT-4', numero_lote_definitivo: null, fecha_vencimiento: null }],
-          detalleMateriaPrima: [{ clave_mp: 'harina', nombre: 'Harina 0000', cantidad_planificada: 1.2 }, { clave_mp: 'huevos', nombre: 'Huevos Frescos', cantidad_planificada: 0.2 }],
-          detalleMaquinaria: [{ id_maquinaria: 3, nombre_maquinaria: 'Amasadora Doble Brazo', hora_inicio_planificada: '08:00', hora_fin_planificada: '09:30' }] },
+          detalleMateriaPrima: [{ clave_mp: 'harina', nombre: 'Harina 0000', cantidad_planificada: 1.2 }, { clave_mp: 'huevos', nombre: 'Huevos Frescos', cantidad_planificada: 0.2 }] },
 
-        { id_orden_produccion: 3, id_orden_pedido_cliente: 1043, id_empleado: 'Carlos Gómez',
-          fecha_emision: '2026-10-06', hora_emision: '10:30', fecha_inicio: '2026-10-07', hora_inicio: '07:00', fecha_fin: '2026-10-07', hora_fin: '10:00',
-          estado: 'En Proceso', observaciones: 'Pedido de Lucas Fernández.', stockDescontado: true,
+        { id_orden_produccion: 3, id_empleado: 'Carlos Gómez',
+          fecha_emision: '2026-10-06', hora_emision: '10:30', fecha_inicio: '2026-11-04', hora_inicio: '07:00', fecha_fin: '2026-11-04', hora_fin: '10:00',
+          estado: 'A iniciar', observaciones: '', stockDescontado: false,
           detalleProductos: [{ id_receta: 3, nombre_producto: 'Ñoquis de Papa', nombre_receta: 'Receta Ñoquis de Papa', cantidad_planificada: 3, cantidad_real: null, numero_lote_proyectado: 'LOT-3', numero_lote_definitivo: null, fecha_vencimiento: null }],
-          detalleMateriaPrima: [{ clave_mp: 'harina', nombre: 'Harina 0000', cantidad_planificada: 0.9 }],
-          detalleMaquinaria: [{ id_maquinaria: 1, nombre_maquinaria: 'Sobadora Industrial', hora_inicio_planificada: '07:00', hora_fin_planificada: '08:30' }] },
+          detalleMateriaPrima: [{ clave_mp: 'harina', nombre: 'Harina 0000', cantidad_planificada: 0.9 }] },
 
-        { id_orden_produccion: 2, id_orden_pedido_cliente: null, id_empleado: 'Carlos Gómez',
+        { id_orden_produccion: 2, id_empleado: 'Carlos Gómez',
           fecha_emision: '2026-10-05', hora_emision: '08:00', fecha_inicio: '2026-10-06', hora_inicio: '07:00', fecha_fin: '2026-10-06', hora_fin: '11:00',
           estado: 'En Proceso', observaciones: 'Producción para reponer stock de góndola.', stockDescontado: true,
           detalleProductos: [{ id_receta: 1, nombre_producto: 'Ravioles de Ricotta y Verdura', nombre_receta: 'Receta Ravioles de Ricotta', cantidad_planificada: 10, cantidad_real: null, numero_lote_proyectado: 'LOT-2', numero_lote_definitivo: null, fecha_vencimiento: null }],
-          detalleMateriaPrima: [{ clave_mp: 'harina', nombre: 'Harina 0000', cantidad_planificada: 4 }, { clave_mp: 'ricotta', nombre: 'Ricotta Fresca', cantidad_planificada: 3 }],
-          detalleMaquinaria: [{ id_maquinaria: 3, nombre_maquinaria: 'Amasadora Doble Brazo', hora_inicio_planificada: '07:00', hora_fin_planificada: '09:00' }] },
+          detalleMateriaPrima: [{ clave_mp: 'harina', nombre: 'Harina 0000', cantidad_planificada: 4 }, { clave_mp: 'ricotta', nombre: 'Ricotta Fresca', cantidad_planificada: 3 }] },
 
-        { id_orden_produccion: 1, id_orden_pedido_cliente: null, id_empleado: 'Laura Rodríguez',
+        { id_orden_produccion: 1, id_empleado: 'Laura Rodríguez',
           fecha_emision: '2026-10-04', hora_emision: '14:00', fecha_inicio: '2026-10-09', hora_inicio: '08:00', fecha_fin: '2026-10-09', hora_fin: '11:00',
           estado: 'En Proceso', observaciones: '', stockDescontado: true,
           detalleProductos: [{ id_receta: 3, nombre_producto: 'Ñoquis de Papa', nombre_receta: 'Receta Ñoquis de Papa', cantidad_planificada: 15, cantidad_real: null, numero_lote_proyectado: 'LOT-1', numero_lote_definitivo: null, fecha_vencimiento: null }],
-          detalleMateriaPrima: [{ clave_mp: 'harina', nombre: 'Harina 0000', cantidad_planificada: 4.5 }],
-          detalleMaquinaria: [{ id_maquinaria: 2, nombre_maquinaria: 'Envasadora al Vacío', hora_inicio_planificada: '10:00', hora_fin_planificada: '11:00' }] }
+          detalleMateriaPrima: [{ clave_mp: 'harina', nombre: 'Harina 0000', cantidad_planificada: 4.5 }] }
     ];
 
     // Órdenes de Mantenimiento: datos de prueba cubriendo los 5 estados del diagrama de estados del TP.
@@ -1027,7 +1144,7 @@ function crearDatosIniciales() {
     ];
 
     return {
-        clientes, proveedores, empleados, maquinaria, recetas, pedidos, comprobantesVenta, comprobantesPago,
+        clientes, proveedores, empleados, maquinaria, productos, materiasPrimas, recetas, pedidos, comprobantesVenta, comprobantesPago,
         presupuestos, presupuestosProveedor, remitos,
         ordenesProduccion, ordenesMantenimiento, ordenesCompra,
         stockMateriaPrima: {
@@ -1037,8 +1154,9 @@ function crearDatosIniciales() {
         },
         cajaDiaria: 0,
         contadores: {
-            recibo: 1, ordenCompra: 106, lote: 5, pedido: 1053, empleado: 7, maquinaria: 5, ordenMant: 6, ordenProduccion: 5,
-            comprobanteVenta: contadorComprobanteVenta, comprobantePago: contadorComprobantePago, presupuesto: 8, presupuestoProveedor: 9, remito: 3
+            recibo: 1, ordenCompra: 106, lote: 10, pedido: 1053, empleado: 7, maquinaria: 5, ordenMant: 6, ordenProduccion: 8,
+            comprobanteVenta: contadorComprobanteVenta, comprobantePago: contadorComprobantePago, presupuesto: 8, presupuestoProveedor: 7, remito: 3,
+            producto: productos.length + 1, materiaPrima: materiasPrimas.length + 1
         }
     };
 }
@@ -1088,25 +1206,19 @@ function cargarDatos() {
             resto.proveedorObj = datos.proveedores.find(p => p.numero_documento === proveedorDocumento) || null;
             return resto;
         });
-        // Completa presupuestos ya guardados en la sesión y suma ejemplos de maquinaria una sola vez.
+        // Completa presupuestos ya guardados en la sesión que no tengan empleado asignado.
         datos.presupuestosProveedor.forEach((pr, indice) => {
             if (!pr.empleado) pr.empleado = datos.empleados[indice % datos.empleados.length]?.nombreMostrado || datos.empleados[indice % datos.empleados.length]?.nombre || '-';
-            if (!pr.tipo) pr.tipo = 'MateriaPrima';
+            delete pr.tipo;
         });
-        if (!datos.presupuestosProveedor.some(pr => pr.tipo === 'Maquinaria')) {
-            const proveedorMaquinaria = datos.proveedores.find(p => /log[ií]stica/i.test(p.rubro || '')) || datos.proveedores[0];
-            const idBase = Math.max(0, ...datos.presupuestosProveedor.map(pr => Number(pr.id_presupuesto_proveedor) || 0));
-            datos.presupuestosProveedor.push(
-                { id_presupuesto_proveedor: idBase + 1, proveedorObj: proveedorMaquinaria, proveedor: proveedorMaquinaria?.nombreMostrado || '', fecha_emision: '2026-10-11', hora_emision: '09:20', condicion_entrega: 'Entrega en fábrica', fecha_vencimiento: '2026-11-10', estado: 'Pendiente', empleado: datos.empleados[0]?.nombreMostrado || 'Carlos Gómez', tipo: 'Maquinaria', idOrdenCompraGenerada: null, observaciones: 'Cotización para renovar el equipo de laminado.', detalle: [{ id_maquinaria: 1, marca: 'Imperia', nombre: 'Sobadora Industrial', modelo: 'IM-450', cantidad: 1, precio_unitario: 1850000, subtotal: 1850000 }], total_estimado: 1850000 },
-                { id_presupuesto_proveedor: idBase + 2, proveedorObj: proveedorMaquinaria, proveedor: proveedorMaquinaria?.nombreMostrado || '', fecha_emision: '2026-10-10', hora_emision: '14:10', condicion_entrega: 'Entrega en fábrica', fecha_vencimiento: '2026-11-09', estado: 'Pendiente', empleado: datos.empleados[1]?.nombreMostrado || 'Laura Rodríguez', tipo: 'Maquinaria', idOrdenCompraGenerada: null, observaciones: 'Presupuesto de equipo de envasado al vacío.', detalle: [{ id_maquinaria: 2, marca: 'VacuumPack', nombre: 'Envasadora al Vacío', modelo: 'VMS-25', cantidad: 1, precio_unitario: 2450000, subtotal: 2450000 }], total_estimado: 2450000 }
-            );
-        }
         datos.remitos = (datos.remitos || []).map(r => {
             const { proveedorDocumento, ...resto } = r;
             resto.proveedorObj = datos.proveedores.find(p => p.numero_documento === proveedorDocumento) || null;
             return resto;
         });
         datos.maquinaria = datos.maquinaria || [];
+        datos.productos = datos.productos && datos.productos.length ? datos.productos : crearDatosIniciales().productos;
+        datos.materiasPrimas = datos.materiasPrimas && datos.materiasPrimas.length ? datos.materiasPrimas : crearDatosIniciales().materiasPrimas;
         datos.recetas = (datos.recetas || []).map(r => Object.setPrototypeOf(r, Receta.prototype));
         datos.ordenesProduccion = datos.ordenesProduccion || [];
         datos.ordenesMantenimiento = datos.ordenesMantenimiento || [];
@@ -1116,6 +1228,8 @@ function cargarDatos() {
         datos.contadores.presupuestoProveedor = datos.contadores.presupuestoProveedor || 1;
         datos.contadores.presupuestoProveedor = Math.max(datos.contadores.presupuestoProveedor, ...datos.presupuestosProveedor.map(pr => (Number(pr.id_presupuesto_proveedor) || 0) + 1));
         datos.contadores.remito = datos.contadores.remito || 1;
+        datos.contadores.producto = datos.contadores.producto || (datos.productos.length + 1);
+        datos.contadores.materiaPrima = datos.contadores.materiaPrima || (datos.materiasPrimas.length + 1);
         return datos;
     } catch (e) {
         console.error('No se pudo leer la base de la sesión, se reinicia con datos de ejemplo.', e);
@@ -1130,6 +1244,8 @@ let listaClientes = DATOS.clientes;
 let listaProveedores = DATOS.proveedores;
 let listaEmpleados = DATOS.empleados;
 let listaMaquinaria = DATOS.maquinaria;
+let listaProductos = DATOS.productos;
+let listaMateriasPrimas = DATOS.materiasPrimas;
 let listaRecetas = DATOS.recetas;
 let listaPedidos = DATOS.pedidos;
 let listaPresupuestos = DATOS.presupuestos;
@@ -1149,6 +1265,8 @@ let numLoteContador = DATOS.contadores.lote;
 let numPedidoContador = DATOS.contadores.pedido;
 let numEmpleadoContador = DATOS.contadores.empleado;
 let numMaquinariaContador = DATOS.contadores.maquinaria;
+let numProductoContador = DATOS.contadores.producto;
+let numMateriaPrimaContador = DATOS.contadores.materiaPrima;
 let numOrdenMantContador = DATOS.contadores.ordenMant;
 let numOrdenProduccionContador = DATOS.contadores.ordenProduccion;
 let numComprobanteVentaContador = DATOS.contadores.comprobanteVenta;
@@ -1163,6 +1281,8 @@ function guardarDatos() {
         proveedores: listaProveedores,
         empleados: listaEmpleados,
         maquinaria: listaMaquinaria,
+        productos: listaProductos,
+        materiasPrimas: listaMateriasPrimas,
         recetas: listaRecetas,
         ordenesProduccion: listaOrdenesProduccion,
         ordenesMantenimiento: listaOrdenesMantenimiento,
@@ -1174,7 +1294,7 @@ function guardarDatos() {
             ordenMant: numOrdenMantContador, ordenProduccion: numOrdenProduccionContador,
             comprobanteVenta: numComprobanteVentaContador, comprobantePago: numComprobantePagoContador,
             presupuesto: numPresupuestoContador, presupuestoProveedor: numPresupuestoProveedorContador,
-            remito: numRemitoContador
+            remito: numRemitoContador, producto: numProductoContador, materiaPrima: numMateriaPrimaContador
         },
         ordenesCompra: listaOrdenesCompra.map(oc => {
             const { proveedorObj, ...resto } = oc;

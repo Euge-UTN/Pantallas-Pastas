@@ -78,7 +78,7 @@ function renderizarStatsInicio() {
         stats.push(tarjetaStatInicio({ icono: 'users-round', color: 'sky', valor: listaClientes.length, label: 'Clientes Registrados' }));
     }
     if ((ROLES_POR_MODULO.produccion || []).includes(rol)) {
-        const activas = listaOrdenesProduccion.filter(o => o.estado === 'Planificada' || o.estado === 'En Proceso').length;
+        const activas = listaOrdenesProduccion.filter(o => o.estado === 'A iniciar' || o.estado === 'En Proceso').length;
         stats.push(tarjetaStatInicio({ icono: 'chef-hat', color: 'blue', valor: activas, label: 'Órdenes de Producción Activas' }));
     }
     if ((ROLES_POR_MODULO.mantenimiento || []).includes(rol)) {

@@ -543,27 +543,10 @@ function verDetalleOrdenCompra(id) {
 // ==========================================
 let proveedorSeleccionadoPresupuesto = null;
 let itemsPresupuestoProveedorActual = [];
-let itemsPresupuestoMaquinariaActual = [];
-let tipoPresupuestoProveedorActual = 'MateriaPrima'; // 'MateriaPrima' | 'Maquinaria'
 let presupuestoProveedorEnEdicionId = null;
 let ordenPresupuestoProveedorCampo = null;
 let ordenPresupuestoProveedorDireccion = null;
 let filtroPresupuestoProveedorEstadoSeleccionado = '';
-let filtroTipoPresupuestoProveedorListado = '';
-
-// Alterna entre cotizar Materia Prima o Maquinaria: bloquea/oculta la sección del tipo no elegido.
-function elegirTipoPresupuestoProveedor(tipo) {
-    tipoPresupuestoProveedorActual = tipo;
-    document.getElementById('presup-seccion-materia-prima').classList.toggle('hidden', tipo !== 'MateriaPrima');
-    document.getElementById('presup-seccion-maquinaria').classList.toggle('hidden', tipo !== 'Maquinaria');
-    ['MateriaPrima', 'Maquinaria'].forEach(t => {
-        const boton = document.getElementById(`tipo-presupuesto-${t}`);
-        if (!boton) return;
-        const activo = t === tipo;
-        boton.className = `tipo-presupuesto-proveedor px-4 py-1.5 rounded-md font-semibold transition ${activo ? 'bg-red-600 text-white' : 'text-slate-500 hover:bg-white'}`;
-    });
-    calcularTotalPresupuestoProveedor();
-}
 
 // Si Producción generó una Nota de Pedido de MP por faltante de stock, la precarga acá como ítems del presupuesto.
 function precargarNotaPedidoMPPendiente() {
@@ -711,102 +694,6 @@ function eliminarItemPresupuestoProveedor(id) {
     renderizarTablaItemsPresupuestoProveedor();
 }
 
-// ---------- Presupuesto de Proveedor: sección Maquinaria (mismo patrón que Materia Prima) ----------
-function filtrarMaquinariaAutocompletadoPresupuesto() {
-    const input = document.getElementById('presup-maq-autocompletar');
-    const cont = document.getElementById('presup-maq-autocompletar-opciones');
-    const termino = normalizarTexto(input.value).trim();
-
-    document.getElementById('presup-maq-select').value = '';
-    if (!termino) { cont.classList.add('hidden'); cont.innerHTML = ''; return; }
-
-    const filtrados = listaMaquinaria.filter(m => normalizarTexto(m.nombre).includes(termino) || normalizarTexto(nombreMarca(m.id_marca)).includes(termino) || normalizarTexto(m.modelo).includes(termino));
-    if (!filtrados.length) {
-        cont.innerHTML = `<p class="px-3 py-2 text-xs text-slate-400">Sin resultados.</p>`;
-        cont.classList.remove('hidden');
-        return;
-    }
-    cont.innerHTML = filtrados.map(m => {
-        const idx = listaMaquinaria.indexOf(m);
-        return `<button type="button" onmousedown="event.preventDefault(); elegirMaquinariaAutocompletadoPresupuesto(${idx})" class="block w-full text-left px-3 py-2 text-sm hover:bg-slate-100">
-            <span class="block truncate">${nombreMarca(m.id_marca)} - ${m.modelo}</span>
-            <span class="block text-[11px] text-slate-400">${m.nombre}</span>
-        </button>`;
-    }).join('');
-    cont.classList.remove('hidden');
-}
-
-function elegirMaquinariaAutocompletadoPresupuesto(idx) {
-    const m = listaMaquinaria[idx];
-    document.getElementById('presup-maq-autocompletar').value = `${nombreMarca(m.id_marca)} - ${m.modelo}`;
-    document.getElementById('presup-maq-select').value = idx;
-    document.getElementById('presup-maq-autocompletar-opciones').classList.add('hidden');
-}
-
-document.addEventListener('click', (e) => {
-    if (!e.target.closest('#presup-maq-autocompletar') && !e.target.closest('#presup-maq-autocompletar-opciones')) {
-        document.getElementById('presup-maq-autocompletar-opciones')?.classList.add('hidden');
-    }
-});
-
-function agregarMaquinariaPresupuesto() {
-    const idx = parseInt(document.getElementById('presup-maq-select').value);
-    const cantidad = parseInt(document.getElementById('presup-maq-cant').value);
-    const precioUnitario = parseFloat(document.getElementById('presup-maq-precio').value);
-
-    if (isNaN(idx)) return alert('Elegí una maquinaria de la lista de sugerencias.');
-    if (!cantidad || cantidad <= 0) return alert('Ingrese una cantidad válida.');
-    if (!precioUnitario || precioUnitario <= 0) return alert('Ingrese el precio unitario cotizado.');
-
-    const m = listaMaquinaria[idx];
-    itemsPresupuestoMaquinariaActual.push({ id: Date.now(), id_maquinaria: m.id_maquinaria, marca: nombreMarca(m.id_marca), nombre: m.nombre, modelo: m.modelo, cantidad, precioUnitario, subtotal: precioUnitario * cantidad });
-    document.getElementById('presup-maq-autocompletar').value = '';
-    document.getElementById('presup-maq-select').value = '';
-    document.getElementById('presup-maq-cant').value = 1;
-    document.getElementById('presup-maq-precio').value = '';
-    renderizarTablaItemsPresupuestoMaquinaria();
-}
-
-function eliminarItemPresupuestoMaquinaria(id) {
-    itemsPresupuestoMaquinariaActual = itemsPresupuestoMaquinariaActual.filter(item => item.id !== id);
-    renderizarTablaItemsPresupuestoMaquinaria();
-}
-
-function renderizarTablaItemsPresupuestoMaquinaria() {
-    const tbody = document.getElementById('tabla-items-presupuesto-maquinaria');
-    tbody.innerHTML = '';
-    itemsPresupuestoMaquinariaActual.forEach(item => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td class="p-3 text-slate-500">${item.marca}</td>
-            <td class="p-3 font-medium text-slate-800">${item.nombre} (${item.modelo})</td>
-            <td class="p-3 text-right">$ ${item.precioUnitario.toLocaleString()}</td>
-            <td class="p-3 text-center">
-                <input type="number" min="1" value="${item.cantidad}" onchange="actualizarCantidadItemPresupuestoMaquinaria(${item.id}, this.value)" class="w-16 text-center border border-slate-300 rounded-md p-1 text-sm outline-none focus:ring-2 focus:ring-red-500">
-            </td>
-            <td class="p-3 text-right font-semibold">$ ${item.subtotal.toLocaleString()}</td>
-            <td class="p-3 text-center">
-                <button type="button" onclick="eliminarItemPresupuestoMaquinaria(${item.id})" class="text-red-500 hover:text-red-700">
-                    <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
-                </button>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
-    lucide.createIcons();
-    calcularTotalPresupuestoProveedor();
-}
-
-function actualizarCantidadItemPresupuestoMaquinaria(id, nuevaCantidad) {
-    const cantidad = parseInt(nuevaCantidad);
-    const item = itemsPresupuestoMaquinariaActual.find(i => i.id === id);
-    if (!item) return;
-    if (!cantidad || cantidad <= 0) { renderizarTablaItemsPresupuestoMaquinaria(); return; }
-    item.cantidad = cantidad;
-    item.subtotal = item.cantidad * item.precioUnitario;
-    renderizarTablaItemsPresupuestoMaquinaria();
-}
-
 function renderizarTablaItemsPresupuestoProveedor() {
     const tbody = document.getElementById('tabla-items-presupuesto-proveedor');
     tbody.innerHTML = '';
@@ -844,7 +731,7 @@ function actualizarCantidadItemPresupuestoProveedor(id, nuevaCantidad) {
 }
 
 function calcularTotalPresupuestoProveedor() {
-    const items = tipoPresupuestoProveedorActual === 'Maquinaria' ? itemsPresupuestoMaquinariaActual : itemsPresupuestoProveedorActual;
+    const items = itemsPresupuestoProveedorActual;
     const subtotal = items.reduce((acc, i) => acc + i.subtotal, 0);
     const bonifPct = parseFloat(document.getElementById('presup-bonificacion')?.value) || 0;
     const bonifMonto = subtotal * (bonifPct / 100);
@@ -860,7 +747,6 @@ function calcularTotalPresupuestoProveedor() {
 
 function resetFormularioPresupuestoProveedor() {
     itemsPresupuestoProveedorActual = [];
-    itemsPresupuestoMaquinariaActual = [];
     proveedorSeleccionadoPresupuesto = null;
     presupuestoProveedorEnEdicionId = null;
     document.getElementById('titulo-form-presupuesto-proveedor').innerText = 'Registrar Presupuesto de Proveedor';
@@ -878,15 +764,9 @@ function resetFormularioPresupuestoProveedor() {
     document.getElementById('presup-mp-autocompletar').value = '';
     document.getElementById('presup-mp-select').value = '';
     document.getElementById('presup-mp-cant').value = 1;
-    document.getElementById('presup-maq-autocompletar').value = '';
-    document.getElementById('presup-maq-select').value = '';
-    document.getElementById('presup-maq-cant').value = 1;
-    document.getElementById('presup-maq-precio').value = '';
     document.getElementById('presup-proveedor-empleado').value = usuarioInternoActual.nombre;
     document.getElementById('presup-proveedor-empleado-nombre').textContent = `${usuarioInternoActual.nombre} (${usuarioInternoActual.rol})`;
-    elegirTipoPresupuestoProveedor('MateriaPrima');
     renderizarTablaItemsPresupuestoProveedor();
-    renderizarTablaItemsPresupuestoMaquinaria();
     lucide.createIcons();
 }
 
@@ -895,19 +775,12 @@ function editarPresupuestoProveedor(id) {
     if (!presupuesto || presupuesto.estado !== 'Pendiente') return;
 
     presupuestoProveedorEnEdicionId = id;
-    itemsPresupuestoProveedorActual = [];
-    itemsPresupuestoMaquinariaActual = [];
-    if (presupuesto.tipo === 'Maquinaria') {
-        itemsPresupuestoMaquinariaActual = presupuesto.detalle.map(i => ({ id: Date.now() + Math.random(), id_maquinaria: i.id_maquinaria, marca: i.marca, nombre: i.nombre, modelo: i.modelo, cantidad: i.cantidad, precioUnitario: i.precio_unitario, subtotal: i.subtotal }));
-    } else {
-        itemsPresupuestoProveedorActual = presupuesto.detalle.map(i => ({ id: Date.now() + Math.random(), clave: i.clave, tipo: i.tipo, marca: i.marca, nombre: i.nombre, cantidad: i.cantidad, precioUnitario: i.precio_unitario, subtotal: i.subtotal }));
-    }
+    itemsPresupuestoProveedorActual = presupuesto.detalle.map(i => ({ id: Date.now() + Math.random(), clave: i.clave, tipo: i.tipo, marca: i.marca, nombre: i.nombre, cantidad: i.cantidad, precioUnitario: i.precio_unitario, subtotal: i.subtotal }));
 
     document.getElementById('titulo-form-presupuesto-proveedor').innerText = `Editar Presupuesto ${formatearIdentificador("PRES-PROV", String(id).padStart(4, '0'))}`;
     document.getElementById('btn-guardar-presupuesto-proveedor').innerHTML = '<i data-lucide="save" class="w-4 h-4"></i><span>Guardar Cambios</span>';
 
     elegirProveedorPresupuesto(listaProveedores.indexOf(presupuesto.proveedorObj));
-    elegirTipoPresupuestoProveedor(presupuesto.tipo || 'MateriaPrima');
     document.getElementById('presup-condicion-entrega').value = presupuesto.condicion_entrega || '';
     document.getElementById('presup-fecha-emision').value = presupuesto.fecha_emision || '';
     document.getElementById('presup-hora-emision').value = presupuesto.hora_emision || '';
@@ -918,7 +791,6 @@ function editarPresupuestoProveedor(id) {
     document.getElementById('presup-proveedor-empleado-nombre').textContent = presupuesto.empleado || `${usuarioInternoActual.nombre} (${usuarioInternoActual.rol})`;
 
     renderizarTablaItemsPresupuestoProveedor();
-    renderizarTablaItemsPresupuestoMaquinaria();
     mostrarSubvistaCompras('registrar-presupuesto-proveedor');
     if (window.location.hash !== '#registrar-presupuesto') window.location.hash = 'registrar-presupuesto';
     lucide.createIcons();
@@ -926,9 +798,7 @@ function editarPresupuestoProveedor(id) {
 
 function guardarPresupuestoProveedor() {
     if (!proveedorSeleccionadoPresupuesto) return alert('Buscá y seleccioná el proveedor.');
-    const esMaquinaria = tipoPresupuestoProveedorActual === 'Maquinaria';
-    const itemsActivos = esMaquinaria ? itemsPresupuestoMaquinariaActual : itemsPresupuestoProveedorActual;
-    if (itemsActivos.length === 0) return alert(`Añadí al menos ${esMaquinaria ? 'una maquinaria' : 'una materia prima'} al presupuesto.`);
+    if (itemsPresupuestoProveedorActual.length === 0) return alert('Añadí al menos una materia prima al presupuesto.');
 
     const condicionEntrega = document.getElementById('presup-condicion-entrega').value.trim();
     const fechaEmision = document.getElementById('presup-fecha-emision').value;
@@ -940,13 +810,11 @@ function guardarPresupuestoProveedor() {
     const bonificacion = parseFloat(document.getElementById('presup-bonificacion').value) || 0;
     const observaciones = document.getElementById('presup-proveedor-observaciones').value.trim();
     const empleado = document.getElementById('presup-proveedor-empleado').value || usuarioInternoActual.nombre;
-    const detalle = esMaquinaria
-        ? itemsActivos.map(i => ({ id_maquinaria: i.id_maquinaria, marca: i.marca, nombre: i.nombre, modelo: i.modelo, cantidad: i.cantidad, precio_unitario: i.precioUnitario, subtotal: i.subtotal }))
-        : itemsActivos.map(i => ({ clave: i.clave, tipo: i.tipo, marca: i.marca, nombre: i.nombre, cantidad: i.cantidad, precio_unitario: i.precioUnitario, subtotal: i.subtotal }));
+    const detalle = itemsPresupuestoProveedorActual.map(i => ({ clave: i.clave, tipo: i.tipo, marca: i.marca, nombre: i.nombre, cantidad: i.cantidad, precio_unitario: i.precioUnitario, subtotal: i.subtotal }));
     const total = calcularTotalPresupuestoProveedor();
     const datosComunes = {
         proveedorObj: proveedorSeleccionadoPresupuesto, proveedor: proveedorSeleccionadoPresupuesto.nombreMostrado,
-        tipo: tipoPresupuestoProveedorActual, empleado, fecha_emision: fechaEmision, hora_emision: horaEmision,
+        empleado, fecha_emision: fechaEmision, hora_emision: horaEmision,
         condicion_entrega: condicionEntrega, fecha_vencimiento: fechaVencimiento, bonificacion,
         observaciones, detalle, total_estimado: total
     };
@@ -963,13 +831,6 @@ function guardarPresupuestoProveedor() {
         alert(`¡Presupuesto ${formatearIdentificador("PRES-PROV", String(nuevoPresupuesto.id_presupuesto_proveedor).padStart(4, '0'))} guardado para "${nuevoPresupuesto.proveedor}"!`);
     }
     volverAPresupuestosProveedor();
-}
-
-// Badge chico que distingue un presupuesto de Materia Prima de uno de Maquinaria en el listado.
-function badgeTipoPresupuestoProveedor(tipo) {
-    return tipo === 'Maquinaria'
-        ? `<span class="inline-flex items-center text-xs bg-violet-100 text-violet-800 px-2 py-1 rounded whitespace-nowrap">Maquinaria</span>`
-        : `<span class="inline-flex items-center text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded whitespace-nowrap">Materia Prima</span>`;
 }
 
 function renderizarTablaPresupuestosProveedor() {
@@ -991,7 +852,6 @@ function renderizarTablaPresupuestosProveedor() {
             (!terminoProveedor || normalizarTexto(proveedor).includes(terminoProveedor)) &&
             (!terminoEmpleado || normalizarTexto(pr.empleado).includes(terminoEmpleado)) &&
             (!filtroPresupuestoProveedorEstadoSeleccionado || pr.estado === filtroPresupuestoProveedorEstadoSeleccionado) &&
-            (!filtroTipoPresupuestoProveedorListado || pr.tipo === filtroTipoPresupuestoProveedorListado) &&
             coincideFechaExacta(fechaEmisionExacta, pr.fecha_emision) &&
             coincideFechaExacta(fechaVencimientoExacta, pr.fecha_vencimiento) &&
             coincideRangoMonto(montoDesde, montoHasta, pr.total_estimado);
@@ -1009,7 +869,7 @@ function renderizarTablaPresupuestosProveedor() {
     actualizarIconoFiltroEstadoPresupuestoProveedor();
 
     if (!filtrados.length) {
-        tbody.innerHTML = `<tr><td colspan="9" class="px-6 py-10 text-center text-slate-400 text-sm">No se encontraron presupuestos con ese criterio.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="px-6 py-10 text-center text-slate-400 text-sm">No se encontraron presupuestos con ese criterio.</td></tr>`;
     }
     filtrados.forEach(pr => {
         const tr = document.createElement('tr');
@@ -1018,7 +878,6 @@ function renderizarTablaPresupuestosProveedor() {
         const fechaVencimientoFormateada = pr.fecha_vencimiento ? new Date(pr.fecha_vencimiento + 'T00:00:00').toLocaleDateString('es-AR') : '-';
         tr.innerHTML = `
             <td class="px-6 py-4 font-semibold text-slate-900">${formatearIdentificador("PRES-PROV", String(pr.id_presupuesto_proveedor).padStart(4, '0'))}</td>
-            <td class="px-6 py-4">${badgeTipoPresupuestoProveedor(pr.tipo)}</td>
             <td class="px-6 py-4 text-slate-800">${pr.proveedorObj ? pr.proveedorObj.nombreMostrado : (pr.proveedor || '-')}</td>
             <td class="px-6 py-4 text-slate-500">${pr.empleado || '-'}</td>
             <td class="px-6 py-4 text-slate-500">${fechaEmisionFormateada}</td>
@@ -1040,13 +899,10 @@ function renderizarTablaPresupuestosProveedor() {
 function renderizarStatsPresupuestosProveedor() {
     const total = listaPresupuestosProveedor.length;
     const pendientes = listaPresupuestosProveedor.filter(pr => pr.estado === 'Pendiente').length;
-    const maquinaria = listaPresupuestosProveedor.filter(pr => pr.tipo === 'Maquinaria').length;
-    const materiaPrima = listaPresupuestosProveedor.filter(pr => pr.tipo !== 'Maquinaria').length;
     const set = (id, valor) => { const el = document.getElementById(id); if (el) el.textContent = valor; };
     set('kpi-pres-prov-total', total);
     set('kpi-pres-prov-pendientes', pendientes);
-    set('kpi-pres-prov-materia-prima', materiaPrima);
-    set('kpi-pres-prov-maquinaria', maquinaria);
+    set('kpi-pres-prov-materia-prima', total);
 }
 
 function alternarOrdenPresupuestoProveedor(campo) {
@@ -1073,11 +929,6 @@ function elegirFiltroEstadoPresupuestoProveedor(valor) {
     renderizarTablaPresupuestosProveedor();
 }
 
-function elegirFiltroTipoPresupuestoProveedorListado(valor) {
-    filtroTipoPresupuestoProveedorListado = valor;
-    document.getElementById('pop-tipo-presupuesto-proveedor')?.classList.add('hidden');
-    renderizarTablaPresupuestosProveedor();
-}
 function actualizarIconoFiltroEstadoPresupuestoProveedor() {
     const boton = document.getElementById('btn-filtro-estado-presupuesto-proveedor');
     if (!boton) return;
@@ -1095,7 +946,6 @@ function verPresupuestoProveedor(id) {
     const pr = listaPresupuestosProveedor.find(p => p.id_presupuesto_proveedor === id);
     if (!pr) return;
     const p = pr.proveedorObj;
-    const esMaquinaria = pr.tipo === 'Maquinaria';
     const fechaFormateada = pr.fecha_emision ? new Date(pr.fecha_emision + 'T00:00:00').toLocaleDateString('es-AR') : '-';
     const vencimientoFormateado = pr.fecha_vencimiento ? new Date(pr.fecha_vencimiento + 'T00:00:00').toLocaleDateString('es-AR') : '-';
 
@@ -1105,11 +955,10 @@ function verPresupuestoProveedor(id) {
     document.getElementById('presupuesto-proveedor-hora-emision').textContent = pr.hora_emision || '-';
     document.getElementById('presupuesto-proveedor-vencimiento').textContent = vencimientoFormateado;
 
-    // El detalle cambia según el tipo: Materia Prima (Marca/Nombre/Cantidad/Precio/Subtotal) o Maquinaria (Marca/Maquinaria/Cantidad/Precio/Subtotal).
     document.getElementById('presupuesto-proveedor-detalle-head').innerHTML = `
         <tr>
             <th class="py-2">Marca</th>
-            <th class="py-2">${esMaquinaria ? 'Maquinaria' : 'Nombre'}</th>
+            <th class="py-2">Nombre</th>
             <th class="py-2 text-center">Cant.</th>
             <th class="py-2 text-right">Precio</th>
             <th class="py-2 text-right">Subtotal</th>
@@ -1117,7 +966,7 @@ function verPresupuestoProveedor(id) {
     document.getElementById('presupuesto-proveedor-detalle-body').innerHTML = pr.detalle.map(i => `
         <tr>
             <td class="py-2 text-slate-500">${i.marca}</td>
-            <td class="py-2">${i.nombre}${esMaquinaria && i.modelo ? ` (${i.modelo})` : ''}</td>
+            <td class="py-2">${i.nombre}</td>
             <td class="py-2 text-center">${i.cantidad}</td>
             <td class="py-2 text-right">$ ${i.precio_unitario.toLocaleString()}</td>
             <td class="py-2 text-right">$ ${i.subtotal.toLocaleString()}</td>

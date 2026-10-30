@@ -1,21 +1,16 @@
 // ==========================================
 // MÓDULO DE MANTENIMIENTO
-// Contiene las Órdenes de Mantenimiento y Maquinarias.
+// Contiene las Órdenes de Mantenimiento. La Maquinaria vive en el módulo de Producción (js/produccion.js).
 // ==========================================
 const SUBVISTAS_MANTENIMIENTO = [
-    'historial', 
-    'registrar', 
-    'maquinaria', 
-    'registrar-maquinaria', 
-    'orden-mantenimiento', 
-    'historial-maquina'
+    'historial',
+    'registrar',
+    'orden-mantenimiento'
 ];
 
 let itemsMantenimientoActual = [];
 let ordenListadoMantenimiento = { campo: '', direccion: '' };
-let ordenListadoMaquinaria = { campo: '', direccion: '' };
 let filtroTipoMantenimientoListado = '';
-let filtroEstadoMaquinariaListado = '';
 
 function ordenarListadoMantenimiento(campo) {
     ordenListadoMantenimiento.direccion = ordenListadoMantenimiento.campo === campo && ordenListadoMantenimiento.direccion === 'asc' ? 'desc' : 'asc';
@@ -23,25 +18,11 @@ function ordenarListadoMantenimiento(campo) {
     renderizarHistorialMantenimiento();
 }
 
-function ordenarListadoMaquinaria(campo) {
-    ordenListadoMaquinaria.direccion = ordenListadoMaquinaria.campo === campo && ordenListadoMaquinaria.direccion === 'asc' ? 'desc' : 'asc';
-    ordenListadoMaquinaria.campo = campo;
-    renderizarTablaMaquinaria();
-}
-
 function elegirFiltroTipoMantenimiento(tipo) {
     filtroTipoMantenimientoListado = tipo;
     document.getElementById('pop-mant-tipo')?.classList.add('hidden');
     renderizarHistorialMantenimiento();
 }
-
-function elegirFiltroEstadoMaquinaria(estado) {
-    filtroEstadoMaquinariaListado = estado;
-    document.getElementById('pop-maq-estado')?.classList.add('hidden');
-    renderizarTablaMaquinaria();
-}
-
-function filtrarListadoMaquinaria() { renderizarTablaMaquinaria(); }
 
 // Carga inicial de datos de prueba asegurando fechas/horas de inicio y fin para todos
 if (typeof listaOrdenesMantenimiento === 'undefined' || !listaOrdenesMantenimiento.length) {
@@ -137,12 +118,6 @@ function irASubvistaDesdeHashMantenimiento() {
     if (hash === 'registrar') {
         resetFormularioMantenimiento();
         mostrarSubvistaMantenimiento('registrar');
-    } else if (hash === 'maquinaria') {
-        renderizarTablaMaquinaria();
-        mostrarSubvistaMantenimiento('maquinaria');
-    } else if (hash === 'registrar-maquinaria') {
-        resetFormularioMaquinaria();
-        mostrarSubvistaMantenimiento('registrar-maquinaria');
     } else {
         renderizarHistorialMantenimiento();
         renderizarStatsMantenimiento();
@@ -158,20 +133,6 @@ function irARegistrarMantenimiento() {
 function volverAlHistorialMantenimiento() {
     if (window.location.hash !== '#historial') window.location.hash = 'historial'; 
     else irASubvistaDesdeHashMantenimiento();
-}
-
-function irAMaquinaria() {
-    if (window.location.hash !== '#maquinaria') window.location.hash = 'maquinaria'; 
-    else irASubvistaDesdeHashMantenimiento();
-}
-
-function irARegistrarMaquinaria() {
-    if (window.location.hash !== '#registrar-maquinaria') window.location.hash = 'registrar-maquinaria'; 
-    else irASubvistaDesdeHashMantenimiento();
-}
-
-function volverAMaquinaria() {
-    irAMaquinaria();
 }
 
 // EMPLEADO RESPONSABLE (Automático)
@@ -208,21 +169,6 @@ function resetFormularioMantenimiento() {
     renderizarTablaDetalleMantenimiento();
 }
 
-// Puebla el <select> de Marca (catálogo compartido dbMarcas) en el alta de maquinaria.
-function poblarSelectMarcaMaquinaria() {
-    const select = document.getElementById('maq-marca');
-    if (!select || typeof dbMarcas === 'undefined') return;
-    select.innerHTML = dbMarcas.map(m => `<option value="${m.id_marca}">${m.nombre}</option>`).join('');
-}
-
-function resetFormularioMaquinaria() {
-    document.getElementById('maq-nombre').value = '';
-    poblarSelectMarcaMaquinaria();
-    document.getElementById('maq-modelo').value = '';
-    document.getElementById('maq-descripcion').value = '';
-    document.getElementById('maq-fecha-adquisicion').value = '';
-    document.getElementById('maq-estado').value = 'Operativa';
-}
 
 // MAQUINARIA
 function poblarSelectMaquinariaDetalle() {
@@ -237,141 +183,6 @@ function poblarSelectMaquinariaDetalle() {
             selectDetMaq.appendChild(opt);
         });
     }
-}
-
-function renderizarTablaMaquinaria() {
-    const tbody = document.getElementById('tabla-maquinaria');
-    if (!tbody) return;
-
-    tbody.innerHTML = '';
-    renderizarStatsMaquinaria();
-    if (typeof listaMaquinaria === 'undefined' || !listaMaquinaria.length) {
-        tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-400">No hay maquinarias registradas.</td></tr>`;
-        return;
-    }
-
-    const estadoSeleccionado = filtroEstadoMaquinariaListado;
-    const filtrosColumna = {
-        numero: normalizarTexto(document.getElementById('buscar-maq-numero')?.value || '').trim(),
-        nombre: normalizarTexto(document.getElementById('buscar-maq-nombre')?.value || '').trim(),
-        marca: normalizarTexto(document.getElementById('buscar-maq-marca')?.value || '').trim(),
-        modelo: normalizarTexto(document.getElementById('buscar-maq-modelo')?.value || '').trim()
-    };
-    const fechaAdquisicion = document.getElementById('buscar-maq-fecha')?.value || '';
-    const estadosMaquinaria = ['Operativa', 'En reparación', 'Fuera de servicio'];
-    let maquinarias = listaMaquinaria.filter(m => (!filtrosColumna.numero || normalizarTexto(`${formatearIdentificador("MAQ", m.id_maquinaria)}`).includes(filtrosColumna.numero)) && (!filtrosColumna.nombre || normalizarTexto(m.nombre).includes(filtrosColumna.nombre)) && (!filtrosColumna.marca || normalizarTexto(nombreMarca(m.id_marca)).includes(filtrosColumna.marca)) && (!filtrosColumna.modelo || normalizarTexto(m.modelo).includes(filtrosColumna.modelo)) && (!fechaAdquisicion || m.fecha_adquisicion === fechaAdquisicion) && (!estadoSeleccionado || m.estado === estadoSeleccionado));
-    if (['nombre', 'marca', 'modelo'].includes(ordenListadoMaquinaria.campo)) {
-        const campo = ordenListadoMaquinaria.campo;
-        maquinarias.sort((a, b) => {
-            const va = campo === 'nombre' ? a.nombre : campo === 'marca' ? nombreMarca(a.id_marca) : a.modelo;
-            const vb = campo === 'nombre' ? b.nombre : campo === 'marca' ? nombreMarca(b.id_marca) : b.modelo;
-            const cmp = typeof va === 'number' ? va - vb : String(va || '').localeCompare(String(vb || ''), 'es');
-            return ordenListadoMaquinaria.direccion === 'asc' ? cmp : -cmp;
-        });
-    }
-    maquinarias.forEach(m => {
-        const idx = listaMaquinaria.indexOf(m);
-        const tr = document.createElement('tr');
-        tr.className = 'hover:bg-slate-50 border-b border-slate-100';
-        tr.innerHTML = `
-            <td class="px-6 py-3 font-semibold text-slate-500">${formatearIdentificador("MAQ", String(m.id_maquinaria).padStart(4, '0'))}</td>
-            <td class="px-6 py-3 font-semibold text-slate-800">${m.nombre}</td>
-            <td class="px-6 py-3 text-slate-600">${nombreMarca(m.id_marca)}</td>
-            <td class="px-6 py-3 text-slate-600">${m.modelo || '-'}</td>
-            <td class="px-6 py-3 text-slate-500">${m.descripcion || '-'}</td>
-            <td class="px-6 py-3 whitespace-nowrap text-slate-600">${formatearFechaLatina(m.fecha_adquisicion)}</td>
-            <td class="px-6 py-3 text-center">
-                <span class="text-xs px-2.5 py-1 rounded-full font-semibold whitespace-nowrap ${m.estado === 'Operativa' ? 'bg-emerald-100 text-emerald-800' : m.estado === 'En reparación' ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'}">${m.estado || 'Sin estado'}</span>
-            </td>
-            <td class="px-6 py-3 text-center">
-                <button type="button" onclick="verHistorialMaquina(${idx})" title="Ver historial de mantenimientos" class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition"><i data-lucide="eye" class="w-4 h-4"></i></button>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-}
-
-function renderizarStatsMaquinaria() {
-    const maquinarias = typeof listaMaquinaria !== 'undefined' ? listaMaquinaria : [];
-    const set = (id, valor) => { const el = document.getElementById(id); if (el) el.textContent = valor; };
-    set('kpi-maquinaria-total', maquinarias.length);
-    set('kpi-maquinaria-operativa', maquinarias.filter(m => m.estado === 'Operativa').length);
-    set('kpi-maquinaria-reparacion', maquinarias.filter(m => m.estado === 'En reparación').length);
-    set('kpi-maquinaria-fuera-servicio', maquinarias.filter(m => m.estado === 'Fuera de servicio').length);
-}
-
-function cambiarEstadoMaquinaria(idx, nuevoEstado) {
-    const maquina = listaMaquinaria[idx];
-    if (!maquina) return;
-    maquina.estado = nuevoEstado;
-    if (typeof guardarDatos === 'function') guardarDatos();
-    renderizarTablaMaquinaria();
-}
-
-function verHistorialMaquina(idx) {
-    const maquina = listaMaquinaria[idx];
-    if (!maquina) return;
-    document.getElementById('historial-maquina-titulo').innerText = `Listado de Mantenimientos - ${maquina.nombre}`;
-    const ordenes = listaOrdenesMantenimiento.filter(o => o.detalle && o.detalle.some(d => d.id_maquinaria === maquina.id_maquinaria));
-    const tbody = document.getElementById('tabla-historial-maquina');
-    
-    if (!ordenes.length) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">Esta máquina no tiene mantenimientos registrados.</td></tr>`;
-    } else {
-        let html = '';
-        ordenes.forEach(o => {
-            const detMaq = o.detalle.find(d => d.id_maquinaria === maquina.id_maquinaria);
-            const fIni = o.fecha_inicio || o.fecha_emision || o.fecha || '2026-10-15';
-            const fFin = o.fecha_fin || o.fecha_emision || o.fecha || '2026-10-15';
-            const hIni = o.hora_inicio || o.hora_emision || '08:00';
-            const hFin = o.hora_fin || '12:00';
-
-            const periodoStr = `${formatearFechaLatina(fIni)} ${hIni} - ${formatearFechaLatina(fFin)} ${hFin}`;
-            html += `
-                <tr class="hover:bg-slate-50 border-b border-slate-100">
-                    <td class="px-6 py-3 font-semibold text-slate-800 whitespace-nowrap">${formatearIdentificador("MANT", String(o.id_orden_mantenimiento).padStart(4, '0'))}</td>
-                    <td class="px-6 py-3"><span class="text-xs px-2.5 py-0.5 rounded-full whitespace-nowrap ${o.id_tipo_mantenimiento === 'Preventivo' ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'}">${o.id_tipo_mantenimiento}</span></td>
-                    <td class="px-6 py-3 text-slate-600 whitespace-nowrap">${periodoStr}</td>
-                    <td class="px-6 py-3 text-slate-600">${detMaq ? detMaq.tareas_realizadas : '-'}</td>
-                    <td class="px-6 py-3 text-slate-600 whitespace-nowrap">${detMaq && detMaq.fecha_proximo_mantenimiento ? formatearFechaLatina(detMaq.fecha_proximo_mantenimiento) : '-'}</td>
-                </tr>`;
-        });
-        tbody.innerHTML = html;
-    }
-    mostrarSubvistaMantenimiento('historial-maquina');
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-}
-
-function volverDesdeHistorialMaquina() {
-    irAMaquinaria();
-}
-
-function guardarMaquinaria() {
-    const nombre = document.getElementById('maq-nombre').value.trim();
-    const idMarca = parseInt(document.getElementById('maq-marca').value);
-    const modelo = document.getElementById('maq-modelo').value.trim();
-    const descripcion = document.getElementById('maq-descripcion').value.trim();
-    const fechaAdquisicion = document.getElementById('maq-fecha-adquisicion').value;
-    const estado = document.getElementById('maq-estado').value;
-
-    if (!nombre) return alert('Ingrese el nombre de la máquina.');
-    if (!idMarca) return alert('Seleccione la marca.');
-    if (!modelo) return alert('Ingrese el modelo.');
-    if (!fechaAdquisicion) return alert('Seleccione la fecha de adquisición.');
-    if (!estado) return alert('Seleccione el estado de la maquinaria.');
-
-    const idNueva = typeof numMaquinariaContador !== 'undefined' ? numMaquinariaContador++ : Date.now();
-
-    if (typeof Maquinaria === 'function') {
-        listaMaquinaria.push(new Maquinaria(idNueva, nombre, descripcion || 'Sin descripción', fechaAdquisicion, 'Horas', estado, idMarca, modelo));
-    } else {
-        listaMaquinaria.push({ id_maquinaria: idNueva, nombre, descripcion, fecha_adquisicion: fechaAdquisicion, id_unidad_tiempo: 'Horas', estado, id_marca: idMarca, modelo });
-    }
-    
-    if (typeof guardarDatos === 'function') guardarDatos();
-    alert(`¡Máquina "${nombre}" registrada con éxito!`);
-    irAMaquinaria();
 }
 
 // REGISTRAR MANTENIMIENTO REALIZADO

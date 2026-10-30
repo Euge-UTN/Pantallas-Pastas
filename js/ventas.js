@@ -534,9 +534,9 @@ function renderizarTablaPedido() {
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50';
         tr.innerHTML = `
+            <td class="p-3 font-medium text-slate-800">${item.nombre}</td>
             <td class="p-3 text-slate-500">${item.tipo || '-'}</td>
             <td class="p-3 text-slate-500">${item.subtipo || '-'}</td>
-            <td class="p-3 font-medium text-slate-800">${item.nombre}</td>
             <td class="p-3 text-center">
                 <input type="number" min="1" value="${item.cantidad}" onchange="actualizarCantidadItemPedido(${item.id}, this.value)" class="w-16 text-center border border-slate-300 rounded-md p-1 text-sm outline-none focus:ring-2 focus:ring-red-500">
             </td>
@@ -700,12 +700,6 @@ function confirmarPedido() {
     volverAlListadoVentas();
 }
 
-// Lleva a Producción > Nueva Orden con este pedido precargado como Origen (ver recibirHandoffDesdePedido en produccion.js).
-function generarOrdenProduccionDesdePedido(idPedido) {
-    sessionStorage.setItem('opDesdePedidoPendiente', JSON.stringify({ idPedido }));
-    window.location.href = 'produccion.html#nueva-orden';
-}
-
 function renderizarTablaPedidosRegistrados() {
     const tbody = document.getElementById('tabla-pedidos-registrados');
     tbody.innerHTML = '';
@@ -790,7 +784,6 @@ function renderizarTablaPedidosRegistrados() {
                     <button onclick="verDetallePedido(${p.id})" title="Ver detalle" class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition"><i data-lucide="eye" class="w-4 h-4"></i></button>
                     ${comprobanteVisible ? `<button onclick="verComprobanteVenta(${p.id})" title="Generar comprobante de venta" class="p-2 rounded-lg text-indigo-600 hover:bg-indigo-50 transition"><i data-lucide="file-check-2" class="w-4 h-4"></i></button>` : ''}
                     ${p.estado === 'Pendiente' ? `<button onclick="editarPedido(${p.id})" title="Editar pedido" class="p-2 rounded-lg text-amber-600 hover:bg-amber-50 transition"><i data-lucide="pencil" class="w-4 h-4"></i></button>` : ''}
-                    ${(p.estado === 'Pendiente' && !p.idOrdenProduccionGenerada) ? `<button onclick="generarOrdenProduccionDesdePedido(${p.id})" title="Generar orden de producción" class="p-2 rounded-lg text-teal-600 hover:bg-teal-50 transition"><i data-lucide="factory" class="w-4 h-4"></i></button>` : ''}
                     ${siguiente ? `<button onclick="avanzarEstadoPedido(${p.id})" title="Marcar ${siguiente}" class="p-2 rounded-lg text-blue-600 hover:bg-blue-50 transition"><i data-lucide="arrow-right-circle" class="w-4 h-4"></i></button>` : ''}
                     ${(p.estado === 'Entregado' || p.estado === 'Devuelto') ? `<button onclick="abrirModalDevolucion(${p.id})" title="Devolver pedido" class="p-2 rounded-lg text-orange-600 hover:bg-orange-50 transition"><i data-lucide="undo-2" class="w-4 h-4"></i></button>` : ''}
                     ${activo ? `<button onclick="cancelarPedidoListado(${p.id})" title="Cancelar pedido" class="p-2 rounded-lg text-red-500 hover:bg-red-50 transition"><i data-lucide="x-circle" class="w-4 h-4"></i></button>` : ''}

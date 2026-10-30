@@ -34,10 +34,14 @@
 
                     <div id="grid-stock-materia-prima" class="grid grid-cols-2 sm:grid-cols-4 gap-4"></div>
 
-                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
                         <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3 shadow-sm">
                             <div class="p-2.5 bg-indigo-100 text-indigo-600 rounded-lg"><i data-lucide="factory" class="w-5 h-5"></i></div>
                             <div><p id="kpi-prod-total" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Total Órdenes</p></div>
+                        </div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3 shadow-sm">
+                            <div class="p-2.5 bg-amber-100 text-amber-600 rounded-lg"><i data-lucide="clock" class="w-5 h-5"></i></div>
+                            <div><p id="kpi-prod-a-iniciar" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">A Iniciar</p></div>
                         </div>
                         <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3 shadow-sm">
                             <div class="p-2.5 bg-blue-100 text-blue-600 rounded-lg"><i data-lucide="chef-hat" class="w-5 h-5"></i></div>
@@ -58,20 +62,19 @@
                     </div>
 
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center gap-3">
-                            <h4 class="font-semibold text-slate-800 text-sm sm:mr-auto">Listado de Órdenes de Producción</h4>
-                            <input type="text" id="historial-buscador" oninput="renderizarHistorialProduccion()" placeholder="Buscar en órdenes..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-xs outline-none w-full sm:w-64">
+                        <div class="p-4 border-b border-slate-100">
+                            <h4 class="font-semibold text-slate-800 text-sm">Listado de Órdenes de Producción</h4>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm text-left">
                                 <thead class="bg-slate-50 text-xs text-slate-500 border-b border-slate-200 uppercase">
                                     <tr>
                                         <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>N° Producción</span><button type="button" onclick="togglePopoverColumna('pop-prod-numero')" title="Buscar N° Producción" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-prod-numero" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-prod-numero" oninput="renderizarHistorialProduccion()" class="w-36 border border-slate-300 rounded px-2 py-1 text-xs" placeholder="N° Producción"></div></div></th>
-                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>N° Pedido</span><button type="button" onclick="togglePopoverColumna('pop-prod-pedido')" title="Buscar N° Pedido" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-prod-pedido" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-prod-pedido" oninput="renderizarHistorialProduccion()" class="w-36 border border-slate-300 rounded px-2 py-1 text-xs" placeholder="N° Pedido"></div></div></th>
                                         <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Empleado</span><button type="button" onclick="ordenarListadoProduccion('empleado')" title="Ordenar" class="text-slate-400 hover:text-slate-700"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button><button type="button" onclick="togglePopoverColumna('pop-prod-empleado')" title="Buscar empleado" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-prod-empleado" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-prod-empleado" oninput="renderizarHistorialProduccion()" class="w-36 border border-slate-300 rounded px-2 py-1 text-xs" placeholder="Empleado"></div></div></th>
                                         <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Producto</span><button type="button" onclick="ordenarListadoProduccion('producto')" title="Ordenar" class="text-slate-400 hover:text-slate-700"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button><button type="button" onclick="togglePopoverColumna('pop-prod-producto')" title="Buscar producto" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-prod-producto" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-prod-producto" oninput="renderizarHistorialProduccion()" class="w-36 border border-slate-300 rounded px-2 py-1 text-xs" placeholder="Producto"></div></div></th>
-                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Fecha emisión</span><button type="button" onclick="togglePopoverColumna('pop-prod-fecha')" title="Filtrar por fecha" class="text-slate-400 hover:text-slate-700"><i data-lucide="calendar-search" class="w-3.5 h-3.5"></i></button><div id="pop-prod-fecha" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><label class="block text-[11px]">Desde<input id="buscar-prod-fecha-desde" type="date" oninput="renderizarHistorialProduccion()" class="block border rounded px-2 py-1 text-xs"></label><label class="block text-[11px]">Hasta<input id="buscar-prod-fecha-hasta" type="date" oninput="renderizarHistorialProduccion()" class="block border rounded px-2 py-1 text-xs"></label></div></div></th>
-                                        <th class="px-6 py-3 text-center"><div class="flex items-center justify-center gap-1.5 popover-trigger"><span>Estado</span><button type="button" onclick="togglePopoverColumna('pop-prod-estado')" title="Filtrar por estado" class="text-slate-400 hover:text-slate-700"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button><div id="pop-prod-estado" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 normal-case"><button type="button" onclick="elegirFiltroEstadoProduccion('')" class="block w-full text-left px-2 py-1 text-xs">Todos</button><button type="button" onclick="elegirFiltroEstadoProduccion('En Proceso')" class="block w-full text-left px-2 py-1 text-xs">En Proceso</button><button type="button" onclick="elegirFiltroEstadoProduccion('Finalizada')" class="block w-full text-left px-2 py-1 text-xs">Finalizada</button><button type="button" onclick="elegirFiltroEstadoProduccion('Cancelada')" class="block w-full text-left px-2 py-1 text-xs">Cancelada</button></div></div></th>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Fecha de Vencimiento</span><button type="button" onclick="togglePopoverColumna('pop-prod-vencimiento')" title="Filtrar por fecha" class="text-slate-400 hover:text-slate-700"><i data-lucide="calendar-search" class="w-3.5 h-3.5"></i></button><div id="pop-prod-vencimiento" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><label class="block text-[11px]">Desde<input id="buscar-prod-vencimiento-desde" type="date" oninput="renderizarHistorialProduccion()" class="block border rounded px-2 py-1 text-xs"></label><label class="block text-[11px]">Hasta<input id="buscar-prod-vencimiento-hasta" type="date" oninput="renderizarHistorialProduccion()" class="block border rounded px-2 py-1 text-xs"></label></div></div></th>
+                                        <th class="px-6 py-3 text-center"><div class="flex items-center justify-center gap-1.5 popover-trigger"><span>Estado</span><button type="button" onclick="togglePopoverColumna('pop-prod-estado')" title="Filtrar por estado" class="text-slate-400 hover:text-slate-700"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button><div id="pop-prod-estado" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 normal-case"><button type="button" onclick="elegirFiltroEstadoProduccion('')" class="block w-full text-left px-2 py-1 text-xs">Todos</button><button type="button" onclick="elegirFiltroEstadoProduccion('A iniciar')" class="block w-full text-left px-2 py-1 text-xs">A iniciar</button><button type="button" onclick="elegirFiltroEstadoProduccion('En Proceso')" class="block w-full text-left px-2 py-1 text-xs">En Proceso</button><button type="button" onclick="elegirFiltroEstadoProduccion('Finalizada')" class="block w-full text-left px-2 py-1 text-xs">Finalizada</button><button type="button" onclick="elegirFiltroEstadoProduccion('Cancelada')" class="block w-full text-left px-2 py-1 text-xs">Cancelada</button></div></div></th>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Observaciones</span><button type="button" onclick="togglePopoverColumna('pop-prod-observaciones')" title="Buscar observaciones" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-prod-observaciones" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-prod-observaciones" oninput="renderizarHistorialProduccion()" class="w-36 border border-slate-300 rounded px-2 py-1 text-xs" placeholder="Observaciones"></div></div></th>
                                         <th class="px-6 py-3 text-center">Acciones</th>
                                     </tr>
                                 </thead>
@@ -87,8 +90,8 @@
                         <div class="flex items-center space-x-3">
                             <div class="p-2.5 bg-red-100 text-red-600 rounded-xl"><i data-lucide="factory" class="w-5 h-5"></i></div>
                             <div>
-                                <h2 class="text-xl font-bold text-slate-900">Registrar Orden de Producción</h2>
-                                <p class="text-xs text-slate-500">Código: <span class="font-semibold text-slate-600">se asigna automáticamente al registrar</span></p>
+                                <h2 id="titulo-nueva-orden" class="text-xl font-bold text-slate-900">Registrar Orden de Producción</h2>
+                                <p class="text-xs text-slate-500">Código: <span id="codigo-nueva-orden" class="font-semibold text-slate-600">se asigna automáticamente al registrar</span></p>
                             </div>
                         </div>
                         <button type="button" onclick="volverAlHistorialProduccion()" class="text-sm font-semibold text-slate-500 hover:text-slate-700 flex items-center space-x-1">
@@ -97,22 +100,10 @@
                     </div>
 
                     <div id="card-nueva-orden-produccion" class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-5">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="relative">
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Origen de la orden *</label>
-                                <input type="text" id="prod-pedido-autocompletar" autocomplete="off" oninput="filtrarPedidosOrigen()" onfocus="filtrarPedidosOrigen()" placeholder="Buscar pedido pendiente o dejar vacío para Producción interna..." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white outline-none focus:ring-2 focus:ring-red-500">
-                                <input type="hidden" id="prod-pedido-asociado" value="">
-                                <div id="prod-pedido-autocompletar-opciones" class="hidden absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-56 overflow-y-auto"></div>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Responsable *</label>
-                                <input type="text" id="prod-empleado" readonly class="w-full border border-slate-200 bg-slate-50 text-slate-700 rounded-lg p-2.5 text-sm font-medium outline-none cursor-not-allowed">
-                            </div>
+                        <div class="max-w-sm">
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Responsable *</label>
+                            <input type="text" id="prod-empleado" readonly class="w-full border border-slate-200 bg-slate-50 text-slate-700 rounded-lg p-2.5 text-sm font-medium outline-none cursor-not-allowed">
                         </div>
-
-                        <button type="button" id="btn-precargar-pedido" onclick="precargarProductosDesdePedido()" class="hidden text-xs font-semibold text-red-600 hover:text-red-700 flex items-center space-x-1">
-                            <i data-lucide="download" class="w-3.5 h-3.5"></i><span>Precargar productos de este pedido</span>
-                        </button>
 
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                             <div>
@@ -162,7 +153,8 @@
                                 <thead class="bg-slate-100 text-xs text-slate-600 uppercase border-b border-slate-200">
                                     <tr>
                                         <th class="p-3">Producto</th>
-                                        <th class="p-3 text-center">Cant. Planificada (Kg)</th>
+                                        <th class="p-3 text-center">Cant. Planificada</th>
+                                        <th class="p-3 text-center">Unidad</th>
                                         <th class="p-3 text-center">Lote proyectado</th>
                                         <th class="p-3 text-center">Acción</th>
                                     </tr>
@@ -174,7 +166,7 @@
                         <!-- SECCIÓN 2: MATERIA PRIMA -->
                         <div class="border border-slate-200 bg-slate-50/50 rounded-xl p-4 space-y-3">
                             <div class="flex flex-wrap items-center justify-between gap-2">
-                                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Sección 2 · Requerimiento de Materia Prima (consolidado)</h4>
+                                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Sección 2 · Requerimiento de Materia Prima</h4>
                                 <button type="button" id="btn-generar-nota-mp" onclick="generarNotaPedidoMP()" class="hidden bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center space-x-1.5">
                                     <i data-lucide="send" class="w-3.5 h-3.5"></i><span>Generar Nota de Pedido de MP</span>
                                 </button>
@@ -182,7 +174,7 @@
                             <table class="w-full text-sm text-left bg-white rounded-lg overflow-hidden border border-slate-200">
                                 <thead class="bg-slate-100 text-xs text-slate-600 uppercase border-b border-slate-200">
                                     <tr>
-                                        <th class="p-3">Materia Prima / Insumo</th>
+                                        <th class="p-3">Materia Prima</th>
                                         <th class="p-3 text-center">Cant. Total Necesaria</th>
                                         <th class="p-3 text-center">Stock Disponible</th>
                                         <th class="p-3 text-center">Unidad</th>
@@ -195,25 +187,9 @@
                             </table>
                         </div>
 
-                        <!-- SECCIÓN 3: MAQUINARIA -->
-                        <div class="border border-slate-200 bg-slate-50/50 rounded-xl p-4 space-y-3">
-                            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Sección 3 · Maquinaria Requerida</h4>
-                            <table class="w-full text-sm text-left bg-white rounded-lg overflow-hidden border border-slate-200">
-                                <thead class="bg-slate-100 text-xs text-slate-600 uppercase border-b border-slate-200">
-                                    <tr>
-                                        <th class="p-3">Maquinaria</th>
-                                        <th class="p-3">Hora inicio plan.</th>
-                                        <th class="p-3">Hora fin plan.</th>
-                                        <th class="p-3 text-center">Estado</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tabla-detalle-maquinaria-produccion" class="divide-y divide-slate-100"></tbody>
-                            </table>
-                        </div>
-
                         <button onclick="registrarOrdenProduccion()" class="w-full sm:w-auto bg-red-600 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-red-700 flex items-center justify-center space-x-2">
                             <i data-lucide="save" class="w-4 h-4"></i>
-                            <span>Registrar Orden de Producción</span>
+                            <span id="texto-boton-nueva-orden">Registrar Orden de Producción</span>
                         </button>
                     </div>
                 </div>
@@ -228,11 +204,17 @@
                                 <p class="text-xs text-slate-500">Consulte el detalle, inicie la producción, cargue el avance y confirme el cierre.</p>
                             </div>
                         </div>
-                        <button type="button" onclick="volverDesdeDetalleOrden()" class="text-sm font-semibold text-slate-500 hover:text-slate-700 flex items-center space-x-1">
-                            <i data-lucide="arrow-left" class="w-4 h-4"></i><span>Volver al listado</span>
-                        </button>
+                        <div class="flex items-center gap-4">
+                            <div id="detalle-orden-acciones"></div>
+                            <button type="button" onclick="window.print()" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-800 flex items-center space-x-2">
+                                <i data-lucide="printer" class="w-4 h-4"></i><span>Imprimir</span>
+                            </button>
+                            <button type="button" onclick="volverDesdeDetalleOrden()" class="text-sm font-semibold text-slate-500 hover:text-slate-700 flex items-center space-x-1">
+                                <i data-lucide="arrow-left" class="w-4 h-4"></i><span>Volver al listado</span>
+                            </button>
+                        </div>
                     </div>
-                    <div id="detalle-orden-contenido"></div>
+                    <div id="detalle-orden-contenido" class="max-w-3xl mx-auto bg-white border border-slate-200 p-10 rounded-xl shadow-lg space-y-6"></div>
                 </div>
 
                 <!-- MODAL CIERRE COMPLETO -->
@@ -249,6 +231,377 @@
                         <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
                             <button type="button" onclick="cerrarModalCierreOrden()" class="px-4 py-2 text-sm font-semibold text-slate-500 hover:text-slate-700">Cancelar</button>
                             <button type="button" onclick="confirmarCierreOrden()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm transition">Confirmar Cierre</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PRODUCTOS: LISTADO GENERAL -->
+                <div id="vista-productos" class="hidden space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2.5 bg-teal-100 text-teal-600 rounded-xl"><i data-lucide="package" class="w-5 h-5"></i></div>
+                            <div>
+                                <h2 class="text-2xl font-bold text-slate-900">Productos</h2>
+                                <p class="text-sm text-slate-500">Catálogo de productos terminados y su stock.</p>
+                            </div>
+                        </div>
+                        <button onclick="irARegistrarProducto()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2 shadow-sm transition">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Registrar Producto</span>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3"><div class="p-2.5 bg-teal-100 text-teal-600 rounded-lg"><i data-lucide="package" class="w-5 h-5"></i></div><div><p id="kpi-productos-total" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Total Productos</p></div></div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3"><div class="p-2.5 bg-emerald-100 text-emerald-600 rounded-lg"><i data-lucide="circle-check" class="w-5 h-5"></i></div><div><p id="kpi-productos-activos"class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Activos</p></div></div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3"><div class="p-2.5 bg-slate-100 text-slate-500 rounded-lg"><i data-lucide="circle-x" class="w-5 h-5"></i></div><div><p id="kpi-productos-inactivos"class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Inactivos</p></div></div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3"><div class="p-2.5 bg-amber-100 text-amber-600 rounded-lg"><i data-lucide="triangle-alert" class="w-5 h-5"></i></div><div><p id="kpi-productos-stock-bajo" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Stock Bajo</p></div></div>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-slate-100"><h3 class="font-semibold text-slate-800">Listado de Productos</h3></div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="bg-slate-50 text-xs text-slate-500 border-b border-slate-200 uppercase">
+                                    <tr>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>N° Producto</span><button type="button" onclick="togglePopoverColumna('pop-productos-numero')" title="Buscar N°" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-productos-numero" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-productos-numero" oninput="renderizarTablaProductos()" class="w-36 border rounded px-2 py-1 text-xs" placeholder="N° Producto"></div></div></th>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Nombre</span><button type="button" onclick="ordenarListadoProductos('nombre')" title="Ordenar" class="text-slate-400 hover:text-slate-700"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button><button type="button" onclick="togglePopoverColumna('pop-productos-nombre')" title="Buscar nombre" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-productos-nombre" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-productos-nombre" oninput="renderizarTablaProductos()" class="w-36 border rounded px-2 py-1 text-xs" placeholder="Nombre"></div></div></th>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Tipo / Subtipo</span><button type="button" onclick="togglePopoverColumna('pop-productos-subtipo')" title="Filtrar por tipo" class="text-slate-400 hover:text-slate-700"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button><div id="pop-productos-subtipo" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 normal-case min-w-[11rem]"></div></div></th>
+                                        <th class="px-6 py-3">Unidad de Medida</th>
+                                        <th class="px-6 py-3 text-right"><div class="flex items-center justify-end gap-1.5 popover-trigger"><span>Precio Unitario</span><button type="button" onclick="ordenarListadoProductos('precio_unitario')" title="Ordenar" class="text-slate-400 hover:text-slate-700"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button></div></th>
+                                        <th class="px-6 py-3 text-right"><div class="flex items-center justify-end gap-1.5 popover-trigger"><span>Stock Actual</span><button type="button" onclick="ordenarListadoProductos('stock_actual')" title="Ordenar" class="text-slate-400 hover:text-slate-700"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button></div></th>
+                                        <th class="px-6 py-3 text-right">Stock Mínimo</th>
+                                        <th class="px-6 py-3 text-center"><div class="flex items-center justify-center gap-1.5 popover-trigger"><span>Estado</span><button type="button" onclick="togglePopoverColumna('pop-productos-estado')" title="Filtrar por estado" class="text-slate-400 hover:text-slate-700"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button><div id="pop-productos-estado" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 normal-case"><button type="button" onclick="elegirFiltroEstadoProducto('')" class="block w-full text-left px-2 py-1 text-xs">Todos</button><button type="button" onclick="elegirFiltroEstadoProducto('activo')" class="block w-full text-left px-2 py-1 text-xs">Activo</button><button type="button" onclick="elegirFiltroEstadoProducto('inactivo')" class="block w-full text-left px-2 py-1 text-xs">Inactivo</button></div></div></th>
+                                        <th class="px-6 py-3 text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-productos" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- REGISTRAR PRODUCTO -->
+                <div id="vista-registrar-producto" class="hidden space-y-6">
+                    <div class="flex items-center space-x-3">
+                        <button type="button" onclick="volverAProductos()" class="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition flex items-center justify-center">
+                            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                        </button>
+                        <div>
+                            <h2 id="titulo-registrar-producto" class="text-2xl font-bold text-slate-900">Registrar Producto</h2>
+                            <p class="text-sm text-slate-500">Alta de un nuevo producto en el catálogo.</p>
+                        </div>
+                    </div>
+
+                    <div class="max-w-2xl bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre *</label>
+                                <input id="prodn-nombre" type="text" placeholder="Ej: Ravioles de Ricotta y Verdura" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo *</label>
+                                <select id="prodn-tipo" onchange="poblarSelectSubtipoProductoCascada('prodn-tipo', 'prodn-subtipo')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Subtipo *</label>
+                                <select id="prodn-subtipo" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Unidad de Medida *</label>
+                                <select id="prodn-unidad" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Precio Unitario *</label>
+                                <input id="prodn-precio" type="number" min="0" placeholder="0" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Estado</label>
+                                <select id="prodn-estado" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                    <option value="true">Activo</option>
+                                    <option value="false">Inactivo</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Stock Actual</label>
+                                <input id="prodn-stock-actual" type="number" min="0" value="0" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Stock Mínimo</label>
+                                <input id="prodn-stock-minimo" type="number" min="0" value="0" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Descripción</label>
+                                <input id="prodn-descripcion" type="text" placeholder="Descripción breve del producto" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                        </div>
+                        <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                            <button type="button" onclick="volverAProductos()" class="bg-slate-100 text-slate-600 px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-200">Cancelar</button>
+                            <button onclick="guardarProducto()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2">
+                                <i data-lucide="save" class="w-4 h-4"></i><span>Guardar producto</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MATERIAS PRIMAS: LISTADO GENERAL -->
+                <div id="vista-materias-primas" class="hidden space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2.5 bg-amber-100 text-amber-600 rounded-xl"><i data-lucide="wheat" class="w-5 h-5"></i></div>
+                            <div>
+                                <h2 class="text-2xl font-bold text-slate-900">Materias Primas</h2>
+                                <p class="text-sm text-slate-500">Catálogo de insumos y su stock.</p>
+                            </div>
+                        </div>
+                        <button onclick="irARegistrarMateriaPrima()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2 shadow-sm transition">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Registrar Materia Prima</span>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3"><div class="p-2.5 bg-amber-100 text-amber-600 rounded-lg"><i data-lucide="wheat" class="w-5 h-5"></i></div><div><p id="kpi-mp-total" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Total Insumos</p></div></div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3"><div class="p-2.5 bg-emerald-100 text-emerald-600 rounded-lg"><i data-lucide="circle-check" class="w-5 h-5"></i></div><div><p id="kpi-mp-activas" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Activas</p></div></div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3"><div class="p-2.5 bg-red-100 text-red-600 rounded-lg"><i data-lucide="triangle-alert" class="w-5 h-5"></i></div><div><p id="kpi-mp-stock-bajo" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Stock Bajo</p></div></div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3"><div class="p-2.5 bg-orange-100 text-orange-600 rounded-lg"><i data-lucide="calendar-clock" class="w-5 h-5"></i></div><div><p id="kpi-mp-por-vencer" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Por Vencer (15 días)</p></div></div>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-slate-100"><h3 class="font-semibold text-slate-800">Listado de Materias Primas</h3></div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="bg-slate-50 text-xs text-slate-500 border-b border-slate-200 uppercase">
+                                    <tr>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>N° MP</span><button type="button" onclick="togglePopoverColumna('pop-mp-numero')" title="Buscar N°" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-mp-numero" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-mp-numero" oninput="renderizarTablaMateriasPrimas()" class="w-36 border rounded px-2 py-1 text-xs" placeholder="N° MP"></div></div></th>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Nombre</span><button type="button" onclick="ordenarListadoMateriasPrimas('nombre_materia_prima')" title="Ordenar" class="text-slate-400 hover:text-slate-700"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button><button type="button" onclick="togglePopoverColumna('pop-mp-nombre')" title="Buscar nombre" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-mp-nombre" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-mp-nombre" oninput="renderizarTablaMateriasPrimas()" class="w-36 border rounded px-2 py-1 text-xs" placeholder="Nombre"></div></div></th>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Tipo</span><button type="button" onclick="togglePopoverColumna('pop-mp-tipo')" title="Filtrar por tipo" class="text-slate-400 hover:text-slate-700"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button><div id="pop-mp-tipo" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 normal-case min-w-[9rem]"></div></div></th>
+                                        <th class="px-6 py-3">Marca</th>
+                                        <th class="px-6 py-3">Unidad</th>
+                                        <th class="px-6 py-3 text-right">Factor Conv.</th>
+                                        <th class="px-6 py-3 text-right"><div class="flex items-center justify-end gap-1.5 popover-trigger"><span>Stock Actual</span><button type="button" onclick="ordenarListadoMateriasPrimas('stock_actual')" title="Ordenar" class="text-slate-400 hover:text-slate-700"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button></div></th>
+                                        <th class="px-6 py-3 text-right">Stock Mínimo</th>
+                                        <th class="px-6 py-3 text-right">Stock Máximo</th>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Vencimiento</span><button type="button" onclick="togglePopoverColumna('pop-mp-vencimiento')" title="Filtrar por fecha" class="text-slate-400 hover:text-slate-700"><i data-lucide="calendar-search" class="w-3.5 h-3.5"></i></button><div id="pop-mp-vencimiento" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-mp-vencimiento" type="date" onchange="renderizarTablaMateriasPrimas()" class="border rounded px-2 py-1 text-xs"></div></div></th>
+                                        <th class="px-6 py-3 text-right">Precio Unitario</th>
+                                        <th class="px-6 py-3 text-center"><div class="flex items-center justify-center gap-1.5 popover-trigger"><span>Estado</span><button type="button" onclick="togglePopoverColumna('pop-mp-estado')" title="Filtrar por estado" class="text-slate-400 hover:text-slate-700"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button><div id="pop-mp-estado" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 normal-case"><button type="button" onclick="elegirFiltroEstadoMateriaPrima('')" class="block w-full text-left px-2 py-1 text-xs">Todos</button><button type="button" onclick="elegirFiltroEstadoMateriaPrima('activa')" class="block w-full text-left px-2 py-1 text-xs">Activa</button><button type="button" onclick="elegirFiltroEstadoMateriaPrima('inactiva')" class="block w-full text-left px-2 py-1 text-xs">Inactiva</button></div></div></th>
+                                        <th class="px-6 py-3 text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-materias-primas" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- REGISTRAR MATERIA PRIMA -->
+                <div id="vista-registrar-materia-prima" class="hidden space-y-6">
+                    <div class="flex items-center space-x-3">
+                        <button type="button" onclick="volverAMateriasPrimas()" class="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition flex items-center justify-center">
+                            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                        </button>
+                        <div>
+                            <h2 id="titulo-registrar-materia-prima" class="text-2xl font-bold text-slate-900">Registrar Materia Prima</h2>
+                            <p class="text-sm text-slate-500">Alta de un nuevo insumo en el catálogo.</p>
+                        </div>
+                    </div>
+
+                    <div class="max-w-2xl bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre *</label>
+                                <input id="mpn-nombre" type="text" placeholder="Ej: Harina 0000" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo de Materia Prima *</label>
+                                <select id="mpn-tipo" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Marca *</label>
+                                <select id="mpn-marca" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Unidad de Medida *</label>
+                                <select id="mpn-unidad" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Factor de Conversión *</label>
+                                <input id="mpn-factor" type="number" min="1" value="1" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Precio Unitario *</label>
+                                <input id="mpn-precio" type="number" min="0" placeholder="0" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Stock Actual</label>
+                                <input id="mpn-stock-actual" type="number" min="0" value="0" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Stock Mínimo</label>
+                                <input id="mpn-stock-minimo" type="number" min="0" value="0" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Stock Máximo</label>
+                                <input id="mpn-stock-maximo" type="number" min="0" value="0" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Estado</label>
+                                <select id="mpn-estado" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                    <option value="true">Activa</option>
+                                    <option value="false">Inactiva</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center gap-2 pt-6">
+                                <input type="checkbox" id="mpn-tiene-vencimiento" onchange="actualizarVisibilidadVencimientoMP()" class="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500">
+                                <label for="mpn-tiene-vencimiento" class="text-xs font-semibold text-slate-600">Tiene fecha de vencimiento</label>
+                            </div>
+                            <div id="wrap-mpn-vencimiento" class="hidden">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha de Vencimiento *</label>
+                                <input id="mpn-fecha-vencimiento" type="date" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                        </div>
+                        <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                            <button type="button" onclick="volverAMateriasPrimas()" class="bg-slate-100 text-slate-600 px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-200">Cancelar</button>
+                            <button onclick="guardarMateriaPrima()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2">
+                                <i data-lucide="save" class="w-4 h-4"></i><span>Guardar materia prima</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MAQUINARIA: LISTADO GENERAL -->
+                <div id="vista-maquinaria" class="hidden space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2.5 bg-violet-100 text-violet-600 rounded-xl"><i data-lucide="cog" class="w-5 h-5"></i></div>
+                            <div>
+                                <h2 class="text-2xl font-bold text-slate-900">Catálogo de Maquinaria</h2>
+                                <p class="text-sm text-slate-500">Equipos y maquinarias de la fábrica.</p>
+                            </div>
+                        </div>
+                        <button onclick="irARegistrarMaquinaria()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2 shadow-sm transition">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Registrar Maquinaria</span>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3"><div class="p-2.5 bg-violet-100 text-violet-600 rounded-lg"><i data-lucide="cog" class="w-5 h-5"></i></div><div><p id="kpi-maquinaria-total" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Total Máquinas</p></div></div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3"><div class="p-2.5 bg-emerald-100 text-emerald-600 rounded-lg"><i data-lucide="circle-check" class="w-5 h-5"></i></div><div><p id="kpi-maquinaria-operativa" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Operativas</p></div></div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3"><div class="p-2.5 bg-amber-100 text-amber-600 rounded-lg"><i data-lucide="wrench" class="w-5 h-5"></i></div><div><p id="kpi-maquinaria-reparacion" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">En Reparación</p></div></div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3"><div class="p-2.5 bg-red-100 text-red-600 rounded-lg"><i data-lucide="circle-x" class="w-5 h-5"></i></div><div><p id="kpi-maquinaria-fuera-servicio" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Fuera de Servicio</p></div></div>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-slate-100">
+                            <div class="flex items-center justify-between gap-3"><h3 class="font-semibold text-slate-800">Listado de Maquinarias</h3></div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="bg-slate-50 text-xs text-slate-500 border-b border-slate-200 uppercase">
+                                    <tr>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>N° Máquina</span><button type="button" onclick="togglePopoverColumna('pop-maq-numero')" title="Buscar N° Máquina" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-maq-numero" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-maq-numero" oninput="filtrarListadoMaquinaria()" class="w-36 border rounded px-2 py-1 text-xs" placeholder="N° Máquina"></div></div></th>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Nombre</span><button type="button" onclick="ordenarListadoMaquinaria('nombre')" title="Ordenar" class="text-slate-400 hover:text-slate-700"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button><button type="button" onclick="togglePopoverColumna('pop-maq-nombre')" title="Buscar nombre" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-maq-nombre" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-maq-nombre" oninput="filtrarListadoMaquinaria()" class="w-36 border rounded px-2 py-1 text-xs" placeholder="Nombre"></div></div></th>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Marca</span><button type="button" onclick="ordenarListadoMaquinaria('marca')" title="Ordenar" class="text-slate-400 hover:text-slate-700"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button><button type="button" onclick="togglePopoverColumna('pop-maq-marca')" title="Buscar marca" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-maq-marca" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-maq-marca" oninput="filtrarListadoMaquinaria()" class="w-36 border rounded px-2 py-1 text-xs" placeholder="Marca"></div></div></th>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Modelo</span><button type="button" onclick="ordenarListadoMaquinaria('modelo')" title="Ordenar" class="text-slate-400 hover:text-slate-700"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button><button type="button" onclick="togglePopoverColumna('pop-maq-modelo')" title="Buscar modelo" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-maq-modelo" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-maq-modelo" oninput="filtrarListadoMaquinaria()" class="w-36 border rounded px-2 py-1 text-xs" placeholder="Modelo"></div></div></th>
+                                        <th class="px-6 py-3">Descripción</th>
+                                        <th class="px-6 py-3">Unidad de Tiempo</th>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Fecha Adquisición</span><button type="button" onclick="togglePopoverColumna('pop-maq-fecha')" title="Filtrar por fecha" class="text-slate-400 hover:text-slate-700"><i data-lucide="calendar-search" class="w-3.5 h-3.5"></i></button><div id="pop-maq-fecha" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-maq-fecha" type="date" onchange="filtrarListadoMaquinaria()" class="border rounded px-2 py-1 text-xs"></div></div></th>
+                                        <th class="px-6 py-3 text-center"><div class="flex items-center justify-center gap-1.5 popover-trigger"><span>Estado</span><button type="button" onclick="togglePopoverColumna('pop-maq-estado')" title="Filtrar por estado" class="text-slate-400 hover:text-slate-700"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button><div id="pop-maq-estado" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 normal-case"><button type="button" onclick="elegirFiltroEstadoMaquinaria('')" class="block w-full text-left px-2 py-1 text-xs">Todos</button><button type="button" onclick="elegirFiltroEstadoMaquinaria('Operativa')" class="block w-full text-left px-2 py-1 text-xs">Operativa</button><button type="button" onclick="elegirFiltroEstadoMaquinaria('En reparación')" class="block w-full text-left px-2 py-1 text-xs">En reparación</button><button type="button" onclick="elegirFiltroEstadoMaquinaria('Fuera de servicio')" class="block w-full text-left px-2 py-1 text-xs">Fuera de servicio</button></div></div></th>
+                                        <th class="px-6 py-3 text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-maquinaria" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- REGISTRAR MAQUINARIA -->
+                <div id="vista-registrar-maquinaria" class="hidden space-y-6">
+                    <div class="flex items-center space-x-3">
+                        <button type="button" onclick="volverAMaquinaria()" class="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition flex items-center justify-center">
+                            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                        </button>
+                        <div>
+                            <h2 id="titulo-registrar-maquinaria" class="text-2xl font-bold text-slate-900">Registrar Maquinaria</h2>
+                            <p class="text-sm text-slate-500">Alta de un nuevo equipo en el catálogo de maquinaria.</p>
+                        </div>
+                    </div>
+
+                    <div class="max-w-2xl bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre *</label>
+                                <input id="maq-nombre" type="text" placeholder="Ej: Sobadora Industrial" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Marca *</label>
+                                <select id="maq-marca" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Modelo *</label>
+                                <input id="maq-modelo" type="text" placeholder="Ej: IM-450" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha de adquisición *</label>
+                                <input id="maq-fecha-adquisicion" type="date" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Unidad de Tiempo *</label>
+                                <select id="maq-unidad-tiempo" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                    <option value="Horas">Horas</option>
+                                    <option value="Turnos">Turnos</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Descripción</label>
+                                <input id="maq-descripcion" type="text" placeholder="Descripción breve de la maquinaria" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Estado</label>
+                                <select id="maq-estado" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                    <option>Operativa</option>
+                                    <option>En reparación</option>
+                                    <option>Fuera de servicio</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                            <button type="button" onclick="volverAMaquinaria()" class="bg-slate-100 text-slate-600 px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-200">Cancelar</button>
+                            <button onclick="guardarMaquinaria()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2">
+                                <i data-lucide="save" class="w-4 h-4"></i><span>Guardar máquina</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- HISTORIAL MANTENIMIENTOS POR MÁQUINA -->
+                <div id="vista-historial-maquina" class="hidden space-y-6">
+                    <div class="flex items-center space-x-3">
+                        <button type="button" onclick="volverDesdeHistorialMaquina()" class="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition flex items-center justify-center">
+                            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                        </button>
+                        <div>
+                            <h2 id="historial-maquina-titulo" class="text-2xl font-bold text-slate-900">Listado de Mantenimientos</h2>
+                            <p class="text-sm text-slate-500">Registros de trabajos realizados sobre este equipo.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="bg-slate-50 text-xs text-slate-500 border-b border-slate-200 uppercase">
+                                    <tr>
+                                        <th class="px-6 py-3">Código</th>
+                                        <th class="px-6 py-3">Tipo</th>
+                                        <th class="px-6 py-3">Período</th>
+                                        <th class="px-6 py-3">Tareas Realizadas</th>
+                                        <th class="px-6 py-3">Próximo Mantenimiento</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-historial-maquina" class="divide-y divide-slate-100"></tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
