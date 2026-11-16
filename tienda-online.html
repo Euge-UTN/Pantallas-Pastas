@@ -6,11 +6,15 @@
 <title>Fábrica de Pastas - Tienda Online</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/estilos.css">
 <style>
+    body { font-family: 'Inter', sans-serif; }
     .toast { animation: slideIn .25s ease-out; }
     @keyframes slideIn { from { transform: translateY(-10px); opacity:0; } to { transform: translateY(0); opacity:1; } }
-    .cart-drawer { transition: transform .3s ease; }
+    .cart-drawer { transition: transform .3s cubic-bezier(0.16, 1, 0.3, 1); }
     .step-dot.active { background-color:#dc2626; color:#fff; }
     .step-line.active { background-color:#dc2626; }
     ::-webkit-scrollbar { width:8px; height:8px; }
@@ -23,107 +27,107 @@
     }
 </style>
 </head>
-<body class="bg-slate-50 text-slate-800">
+<body class="bg-slate-50 text-slate-800 antialiased selection:bg-red-500 selection:text-white">
 
 <!-- TOASTS -->
 <div id="toast-container" class="fixed top-4 right-4 z-[100] space-y-2 no-print"></div>
 
 <!-- HEADER -->
-<header class="bg-white border-b border-slate-200 sticky top-0 z-40 no-print">
+<header class="bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40 no-print transition-all">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
-        <div class="flex items-center space-x-3 cursor-pointer" onclick="irA('inicio')">
-            <div class="p-2 bg-red-600 text-white rounded-lg"><i data-lucide="utensils-crossed" class="w-5 h-5"></i></div>
+        <div class="flex items-center space-x-3 cursor-pointer group" onclick="irA('inicio')">
+            <div class="p-2.5 bg-red-600 text-white rounded-xl shadow-sm group-hover:bg-red-700 transition"><i data-lucide="utensils-crossed" class="w-5 h-5"></i></div>
             <div class="leading-tight">
                 <p class="font-bold text-slate-900 text-sm sm:text-base">Fábrica de Pastas</p>
-                <p class="text-[11px] text-slate-500 -mt-0.5">Tienda Online</p>
+                <p class="text-[11px] text-slate-500 font-medium -mt-0.5">Tienda Online</p>
             </div>
         </div>
 
         <nav class="hidden md:flex items-center space-x-1 text-sm font-medium">
-            <button onclick="irA('inicio')" class="px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-600">Inicio</button>
-            <button onclick="irA('productos')" class="px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-600">Productos</button>
-            <button id="nav-mis-pedidos" onclick="irAProtegido('mis-pedidos')" class="hidden px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-600">Mis Pedidos</button>
+            <button onclick="irA('inicio')" class="px-3.5 py-2 rounded-xl hover:bg-slate-100 text-slate-600 transition">Inicio</button>
+            <button onclick="irA('productos')" class="px-3.5 py-2 rounded-xl hover:bg-slate-100 text-slate-600 transition">Productos</button>
+            <button id="nav-mis-pedidos" onclick="irAProtegido('mis-pedidos')" class="hidden px-3.5 py-2 rounded-xl hover:bg-slate-100 text-slate-600 transition">Mis Pedidos</button>
         </nav>
 
         <div class="flex items-center space-x-2">
             <div id="caja-sesion" class="relative hidden sm:block"></div>
-            <button onclick="toggleCarrito(true)" class="relative p-2.5 rounded-lg hover:bg-slate-100">
+            <button onclick="toggleCarrito(true)" class="relative p-2.5 rounded-xl hover:bg-slate-100 transition active:scale-95">
                 <i data-lucide="shopping-cart" class="w-5 h-5 text-slate-700"></i>
-                <span id="badge-carrito" class="hidden absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">0</span>
+                <span id="badge-carrito" class="hidden absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center ring-2 ring-white">0</span>
             </button>
-            <button onclick="document.getElementById('mobile-nav').classList.toggle('hidden')" class="md:hidden p-2.5 rounded-lg hover:bg-slate-100">
+            <button onclick="document.getElementById('mobile-nav').classList.toggle('hidden')" class="md:hidden p-2.5 rounded-xl hover:bg-slate-100">
                 <i data-lucide="menu" class="w-5 h-5"></i>
             </button>
         </div>
     </div>
-    <div id="mobile-nav" class="hidden md:hidden border-t border-slate-100 px-4 py-3 space-y-1 text-sm font-medium">
-        <button onclick="irA('inicio'); cerrarMenuMobile()" class="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100">Inicio</button>
-        <button onclick="irA('productos'); cerrarMenuMobile()" class="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100">Productos</button>
-        <button id="nav-mis-pedidos-mobile" onclick="irAProtegido('mis-pedidos'); cerrarMenuMobile()" class="hidden w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100">Mis Pedidos</button>
+    <div id="mobile-nav" class="hidden md:hidden border-t border-slate-100 px-4 py-3 space-y-1 text-sm font-medium bg-white">
+        <button onclick="irA('inicio'); cerrarMenuMobile()" class="block w-full text-left px-3 py-2 rounded-xl hover:bg-slate-100">Inicio</button>
+        <button onclick="irA('productos'); cerrarMenuMobile()" class="block w-full text-left px-3 py-2 rounded-xl hover:bg-slate-100">Productos</button>
+        <button id="nav-mis-pedidos-mobile" onclick="irAProtegido('mis-pedidos'); cerrarMenuMobile()" class="hidden w-full text-left px-3 py-2 rounded-xl hover:bg-slate-100">Mis Pedidos</button>
         <div id="caja-sesion-mobile" class="pt-2 border-t border-slate-100"></div>
     </div>
 </header>
 
 <!-- ================= VISTA INICIO ================= -->
 <main id="vista-inicio" class="space-y-14 pb-14">
-    <div class="relative overflow-hidden bg-gradient-to-br from-red-600 to-red-800 text-white">
+    <div class="relative overflow-hidden bg-gradient-to-br from-red-600 via-red-700 to-red-800 text-white shadow-inner">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 relative z-10">
-            <p class="text-red-100 text-sm font-semibold tracking-wide uppercase mb-2">Pastas y salsas artesanales</p>
-            <h1 class="text-3xl sm:text-5xl font-bold mb-4 max-w-2xl">Hechas como en casa, ahora a un clic</h1>
-            <p class="text-red-50 text-sm sm:text-lg max-w-xl mb-6">Elaboramos pastas frescas y tres variedades de salsas todos los días. Comprá por la web: elegí tus productos, retirá en el local o pedí envío a domicilio.</p>
+            <span class="inline-block bg-red-500/30 backdrop-blur-md text-red-100 text-xs font-semibold tracking-wider uppercase px-3 py-1 rounded-full mb-3 border border-white/10">Pastas y salsas artesanales</span>
+            <h1 class="text-3xl sm:text-5xl font-extrabold mb-4 max-w-2xl leading-tight">Hechas como en casa, ahora a un clic</h1>
+            <p class="text-red-50 text-sm sm:text-lg max-w-xl mb-8 leading-relaxed opacity-90">Elaboramos pastas frescas y tres variedades de salsas todos los días. Comprá por la web: elegí tus productos, retirá en el local o pedí envío a domicilio.</p>
             <div class="flex flex-wrap gap-3">
-                <button onclick="irA('productos')" class="bg-white text-red-700 font-semibold px-6 py-3 rounded-lg text-sm hover:bg-red-50 flex items-center space-x-2">
+                <button onclick="irA('productos')" class="bg-white text-red-700 font-bold px-6 py-3.5 rounded-xl text-sm hover:bg-red-50 transition shadow-lg flex items-center space-x-2 active:scale-95">
                     <i data-lucide="shopping-bag" class="w-4 h-4"></i><span>Ver productos</span>
                 </button>
-                <button onclick="irA('acceso')" id="btn-hero-cuenta" class="bg-red-700/40 border border-white/40 text-white font-semibold px-6 py-3 rounded-lg text-sm hover:bg-red-700/60">Crear mi cuenta</button>
+                <button onclick="irA('acceso')" id="btn-hero-cuenta" class="bg-red-900/30 border border-white/30 text-white font-semibold px-6 py-3.5 rounded-xl text-sm hover:bg-red-900/50 transition">Crear mi cuenta</button>
             </div>
         </div>
-        <i data-lucide="chef-hat" class="w-56 h-56 absolute -right-8 -bottom-10 text-red-500/30 hidden lg:block"></i>
+        <i data-lucide="chef-hat" class="w-64 h-64 absolute -right-8 -bottom-10 text-red-500/20 hidden lg:block pointer-events-none"></i>
     </div>
 
     <section class="max-w-7xl mx-auto px-4 sm:px-6">
         <h2 class="text-xl font-bold text-slate-900 mb-6 text-center">¿Cómo comprar?</h2>
         <div class="grid grid-cols-1 sm:grid-cols-4 gap-5">
-            <div class="bg-white border border-slate-200 rounded-xl p-5 text-center space-y-2">
-                <div class="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto"><i data-lucide="list" class="w-5 h-5"></i></div>
-                <p class="font-semibold text-sm text-slate-800">1. Elegí tus productos</p>
-                <p class="text-xs text-slate-500">Recorré el catálogo y agregalos al carrito.</p>
+            <div class="bg-white border border-slate-200/80 rounded-2xl p-5 text-center space-y-2.5 shadow-sm hover:shadow-md transition duration-200">
+                <div class="w-12 h-12 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mx-auto"><i data-lucide="list" class="w-6 h-6"></i></div>
+                <p class="font-bold text-sm text-slate-800">1. Elegí tus productos</p>
+                <p class="text-xs text-slate-500 leading-relaxed">Recorré el catálogo y agregalos al carrito.</p>
             </div>
-            <div class="bg-white border border-slate-200 rounded-xl p-5 text-center space-y-2">
-                <div class="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto"><i data-lucide="user-plus" class="w-5 h-5"></i></div>
-                <p class="font-semibold text-sm text-slate-800">2. Identificate</p>
-                <p class="text-xs text-slate-500">Iniciá sesión o creá tu cuenta de cliente.</p>
+            <div class="bg-white border border-slate-200/80 rounded-2xl p-5 text-center space-y-2.5 shadow-sm hover:shadow-md transition duration-200">
+                <div class="w-12 h-12 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mx-auto"><i data-lucide="user-plus" class="w-6 h-6"></i></div>
+                <p class="font-bold text-sm text-slate-800">2. Identificate</p>
+                <p class="text-xs text-slate-500 leading-relaxed">Iniciá sesión o creá tu cuenta de cliente.</p>
             </div>
-            <div class="bg-white border border-slate-200 rounded-xl p-5 text-center space-y-2">
-                <div class="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto"><i data-lucide="truck" class="w-5 h-5"></i></div>
-                <p class="font-semibold text-sm text-slate-800">3. Elegí entrega y pago</p>
-                <p class="text-xs text-slate-500">Retiro en el local o envío a domicilio.</p>
+            <div class="bg-white border border-slate-200/80 rounded-2xl p-5 text-center space-y-2.5 shadow-sm hover:shadow-md transition duration-200">
+                <div class="w-12 h-12 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mx-auto"><i data-lucide="truck" class="w-6 h-6"></i></div>
+                <p class="font-bold text-sm text-slate-800">3. Elegí entrega y pago</p>
+                <p class="text-xs text-slate-500 leading-relaxed">Retiro en el local o envío a domicilio.</p>
             </div>
-            <div class="bg-white border border-slate-200 rounded-xl p-5 text-center space-y-2">
-                <div class="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto"><i data-lucide="package-check" class="w-5 h-5"></i></div>
-                <p class="font-semibold text-sm text-slate-800">4. Recibí tu pedido</p>
-                <p class="text-xs text-slate-500">Seguilo desde "Mis Pedidos" hasta la entrega.</p>
+            <div class="bg-white border border-slate-200/80 rounded-2xl p-5 text-center space-y-2.5 shadow-sm hover:shadow-md transition duration-200">
+                <div class="w-12 h-12 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mx-auto"><i data-lucide="package-check" class="w-6 h-6"></i></div>
+                <p class="font-bold text-sm text-slate-800">4. Recibí tu pedido</p>
+                <p class="text-xs text-slate-500 leading-relaxed">Seguilo desde "Mis Pedidos" hasta la entrega.</p>
             </div>
         </div>
     </section>
 
     <section class="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
         <div class="space-y-3">
-            <p class="text-xs font-bold uppercase tracking-wide text-red-600">Sobre la fábrica</p>
-            <h2 class="text-2xl font-bold text-slate-900">Pastas frescas elaboradas todos los días</h2>
-            <p class="text-sm text-slate-600">Fabricamos pastas de todo tipo y tres variedades de salsas, con maquinaria propia y recetas cuidadas al detalle. Esta tienda online está pensada para que compres fácil, elijas cómo retirar tu pedido y pagues como prefieras.</p>
-            <ul class="text-sm text-slate-600 space-y-1.5 pt-2">
-                <li class="flex items-center space-x-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600"></i><span>Elaboración artesanal diaria</span></li>
-                <li class="flex items-center space-x-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600"></i><span>Retiro en el local o envío a domicilio</span></li>
+            <span class="text-xs font-bold uppercase tracking-wider text-red-600">Sobre la fábrica</span>
+            <h2 class="text-2xl sm:text-3xl font-bold text-slate-900">Pastas frescas elaboradas todos los días</h2>
+            <p class="text-sm text-slate-600 leading-relaxed">Fabricamos pastas de todo tipo y tres variedades de salsas, con maquinaria propia y recetas cuidadas al detalle. Esta tienda online está pensada para que compres fácil, elijas cómo retirar tu pedido y pagues como prefieras.</p>
+            <ul class="text-sm text-slate-600 space-y-2 pt-2">
+                <li class="flex items-center space-x-2.5"><i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600"></i><span>Elaboración artesanal diaria</span></li>
+                <li class="flex items-center space-x-2.5"><i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600"></i><span>Retiro en el local o envío a domicilio</span></li>
             </ul>
         </div>
-        <div class="bg-white border border-slate-200 rounded-xl p-6 space-y-4">
-            <p class="text-sm font-semibold text-slate-800">Medios de pago aceptados</p>
+        <div class="bg-white border border-slate-200/80 rounded-2xl p-6 space-y-4 shadow-sm">
+            <p class="text-sm font-bold text-slate-800">Medios de pago aceptados</p>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-                <div class="bg-slate-50 rounded-lg p-3"><i data-lucide="banknote" class="w-5 h-5 mx-auto text-slate-500 mb-1"></i><p class="text-[11px] text-slate-600">Efectivo</p></div>
-                <div class="bg-slate-50 rounded-lg p-3"><i data-lucide="credit-card" class="w-5 h-5 mx-auto text-slate-500 mb-1"></i><p class="text-[11px] text-slate-600">Tarjeta de Débito</p></div>
-                <div class="bg-slate-50 rounded-lg p-3"><i data-lucide="landmark" class="w-5 h-5 mx-auto text-slate-500 mb-1"></i><p class="text-[11px] text-slate-600">Transferencia Bancaria</p></div>
-                <div class="bg-slate-50 rounded-lg p-3"><i data-lucide="wallet" class="w-5 h-5 mx-auto text-slate-500 mb-1"></i><p class="text-[11px] text-slate-600">Billetera Virtual</p></div>
+                <div class="bg-slate-50 border border-slate-100 rounded-xl p-3.5"><i data-lucide="banknote" class="w-5 h-5 mx-auto text-slate-600 mb-1"></i><p class="text-xs font-medium text-slate-700">Efectivo</p></div>
+                <div class="bg-slate-50 border border-slate-100 rounded-xl p-3.5"><i data-lucide="credit-card" class="w-5 h-5 mx-auto text-slate-600 mb-1"></i><p class="text-xs font-medium text-slate-700">Débito</p></div>
+                <div class="bg-slate-50 border border-slate-100 rounded-xl p-3.5"><i data-lucide="landmark" class="w-5 h-5 mx-auto text-slate-600 mb-1"></i><p class="text-xs font-medium text-slate-700">Transferencia</p></div>
+                <div class="bg-slate-50 border border-slate-100 rounded-xl p-3.5"><i data-lucide="wallet" class="w-5 h-5 mx-auto text-slate-600 mb-1"></i><p class="text-xs font-medium text-slate-700">Billetera Virtual</p></div>
             </div>
         </div>
     </section>
@@ -131,7 +135,7 @@
     <section class="max-w-7xl mx-auto px-4 sm:px-6">
         <div class="flex items-center justify-between mb-6">
             <h2 class="text-xl font-bold text-slate-900">Productos destacados</h2>
-            <button onclick="irA('productos')" class="text-sm font-semibold text-red-600 hover:underline">Ver todo →</button>
+            <button onclick="irA('productos')" class="text-sm font-semibold text-red-600 hover:text-red-700 transition flex items-center space-x-1"><span>Ver todo</span><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
         </div>
         <div id="grid-destacados" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"></div>
     </section>
@@ -141,65 +145,98 @@
 <main id="vista-productos" class="hidden max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
     <div>
         <h2 class="text-2xl font-bold text-slate-900">Nuestros Productos</h2>
-        <p class="text-sm text-slate-500">Pastas frescas y tres variedades de salsas.</p>
+        <p class="text-sm text-slate-500 mt-0.5">Pastas frescas y tres variedades de salsas.</p>
     </div>
 
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div class="flex items-center gap-2 overflow-x-auto pb-1" id="filtros-categoria">
-            <button data-cat="Todas" onclick="filtrarCategoria('Todas')" class="chip-cat px-4 py-2 rounded-full text-sm font-semibold bg-red-600 text-white whitespace-nowrap">Todas</button>
-            <button data-cat="Pastas Rellenas" onclick="filtrarCategoria('Pastas Rellenas')" class="chip-cat px-4 py-2 rounded-full text-sm font-semibold bg-white border border-slate-200 text-slate-600 whitespace-nowrap">Pastas Rellenas</button>
-            <button data-cat="Pastas Secas" onclick="filtrarCategoria('Pastas Secas')" class="chip-cat px-4 py-2 rounded-full text-sm font-semibold bg-white border border-slate-200 text-slate-600 whitespace-nowrap">Pastas Secas</button>
-            <button data-cat="Salsas" onclick="filtrarCategoria('Salsas')" class="chip-cat px-4 py-2 rounded-full text-sm font-semibold bg-white border border-slate-200 text-slate-600 whitespace-nowrap">Salsas</button>
+            <button data-cat="Todas" onclick="filtrarCategoria('Todas')" class="chip-cat px-4 py-2 rounded-xl text-sm font-semibold bg-red-600 text-white shadow-sm whitespace-nowrap">Todas</button>
+            <button data-cat="Pastas Rellenas" onclick="filtrarCategoria('Pastas Rellenas')" class="chip-cat px-4 py-2 rounded-xl text-sm font-semibold bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 whitespace-nowrap">Pastas Rellenas</button>
+            <button data-cat="Pastas Secas" onclick="filtrarCategoria('Pastas Secas')" class="chip-cat px-4 py-2 rounded-xl text-sm font-semibold bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 whitespace-nowrap">Pastas Secas</button>
+            <button data-cat="Salsas" onclick="filtrarCategoria('Salsas')" class="chip-cat px-4 py-2 rounded-xl text-sm font-semibold bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 whitespace-nowrap">Salsas</button>
         </div>
         <div class="relative w-full sm:w-72">
-            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-            <input id="input-buscar-producto" oninput="renderCatalogo()" type="text" placeholder="Buscar producto..." class="w-full border border-slate-300 rounded-lg pl-9 pr-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input id="input-buscar-producto" oninput="renderCatalogo()" type="text" placeholder="Buscar producto..." class="w-full bg-white border border-slate-300 rounded-xl pl-10 pr-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition">
         </div>
     </div>
 
-    <div id="grid-productos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+    <div id="grid-productos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
 </main>
+
+<!-- ================= MODAL DETALLE DE PRODUCTO ================= -->
+<div id="modal-detalle-producto" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl space-y-0">
+        <div class="relative h-56 bg-slate-100">
+            <img id="modal-prod-img" src="" alt="" class="w-full h-full object-cover">
+            <button onclick="cerrarModalProducto()" class="absolute top-3 right-3 p-1.5 bg-white/80 hover:bg-white text-slate-600 rounded-full backdrop-blur-md transition shadow-md">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <span id="modal-prod-cat" class="absolute bottom-3 left-3 bg-red-600 text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-md"></span>
+        </div>
+        <div class="p-6 space-y-4">
+            <div>
+                <h3 id="modal-prod-nombre" class="font-bold text-xl text-slate-900"></h3>
+                <p id="modal-prod-precio" class="text-lg font-extrabold text-red-600 mt-0.5"></p>
+            </div>
+            <p id="modal-prod-desc" class="text-sm text-slate-600 leading-relaxed"></p>
+            <div id="modal-prod-extra" class="bg-slate-50 border border-slate-100 rounded-xl p-3.5 text-xs text-slate-500 space-y-1.5"></div>
+            
+            <div class="flex items-center justify-between pt-2">
+                <div class="flex items-center space-x-2 border border-slate-200 rounded-xl p-1 bg-slate-50">
+                    <button onclick="modificarCantidadModal(-1)" class="w-8 h-8 rounded-lg bg-white shadow-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center justify-center">-</button>
+                    <span id="modal-prod-cant" class="text-sm font-bold w-8 text-center text-slate-900">1</span>
+                    <button onclick="modificarCantidadModal(1)" class="w-8 h-8 rounded-lg bg-white shadow-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center justify-center">+</button>
+                </div>
+                <button id="modal-prod-btn-agregar" onclick="" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl text-sm font-bold shadow-sm transition flex items-center space-x-2 active:scale-95">
+                    <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                    <span>Agregar al carrito</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- ================= VISTA ACCESO ================= -->
 <main id="vista-acceso" class="hidden max-w-xl mx-auto px-4 sm:px-6 py-10">
-    <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-5">
+    <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-5">
         <div class="flex border-b border-slate-200">
-            <button onclick="mostrarTabAuth('login')" id="tab-btn-login" class="px-4 py-2 text-sm font-semibold border-b-2 border-red-600 text-red-600">Iniciar sesión</button>
-            <button onclick="mostrarTabAuth('registro')" id="tab-btn-registro" class="px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-500">Registrarme</button>
+            <button onclick="mostrarTabAuth('login')" id="tab-btn-login" class="px-5 py-2.5 text-sm font-bold border-b-2 border-red-600 text-red-600">Iniciar sesión</button>
+            <button onclick="mostrarTabAuth('registro')" id="tab-btn-registro" class="px-5 py-2.5 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-700">Registrarme</button>
         </div>
 
-        <div id="tab-login" class="space-y-3">
-            <p class="text-sm text-slate-500">Ingresá con tu usuario para identificarte como cliente registrado.</p>
+        <div id="tab-login" class="space-y-4">
+            <p class="text-sm text-slate-500 leading-relaxed">Ingresá con tu usuario para identificarte como cliente registrado.</p>
             <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Usuario (email)</label>
-                <input id="login-usuario" type="text" placeholder="jperez@gmail.com" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                <input id="login-usuario" type="text" placeholder="jperez@gmail.com" class="w-full border border-slate-300 rounded-xl p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition">
             </div>
             <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Contraseña</label>
                 <div class="relative">
-                    <input id="login-password" type="password" placeholder="••••••••" class="w-full border border-slate-300 rounded-lg p-2.5 pr-10 text-sm outline-none focus:ring-2 focus:ring-red-500">
-                    <button type="button" onclick="togglePassword('login-password', this)" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                    <input id="login-password" type="password" placeholder="••••••••" class="w-full border border-slate-300 rounded-xl p-2.5 pr-10 text-sm outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition">
+                    <button type="button" onclick="togglePassword('login-password', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                         <i data-lucide="eye" class="w-4 h-4"></i>
                     </button>
                 </div>
             </div>
-            <button onclick="loginCliente()" class="w-full bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-lg text-sm font-semibold">Ingresar</button>
+            <button onclick="loginCliente()" class="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl text-sm font-bold shadow-sm transition active:scale-[0.99]">Ingresar</button>
         </div>
 
         <div id="tab-registro" class="hidden space-y-4">
-            <p class="text-sm text-slate-500">Completá tus datos para registrarte como cliente de la fábrica.</p>
+            <p class="text-sm text-slate-500 leading-relaxed">Completá tus datos para registrarte como cliente de la fábrica.</p>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre *</label>
-                    <input id="reg-nombre" type="text" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                    <input id="reg-nombre" type="text" class="w-full border border-slate-300 rounded-xl p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Apellido *</label>
-                    <input id="reg-apellido" type="text" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                    <input id="reg-apellido" type="text" class="w-full border border-slate-300 rounded-xl p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo de Documento *</label>
-                    <select id="reg-tipo-documento" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                    <select id="reg-tipo-documento" class="w-full border border-slate-300 rounded-xl p-2.5 text-sm outline-none bg-white">
                         <option value="DNI">DNI</option>
                         <option value="CUIT">CUIT</option>
                         <option value="CUIL">CUIL</option>
@@ -207,43 +244,43 @@
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Número de Documento *</label>
-                    <input id="reg-numero-documento" type="text" placeholder="30123456" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                    <input id="reg-numero-documento" type="text" placeholder="30123456" class="w-full border border-slate-300 rounded-xl p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Provincia *</label>
-                    <select id="reg-provincia" onchange="actualizarEstiloSelect(this); cargarLocalidadesCascada('reg')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none text-slate-400"></select>
+                    <select id="reg-provincia" onchange="actualizarEstiloSelect(this); cargarLocalidadesCascada('reg')" class="w-full border border-slate-300 rounded-xl p-2.5 text-sm outline-none bg-white text-slate-400"></select>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Localidad *</label>
-                    <select id="reg-localidad" onchange="actualizarEstiloSelect(this); cargarCallesCascada('reg')" disabled class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none text-slate-400"></select>
+                    <select id="reg-localidad" onchange="actualizarEstiloSelect(this); cargarCallesCascada('reg')" disabled class="w-full border border-slate-300 rounded-xl p-2.5 text-sm outline-none bg-white text-slate-400"></select>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Calle *</label>
-                    <select id="reg-calle" onchange="actualizarEstiloSelect(this)" disabled class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none text-slate-400"></select>
+                    <select id="reg-calle" onchange="actualizarEstiloSelect(this)" disabled class="w-full border border-slate-300 rounded-xl p-2.5 text-sm outline-none bg-white text-slate-400"></select>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Altura *</label>
-                    <input id="reg-altura" type="text" placeholder="Ej: 450" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                    <input id="reg-altura" type="text" placeholder="Ej: 450" class="w-full border border-slate-300 rounded-xl p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Teléfono</label>
-                    <input id="reg-telefono" type="text" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                    <input id="reg-telefono" type="text" class="w-full border border-slate-300 rounded-xl p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Email *</label>
-                    <input id="reg-email" type="email" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                    <input id="reg-email" type="email" class="w-full border border-slate-300 rounded-xl p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition">
                 </div>
                 <div class="md:col-span-2">
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Contraseña *</label>
                     <div class="relative">
-                        <input id="reg-password" type="password" class="w-full border border-slate-300 rounded-lg p-2.5 pr-10 text-sm outline-none focus:ring-2 focus:ring-red-500">
-                        <button type="button" onclick="togglePassword('reg-password', this)" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                        <input id="reg-password" type="password" class="w-full border border-slate-300 rounded-xl p-2.5 pr-10 text-sm outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition">
+                        <button type="button" onclick="togglePassword('reg-password', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                             <i data-lucide="eye" class="w-4 h-4"></i>
                         </button>
                     </div>
                 </div>
             </div>
-            <button onclick="registrarCliente()" class="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold">Crear cuenta</button>
+            <button onclick="registrarCliente()" class="w-full bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl text-sm font-bold shadow-sm transition active:scale-[0.99]">Crear cuenta</button>
         </div>
     </div>
 </main>
@@ -251,104 +288,108 @@
 <!-- ================= VISTA EDITAR PERFIL ================= -->
 <main id="vista-editar-perfil" class="hidden max-w-2xl mx-auto px-4 sm:px-6 py-8">
     <h2 class="text-2xl font-bold text-slate-900 mb-6">Editar Perfil</h2>
-    <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
+    <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre</label>
-                <input id="perfil-nombre" type="text" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                <input id="perfil-nombre" type="text" class="w-full border border-slate-300 rounded-xl p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500 transition">
             </div>
             <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Apellido</label>
-                <input id="perfil-apellido" type="text" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                <input id="perfil-apellido" type="text" class="w-full border border-slate-300 rounded-xl p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500 transition">
             </div>
             <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Teléfono</label>
-                <input id="perfil-telefono" type="text" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                <input id="perfil-telefono" type="text" class="w-full border border-slate-300 rounded-xl p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500 transition">
             </div>
             <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Email</label>
-                <input id="perfil-email" type="email" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                <input id="perfil-email" type="email" class="w-full border border-slate-300 rounded-xl p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500 transition">
             </div>
             <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Provincia *</label>
-                <select id="perfil-provincia" onchange="actualizarEstiloSelect(this); cargarLocalidadesCascada('perfil')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none text-slate-400"></select>
+                <select id="perfil-provincia" onchange="actualizarEstiloSelect(this); cargarLocalidadesCascada('perfil')" class="w-full border border-slate-300 rounded-xl p-2.5 text-sm outline-none bg-white text-slate-400"></select>
             </div>
             <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Localidad *</label>
-                <select id="perfil-localidad" onchange="actualizarEstiloSelect(this); cargarCallesCascada('perfil')" disabled class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none text-slate-400"></select>
+                <select id="perfil-localidad" onchange="actualizarEstiloSelect(this); cargarCallesCascada('perfil')" disabled class="w-full border border-slate-300 rounded-xl p-2.5 text-sm outline-none bg-white text-slate-400"></select>
             </div>
             <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Calle *</label>
-                <select id="perfil-calle" onchange="actualizarEstiloSelect(this)" disabled class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none text-slate-400"></select>
+                <select id="perfil-calle" onchange="actualizarEstiloSelect(this)" disabled class="w-full border border-slate-300 rounded-xl p-2.5 text-sm outline-none bg-white text-slate-400"></select>
             </div>
             <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Altura *</label>
-                <input id="perfil-altura" type="text" placeholder="Ej: 450" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                <input id="perfil-altura" type="text" placeholder="Ej: 450" class="w-full border border-slate-300 rounded-xl p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500 transition">
             </div>
             <div class="md:col-span-2">
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Nueva contraseña (opcional)</label>
                 <div class="relative">
-                    <input id="perfil-password" type="password" placeholder="Dejar vacío para no cambiarla" class="w-full border border-slate-300 rounded-lg p-2.5 pr-10 text-sm outline-none">
-                    <button type="button" onclick="togglePassword('perfil-password', this)" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                    <input id="perfil-password" type="password" placeholder="Dejar vacío para no cambiarla" class="w-full border border-slate-300 rounded-xl p-2.5 pr-10 text-sm outline-none focus:ring-2 focus:ring-red-500 transition">
+                    <button type="button" onclick="togglePassword('perfil-password', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                         <i data-lucide="eye" class="w-4 h-4"></i>
                     </button>
                 </div>
             </div>
         </div>
-        <div class="flex justify-end gap-3 pt-2 border-t border-slate-100">
-            <button onclick="irA('mi-cuenta')" class="px-4 py-2.5 text-sm font-semibold text-slate-500 hover:text-slate-800">Cancelar</button>
-            <button onclick="guardarPerfil()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold">Guardar cambios</button>
+        <div class="flex justify-end gap-3 pt-3 border-t border-slate-100">
+            <button onclick="irA('mi-cuenta')" class="px-4 py-2.5 text-sm font-semibold text-slate-500 hover:text-slate-800 transition">Cancelar</button>
+            <button onclick="guardarPerfil()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-sm transition active:scale-95">Guardar cambios</button>
         </div>
     </div>
 </main>
 
 <!-- ================= VISTA CHECKOUT ================= -->
 <main id="vista-checkout" class="hidden max-w-4xl mx-auto px-4 sm:px-6 py-8">
-    <button onclick="irA('productos')" class="flex items-center text-sm text-slate-500 hover:text-slate-800 mb-4">
-        <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i> Seguir comprando
+    <button onclick="irA('productos')" class="flex items-center text-sm font-semibold text-slate-500 hover:text-slate-800 mb-6 transition">
+        <i data-lucide="arrow-left" class="w-4 h-4 mr-1.5"></i> Seguir comprando
     </button>
 
-    <div class="flex items-center justify-center mb-8 text-xs font-semibold text-slate-400">
+    <div class="flex items-center justify-center mb-8 text-xs font-bold text-slate-400">
         <div class="flex items-center">
-            <div id="dot-1" class="step-dot w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center">1</div>
-            <span class="ml-2">Entrega</span>
+            <div id="dot-1" class="step-dot w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold">1</div>
+            <span class="ml-2 font-semibold">Entrega</span>
         </div>
-        <div id="line-1" class="step-line w-12 sm:w-20 h-0.5 bg-slate-200 mx-3"></div>
+        <div id="line-1" class="step-line w-16 sm:w-24 h-0.5 bg-slate-200 mx-4"></div>
         <div class="flex items-center">
-            <div id="dot-2" class="step-dot w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center">2</div>
-            <span class="ml-2">Pago</span>
+            <div id="dot-2" class="step-dot w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold">2</div>
+            <span class="ml-2 font-semibold">Pago</span>
         </div>
     </div>
 
     <!-- PASO 1: ENTREGA -->
-    <section id="paso-1" class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-5">
-        <h3 class="font-semibold text-lg text-slate-800">¿Cómo querés recibir tu pedido?</h3>
+    <section id="paso-1" class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-6">
+        <div>
+            <h3 class="font-bold text-lg text-slate-900">¿Cómo querés recibir tu pedido?</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Elegí la modalidad de retiro o envío deseada.</p>
+        </div>
+        
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <label class="border border-slate-200 rounded-xl p-4 cursor-pointer flex items-start space-x-3 has-[:checked]:border-red-500 has-[:checked]:bg-red-50">
-                <input type="radio" name="modalidad-entrega" value="Retiro en local" checked onchange="renderResumenEntrega()" class="mt-1">
+            <label class="border-2 border-slate-200 rounded-2xl p-4 cursor-pointer flex items-start space-x-3.5 has-[:checked]:border-red-600 has-[:checked]:bg-red-50/50 transition">
+                <input type="radio" name="modalidad-entrega" value="Retiro en local" checked onchange="renderResumenEntrega()" class="mt-1 accent-red-600">
                 <div>
-                    <p class="font-semibold text-sm text-slate-800">Retiro en el local</p>
-                    <p class="text-xs text-slate-500 mt-1">Sin costo adicional. Te avisamos cuando esté listo.</p>
+                    <p class="font-bold text-sm text-slate-800">Retiro en el local</p>
+                    <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">Sin costo adicional. Te avisamos cuando esté listo.</p>
                 </div>
             </label>
-            <label class="border border-slate-200 rounded-xl p-4 cursor-pointer flex items-start space-x-3 has-[:checked]:border-red-500 has-[:checked]:bg-red-50">
-                <input type="radio" name="modalidad-entrega" value="Envío a domicilio" onchange="renderResumenEntrega()" class="mt-1">
+            <label class="border-2 border-slate-200 rounded-2xl p-4 cursor-pointer flex items-start space-x-3.5 has-[:checked]:border-red-600 has-[:checked]:bg-red-50/50 transition">
+                <input type="radio" name="modalidad-entrega" value="Envío a domicilio" onchange="renderResumenEntrega()" class="mt-1 accent-red-600">
                 <div>
-                    <p class="font-semibold text-sm text-slate-800">Envío a domicilio</p>
-                    <p class="text-xs text-slate-500 mt-1">Mediante delivery externo a cargo del cliente.</p>
+                    <p class="font-bold text-sm text-slate-800">Envío a domicilio</p>
+                    <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">Mediante delivery externo a cargo del cliente.</p>
                 </div>
             </label>
         </div>
 
-        <div id="bloque-direccion-envio" class="hidden space-y-3 bg-slate-50 border border-slate-200 p-4 rounded-xl">
-            <p class="text-xs font-bold uppercase tracking-wide text-slate-700">Dirección de Envío</p>
+        <div id="bloque-direccion-envio" class="hidden space-y-3 bg-slate-50 border border-slate-200/80 p-4 rounded-xl">
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-700">Dirección de Envío</p>
             <div id="bloque-direccion-guardada" class="hidden space-y-2">
-                <label class="flex items-center space-x-2 text-xs text-slate-800 font-medium">
-                    <input type="radio" name="opcion-direccion" value="guardada" checked onchange="toggleOpcionDireccion()">
-                    <span>Usar mi dirección de perfil: <b id="texto-direccion-perfil">-</b></span>
+                <label class="flex items-center space-x-2 text-xs text-slate-800 font-medium cursor-pointer">
+                    <input type="radio" name="opcion-direccion" value="guardada" checked onchange="toggleOpcionDireccion()" class="accent-red-600">
+                    <span>Usar mi dirección de perfil: <b id="texto-direccion-perfil" class="text-slate-900">-</b></span>
                 </label>
-                <label class="flex items-center space-x-2 text-xs text-slate-800 font-medium">
-                    <input type="radio" name="opcion-direccion" value="nueva" onchange="toggleOpcionDireccion()">
+                <label class="flex items-center space-x-2 text-xs text-slate-800 font-medium cursor-pointer">
+                    <input type="radio" name="opcion-direccion" value="nueva" onchange="toggleOpcionDireccion()" class="accent-red-600">
                     <span>Ingresar otra dirección</span>
                 </label>
             </div>
@@ -356,55 +397,86 @@
             <div id="form-direccion-nueva" class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Provincia *</label>
-                    <select id="checkout-provincia" onchange="actualizarEstiloSelect(this); cargarLocalidadesCascada('checkout')" class="w-full border border-slate-300 rounded-lg p-2 text-xs outline-none bg-white text-slate-400"></select>
+                    <select id="checkout-provincia" onchange="actualizarEstiloSelect(this); cargarLocalidadesCascada('checkout')" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs outline-none bg-white text-slate-400"></select>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Localidad *</label>
-                    <select id="checkout-localidad" onchange="actualizarEstiloSelect(this); cargarCallesCascada('checkout')" disabled class="w-full border border-slate-300 rounded-lg p-2 text-xs outline-none bg-white text-slate-400"></select>
+                    <select id="checkout-localidad" onchange="actualizarEstiloSelect(this); cargarCallesCascada('checkout')" disabled class="w-full border border-slate-300 rounded-xl p-2.5 text-xs outline-none bg-white text-slate-400"></select>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Calle *</label>
-                    <select id="checkout-calle" onchange="actualizarEstiloSelect(this)" disabled class="w-full border border-slate-300 rounded-lg p-2 text-xs outline-none bg-white text-slate-400"></select>
+                    <select id="checkout-calle" onchange="actualizarEstiloSelect(this)" disabled class="w-full border border-slate-300 rounded-xl p-2.5 text-xs outline-none bg-white text-slate-400"></select>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Altura *</label>
-                    <input id="checkout-altura" type="text" placeholder="Ej: 450" class="w-full border border-slate-300 rounded-lg p-2 text-xs outline-none bg-white">
+                    <input id="checkout-altura" type="text" placeholder="Ej: 450" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs outline-none bg-white focus:ring-2 focus:ring-red-500 transition">
                 </div>
             </div>
         </div>
 
         <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha deseada de entrega / retiro *</label>
-            <input id="fecha-entrega" type="date" class="w-full sm:w-60 border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Fecha deseada de entrega / retiro *</label>
+            <input id="fecha-entrega" type="date" class="w-full sm:w-64 border border-slate-300 rounded-xl p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500 transition">
         </div>
 
         <div class="flex justify-end pt-2">
-            <button onclick="confirmarPasoEntrega()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold">Continuar a Pago →</button>
+            <button onclick="confirmarPasoEntrega()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl text-sm font-bold shadow-sm transition active:scale-95">Continuar a Pago →</button>
         </div>
     </section>
 
     <!-- PASO 2: PAGO -->
-    <section id="paso-2" class="hidden bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-5">
-        <h3 class="font-semibold text-lg text-slate-800">Forma de pago</h3>
+    <section id="paso-2" class="hidden bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-6">
+        <div>
+            <h3 class="font-bold text-lg text-slate-900">Forma de pago</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Seleccioná tu medio de pago y verificá el total antes de continuar.</p>
+        </div>
 
-        <div id="resumen-totales-pago" class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm space-y-1"></div>
+        <div id="resumen-totales-pago" class="bg-slate-50 border border-slate-200/80 rounded-xl p-4 text-sm space-y-1.5"></div>
 
         <div id="bloque-medio-pago">
-            <label class="block text-xs font-semibold text-slate-600 mb-2">Medio de pago</label>
+            <label class="block text-xs font-bold text-slate-700 mb-2">Medio de pago</label>
             <div id="grid-medios-pago" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
         </div>
 
-        <label id="bloque-terminos" class="flex items-start space-x-2 text-xs text-slate-500">
-            <input type="checkbox" id="check-terminos" class="mt-0.5">
+        <label id="bloque-terminos" class="flex items-start space-x-2.5 text-xs text-slate-600 cursor-pointer">
+            <input type="checkbox" id="check-terminos" class="mt-0.5 accent-red-600 rounded">
             <span>Confirmo los datos del pedido y la emisión de la orden correspondientes.</span>
         </label>
 
-        <div class="flex justify-between pt-2">
-            <button onclick="irPasoCheckout(1)" class="text-sm font-semibold text-slate-500 hover:text-slate-800">← Volver</button>
-            <button id="btn-confirmar-pedido" onclick="confirmarPedido()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold">Confirmar Pedido</button>
+        <div class="flex justify-between items-center pt-2">
+            <button onclick="irPasoCheckout(1)" class="text-sm font-semibold text-slate-500 hover:text-slate-800 transition">← Volver</button>
+            <button id="btn-confirmar-pedido" onclick="confirmarPedido()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl text-sm font-bold shadow-sm transition active:scale-95">Confirmar Pedido</button>
         </div>
     </section>
 </main>
+
+<!-- ================= MODAL CONFIRMAR PEDIDO (RESUMEN PRODUCTOS) ================= -->
+<div id="modal-confirmar-pedido" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h3 class="font-bold text-slate-900 flex items-center space-x-2">
+                <i data-lucide="shopping-bag" class="w-5 h-5 text-red-600"></i>
+                <span>Resumen de tu pedido</span>
+            </h3>
+            <button onclick="cerrarModalConfirmacion()" class="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <p class="text-xs text-slate-500">Por favor, revisá los productos y detalles seleccionados antes de finalizar tu compra:</p>
+
+        <div id="modal-lista-productos" class="max-h-52 overflow-y-auto pr-1 space-y-2 text-xs divide-y divide-slate-100"></div>
+
+        <div id="modal-datos-envio" class="bg-slate-50 border border-slate-200/80 rounded-xl p-3 text-xs space-y-1"></div>
+
+        <div class="flex justify-end gap-3 pt-3 border-t border-slate-200">
+            <button onclick="cerrarModalConfirmacion()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-800 transition">Volver y Modificar</button>
+            <button onclick="finalizarOrdenPedido()" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition flex items-center space-x-1.5 active:scale-95">
+                <i data-lucide="check" class="w-4 h-4"></i><span>Confirmar y Finalizar</span>
+            </button>
+        </div>
+    </div>
+</div>
 
 <!-- ================= VISTA CONFIRMACION ================= -->
 <main id="vista-confirmacion" class="hidden max-w-2xl mx-auto px-4 sm:px-6 py-10">
@@ -416,11 +488,11 @@
         <p class="text-sm text-slate-500 mt-1">Guardá el número de orden para hacer el seguimiento en "Mis Pedidos".</p>
     </div>
 
-    <div id="area-comprobante" class="bg-white border border-slate-200 rounded-xl p-8 shadow-sm space-y-5">
+    <div id="area-comprobante" class="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-5">
         <div class="flex justify-between items-start border-b border-slate-200 pb-4">
             <div>
                 <h1 class="text-xl font-bold text-red-600">FÁBRICA DE PASTAS</h1>
-                <p class="text-xs text-slate-500">Orden de pedido oficial</p>
+                <p class="text-xs text-slate-500 font-medium">Orden de pedido oficial</p>
             </div>
             <div class="text-right">
                 <p id="confirm-numero" class="text-sm font-bold text-slate-800">PED-0000</p>
@@ -429,7 +501,7 @@
         </div>
         <div id="confirm-cliente-info" class="text-xs text-slate-600"></div>
         <table class="w-full text-xs text-left">
-            <thead class="border-b border-slate-300 uppercase text-slate-500">
+            <thead class="border-b border-slate-300 uppercase text-slate-500 font-semibold">
                 <tr><th class="py-2">Producto</th><th class="py-2 text-center">Cant.</th><th class="py-2 text-right">P. Unit.</th><th class="py-2 text-right">Subtotal</th></tr>
             </thead>
             <tbody id="confirm-detalle"></tbody>
@@ -438,22 +510,24 @@
     </div>
 
     <div class="flex flex-col sm:flex-row gap-3 mt-6 no-print">
-        <button onclick="window.print()" class="flex-1 bg-slate-900 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-800 flex items-center justify-center space-x-2"><i data-lucide="printer" class="w-4 h-4"></i><span>Imprimir comprobante</span></button>
-        <button onclick="irAProtegido('mis-pedidos')" class="flex-1 bg-red-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-red-700">Ver mis pedidos</button>
-        <button onclick="irA('productos')" class="flex-1 bg-slate-100 border border-slate-300 text-slate-700 py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-200">Seguir comprando</button>
+        <button onclick="window.print()" class="flex-1 bg-slate-900 text-white py-3 rounded-xl text-sm font-bold hover:bg-slate-800 transition flex items-center justify-center space-x-2"><i data-lucide="printer" class="w-4 h-4"></i><span>Imprimir comprobante</span></button>
+        <button onclick="irAProtegido('mis-pedidos')" class="flex-1 bg-red-600 text-white py-3 rounded-xl text-sm font-bold hover:bg-red-700 transition">Ver mis pedidos</button>
+        <button onclick="irA('productos')" class="flex-1 bg-slate-100 border border-slate-300 text-slate-700 py-3 rounded-xl text-sm font-bold hover:bg-slate-200 transition">Seguir comprando</button>
     </div>
 </main>
 
 <!-- ================= VISTA MIS PEDIDOS ================= -->
 <main id="vista-mis-pedidos" class="hidden max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
     <div id="listado-mis-pedidos" class="space-y-6">
-        <h2 class="text-2xl font-bold text-slate-900">Mis Pedidos</h2>
-        <p class="text-sm text-slate-500 -mt-4">Seguimiento de tus órdenes de pedido. Se permite cancelar pedidos con al menos 48hs de anticipación a la fecha de entrega.</p>
+        <div>
+            <h2 class="text-2xl font-bold text-slate-900">Mis Pedidos</h2>
+            <p class="text-sm text-slate-500 mt-1">Seguimiento de tus órdenes de pedido. Se permite cancelar pedidos con al menos 48hs de anticipación a la fecha de entrega.</p>
+        </div>
         <div id="tabla-mis-pedidos" class="space-y-3"></div>
     </div>
 
-    <div id="detalle-mi-pedido" class="hidden bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
-        <button onclick="document.getElementById('detalle-mi-pedido').classList.add('hidden'); document.getElementById('listado-mis-pedidos').classList.remove('hidden')" class="text-sm font-semibold text-slate-500 hover:text-slate-800 flex items-center"><i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i>Volver al listado</button>
+    <div id="detalle-mi-pedido" class="hidden bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
+        <button onclick="document.getElementById('detalle-mi-pedido').classList.add('hidden'); document.getElementById('listado-mis-pedidos').classList.remove('hidden')" class="text-sm font-semibold text-slate-500 hover:text-slate-800 transition flex items-center"><i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i>Volver al listado</button>
         <div id="contenido-detalle-pedido"></div>
     </div>
 </main>
@@ -465,23 +539,23 @@
 </main>
 
 <!-- ================= CARRITO (DRAWER) ================= -->
-<div id="overlay-carrito" onclick="toggleCarrito(false)" class="hidden fixed inset-0 bg-black/40 z-40 no-print"></div>
+<div id="overlay-carrito" onclick="toggleCarrito(false)" class="hidden fixed inset-0 bg-black/40 backdrop-blur-xs z-40 no-print"></div>
 <aside id="drawer-carrito" class="cart-drawer fixed top-0 right-0 h-full w-full sm:w-96 bg-white z-50 shadow-2xl translate-x-full flex flex-col no-print">
     <div class="flex items-center justify-between p-5 border-b border-slate-200">
-        <h3 class="font-bold text-slate-900 flex items-center space-x-2"><i data-lucide="shopping-cart" class="w-5 h-5"></i><span>Tu carrito</span></h3>
-        <button onclick="toggleCarrito(false)" class="p-1 hover:bg-slate-100 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <h3 class="font-bold text-slate-900 flex items-center space-x-2"><i data-lucide="shopping-cart" class="w-5 h-5 text-red-600"></i><span>Tu carrito</span></h3>
+        <button onclick="toggleCarrito(false)" class="p-1 hover:bg-slate-100 rounded-lg text-slate-500"><i data-lucide="x" class="w-5 h-5"></i></button>
     </div>
     <div id="items-carrito" class="flex-1 overflow-y-auto p-5 space-y-4"></div>
-    <div class="p-5 border-t border-slate-200 space-y-3">
+    <div class="p-5 border-t border-slate-200 space-y-3 bg-slate-50/50">
         <div class="flex justify-between text-sm text-slate-500"><span>Subtotal</span><span id="carrito-subtotal">$ 0</span></div>
-        <div id="carrito-bonificacion-fila" class="hidden flex justify-between text-sm text-emerald-600"><span>Bonificación</span><span id="carrito-bonificacion">-$ 0</span></div>
-        <div class="flex justify-between font-bold text-lg text-slate-900"><span>Total</span><span id="carrito-total">$ 0</span></div>
-        <button onclick="irA('checkout')" id="btn-ir-checkout" class="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed">Iniciar compra</button>
+        <div id="carrito-bonificacion-fila" class="hidden flex justify-between text-sm text-emerald-600 font-semibold"><span>Bonificación</span><span id="carrito-bonificacion">-$ 0</span></div>
+        <div class="flex justify-between font-bold text-lg text-slate-900 pt-1 border-t border-slate-200"><span>Total</span><span id="carrito-total">$ 0</span></div>
+        <button onclick="irA('checkout')" id="btn-ir-checkout" class="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl text-sm font-bold shadow-sm transition disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.99]">Iniciar compra</button>
     </div>
 </aside>
 
 <footer class="bg-white border-t border-slate-200 py-6 mt-10 no-print">
-    <div class="max-w-7xl mx-auto px-6 text-center text-xs text-slate-400">
+    <div class="max-w-7xl mx-auto px-6 text-center text-xs text-slate-400 font-medium">
     </div>
 </footer>
 
@@ -537,16 +611,21 @@ class Producto {
     }
 }
 
+// Helper para ID formateados
+function formatearIdentificador(prefix, num) {
+    return `${prefix}-${String(num).padStart(4, '0')}`;
+}
+
 // ==========================================
 // DATOS SEMILLA
 // ==========================================
 const catalogo = [
-    new Producto(1,'Ravioles de Ricotta y Verdura','Pastas Rellenas','kg',3500,'Ravioles caseros rellenos de ricotta fresca y espinaca.','imagenes/ravioles.jpg'),
-    new Producto(2,'Sorrentinos de Jamón y Queso','Pastas Rellenas','kg',4200,'Sorrentinos rellenos de jamón cocido y queso cremoso.','imagenes/sorrentino.jpg'),
-    new Producto(3,'Capeletis de Pollo y Verdura','Pastas Rellenas','kg',3900,'Capeletis rellenos de pollo braseado y verdura salteada.','imagenes/capeletti.jpg'),
-    new Producto(4,'Tallarines al Huevo','Pastas Secas','kg',2800,'Tallarines frescos elaborados con huevo de campo.','imagenes/tallarines.jpg'),
-    new Producto(5,'Ñoquis de Papa','Pastas Secas','kg',3000,'Ñoquis caseros de papa, suaves y livianos.','imagenes/noquis.jpg'),
-    new Producto(6,'Fideos Caseros Cortados','Pastas Secas','kg',2600,'Fideos cortados a mano, ideales para salsas espesas.','imagenes/fideos.jpg'),
+    new Producto(1,'Ravioles de Ricotta y Verdura','Pastas Rellenas','kg',3500,'Ravioles caseros rellenos de ricotta fresca y espinaca.','imagenes/ravioles.jfif'),
+    new Producto(2,'Sorrentinos de Jamón y Queso','Pastas Rellenas','kg',4200,'Sorrentinos rellenos de jamón cocido y queso cremoso.','imagenes/sorrentino.jfif'),
+    new Producto(3,'Capeletis de Pollo y Verdura','Pastas Rellenas','kg',3900,'Capeletis rellenos de pollo braseado y verdura salteada.','imagenes/capeletti.jfif'),
+    new Producto(4,'Tallarines al Huevo','Pastas Secas','kg',2800,'Tallarines frescos elaborados con huevo de campo.','imagenes/tallarines.jfif'),
+    new Producto(5,'Ñoquis de Papa','Pastas Secas','kg',3000,'Ñoquis caseros de papa, suaves y livianos.','imagenes/noquis.jfif'),
+    new Producto(6,'Fideos Caseros Cortados','Pastas Secas','kg',2600,'Fideos cortados a mano, ideales para salsas espesas.','imagenes/fideos.jfif'),
     new Producto(7,'Salsa Fileto en Pote','Salsas','un (500g)',1200,'Salsa de tomate clásica a fuego lento.','imagenes/salsa.jfif'),
     new Producto(8,'Salsa Bolognesa en Pote','Salsas','un (500g)',1800,'Salsa con carne picada y vegetales.','imagenes/salsa.jfif'),
     new Producto(9,'Salsa Blanca (Crema) en Pote','Salsas','un (500g)',1500,'Salsa blanca cremosa, ideal para pastas rellenas.','imagenes/salsab.jfif'),
@@ -665,7 +744,7 @@ function togglePassword(inputId, btnEl){
 function toast(mensaje, tipo='success'){
     const colores = { success:'bg-emerald-600', error:'bg-red-600', info:'bg-slate-800' };
     const div = document.createElement('div');
-    div.className = `toast ${colores[tipo]||colores.success} text-white text-sm font-medium px-4 py-3 rounded-lg shadow-lg max-w-xs`;
+    div.className = `toast ${colores[tipo]||colores.success} text-white text-sm font-medium px-4 py-3 rounded-xl shadow-lg max-w-xs`;
     div.innerText = mensaje;
     document.getElementById('toast-container').appendChild(div);
     setTimeout(()=>{ div.remove(); }, 3800);
@@ -702,7 +781,7 @@ function filtrarCategoria(cat){
     categoriaActiva = cat;
     document.querySelectorAll('.chip-cat').forEach(btn=>{
         const activo = btn.dataset.cat === cat;
-        btn.className = `chip-cat px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap ${activo ? 'bg-red-600 text-white' : 'bg-white border border-slate-200 text-slate-600'}`;
+        btn.className = `chip-cat px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition ${activo ? 'bg-red-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`;
     });
     renderCatalogo();
 }
@@ -718,22 +797,28 @@ function tarjetaProducto(p){
     const precioFinal = precioParaCliente(p);
     const tieneDescuento = precioFinal < p.precio_unitario;
     const div = document.createElement('div');
-    div.className = 'bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition flex flex-col';
+    div.className = 'bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition duration-300 flex flex-col group';
     div.innerHTML = `
-        <div class="h-32 bg-slate-100 flex items-center justify-center overflow-hidden">
-            <img src="${p.icono}" alt="${p.nombre}" class="w-full h-full object-cover">
+        <div onclick="abrirModalProducto(${p.id_producto})" class="h-40 bg-slate-100 flex items-center justify-center overflow-hidden relative cursor-pointer">
+            <img src="${p.icono}" alt="${p.nombre}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+            <span class="absolute top-3 left-3 bg-white/90 backdrop-blur-md border border-slate-200/60 text-red-600 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-xs">${p.tipo_producto}</span>
+            <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white">
+                <span class="bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full text-xs font-semibold flex items-center space-x-1">
+                    <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                    <span>Ver detalle</span>
+                </span>
+            </div>
         </div>
         <div class="p-4 flex-1 flex flex-col">
-            <span class="text-[10px] font-bold uppercase tracking-wide text-red-500">${p.tipo_producto}</span>
-            <h3 class="font-semibold text-slate-800 mt-1">${p.nombre}</h3>
-            <p class="text-xs text-slate-500 mt-1 flex-1">${p.descripcion}</p>
-            <div class="mt-3 flex items-end justify-between">
+            <h3 onclick="abrirModalProducto(${p.id_producto})" class="font-bold text-slate-900 leading-snug cursor-pointer hover:text-red-600 transition">${p.nombre}</h3>
+            <p class="text-xs text-slate-500 mt-1 flex-1 leading-relaxed">${p.descripcion}</p>
+            <div class="mt-4 flex items-end justify-between">
                 <div>
-                    ${tieneDescuento ? `<span class="text-xs text-slate-400 line-through">$ ${p.precio_unitario.toLocaleString()}</span>` : ''}
-                    <p class="font-bold text-slate-900">$ ${precioFinal.toLocaleString(undefined,{maximumFractionDigits:0})} <span class="text-xs font-normal text-slate-400">/ ${p.unidad_medida}</span></p>
+                    ${tieneDescuento ? `<span class="text-xs text-slate-400 line-through block">$ ${p.precio_unitario.toLocaleString()}</span>` : ''}
+                    <p class="font-bold text-slate-900 text-base">$ ${precioFinal.toLocaleString(undefined,{maximumFractionDigits:0})} <span class="text-xs font-normal text-slate-400">/ ${p.unidad_medida}</span></p>
                 </div>
             </div>
-            <button onclick="agregarAlCarrito(${p.id_producto})" class="mt-3 w-full bg-slate-900 hover:bg-red-600 text-white text-sm font-semibold py-2 rounded-lg transition flex items-center justify-center space-x-2">
+            <button onclick="agregarAlCarrito(${p.id_producto})" class="mt-3 w-full bg-slate-900 hover:bg-red-600 text-white text-sm font-semibold py-2.5 rounded-xl transition shadow-xs flex items-center justify-center space-x-2 active:scale-95">
                 <i data-lucide="plus" class="w-4 h-4"></i><span>Agregar al carrito</span>
             </button>
         </div>`;
@@ -759,6 +844,64 @@ function renderCatalogo(){
     }
     lista.forEach(p=> grid.appendChild(tarjetaProducto(p)));
     lucide.createIcons();
+}
+
+// ==========================================
+// MODAL DETALLE PRODUCTO
+// ==========================================
+let cantidadModalProducto = 1;
+let idProductoModalActual = null;
+
+function abrirModalProducto(idProducto){
+    const p = catalogo.find(item=>item.id_producto===idProducto);
+    if(!p) return;
+
+    idProductoModalActual = idProducto;
+    cantidadModalProducto = 1;
+
+    document.getElementById('modal-prod-img').src = p.icono;
+    document.getElementById('modal-prod-cat').innerText = p.tipo_producto;
+    document.getElementById('modal-prod-nombre').innerText = p.nombre;
+    
+    const precioFinal = precioParaCliente(p);
+    document.getElementById('modal-prod-precio').innerText = `$ ${precioFinal.toLocaleString(undefined,{maximumFractionDigits:0})} / ${p.unidad_medida}`;
+    document.getElementById('modal-prod-desc').innerText = p.descripcion;
+    document.getElementById('modal-prod-cant').innerText = cantidadModalProducto;
+
+    const extra = document.getElementById('modal-prod-extra');
+    extra.innerHTML = `
+        <div class="flex items-center space-x-2"><i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i><span>Elaboración artesanal diaria con insumos seleccionados.</span></div>
+        <div class="flex items-center space-x-2"><i data-lucide="package" class="w-3.5 h-3.5 text-slate-400"></i><span>Unidad de venta: <b>por ${p.unidad_medida}</b>.</span></div>
+        <div class="flex items-center space-x-2"><i data-lucide="utensils" class="w-3.5 h-3.5 text-slate-400"></i><span>Ideal para acompañar con nuestras salsas artesanales en pote.</span></div>
+    `;
+
+    document.getElementById('modal-prod-btn-agregar').onclick = function(){
+        agregarAlCarritoDesdeModal(p.id_producto, cantidadModalProducto);
+    };
+
+    document.getElementById('modal-detalle-producto').classList.remove('hidden');
+    lucide.createIcons();
+}
+
+function modificarCantidadModal(delta){
+    cantidadModalProducto += delta;
+    if(cantidadModalProducto < 1) cantidadModalProducto = 1;
+    document.getElementById('modal-prod-cant').innerText = cantidadModalProducto;
+}
+
+function cerrarModalProducto(){
+    document.getElementById('modal-detalle-producto').classList.add('hidden');
+}
+
+function agregarAlCarritoDesdeModal(idProducto, cantidad){
+    const producto = catalogo.find(p=>p.id_producto===idProducto);
+    const existente = carrito.find(i=>i.producto.id_producto===idProducto);
+    if(existente) existente.cantidad += cantidad;
+    else carrito.push({ producto, cantidad: cantidad });
+    
+    renderCarrito();
+    cerrarModalProducto();
+    toggleCarrito(true);
 }
 
 // ==========================================
@@ -805,18 +948,18 @@ function renderCarrito(){
         const div = document.createElement('div');
         div.className = 'flex items-center justify-between border-b border-slate-100 pb-3';
         div.innerHTML = `
-            <div class="flex-1">
+            <div class="flex-1 pr-2">
                 <p class="text-sm font-semibold text-slate-800">${i.producto.nombre}</p>
                 <p class="text-xs text-slate-400">$ ${precioParaCliente(i.producto).toLocaleString(undefined,{maximumFractionDigits:0})} / ${i.producto.unidad_medida}</p>
-                <div class="flex items-center space-x-2 mt-1">
-                    <button onclick="cambiarCantidadCarrito(${i.producto.id_producto},-1)" class="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 text-sm">-</button>
-                    <span class="text-sm font-medium w-6 text-center">${i.cantidad}</span>
-                    <button onclick="cambiarCantidadCarrito(${i.producto.id_producto},1)" class="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 text-sm">+</button>
+                <div class="flex items-center space-x-2 mt-2">
+                    <button onclick="cambiarCantidadCarrito(${i.producto.id_producto},-1)" class="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 text-sm font-bold flex items-center justify-center transition">-</button>
+                    <span class="text-xs font-bold w-6 text-center text-slate-800">${i.cantidad}</span>
+                    <button onclick="cambiarCantidadCarrito(${i.producto.id_producto},1)" class="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 text-sm font-bold flex items-center justify-center transition">+</button>
                 </div>
             </div>
             <div class="text-right">
                 <p class="text-sm font-bold text-slate-900">$ ${(precioParaCliente(i.producto)*i.cantidad).toLocaleString(undefined,{maximumFractionDigits:0})}</p>
-                <button onclick="quitarDelCarrito(${i.producto.id_producto})" class="text-xs text-red-500 hover:text-red-700 mt-1">Quitar</button>
+                <button onclick="quitarDelCarrito(${i.producto.id_producto})" class="text-xs font-medium text-red-500 hover:text-red-700 mt-1 transition">Quitar</button>
             </div>`;
         cont.appendChild(div);
     });
@@ -858,24 +1001,24 @@ function renderSesion(){
     if(clienteActual){
         const inicial = clienteActual.nombre.charAt(0).toUpperCase();
         cont.innerHTML = `
-            <button id="btn-avatar-perfil" onclick="toggleMenuPerfil()" class="w-9 h-9 rounded-full bg-red-600 text-white font-bold flex items-center justify-center hover:bg-red-700">${inicial}</button>
+            <button id="btn-avatar-perfil" onclick="toggleMenuPerfil()" class="w-9 h-9 rounded-full bg-red-600 text-white font-bold flex items-center justify-center hover:bg-red-700 shadow-sm transition">${inicial}</button>
             <div id="menu-perfil" class="hidden absolute right-0 mt-2 w-52 bg-white border border-slate-200 rounded-xl shadow-lg py-2 text-sm z-50">
                 <div class="px-4 py-2 border-b border-slate-100">
-                    <p class="font-semibold text-slate-800 truncate">${clienteActual.nombreCompleto}</p>
+                    <p class="font-bold text-slate-800 truncate">${clienteActual.nombreCompleto}</p>
                 </div>
-                <button onclick="irA('mi-cuenta')" class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center space-x-2"><i data-lucide="user" class="w-4 h-4"></i><span>Mi Cuenta</span></button>
-                <button onclick="irA('mis-pedidos')" class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center space-x-2"><i data-lucide="package" class="w-4 h-4"></i><span>Mis Pedidos</span></button>
-                <button onclick="irA('editar-perfil')" class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center space-x-2"><i data-lucide="settings" class="w-4 h-4"></i><span>Editar Perfil</span></button>
+                <button onclick="irA('mi-cuenta')" class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center space-x-2 text-slate-700"><i data-lucide="user" class="w-4 h-4"></i><span>Mi Cuenta</span></button>
+                <button onclick="irA('mis-pedidos')" class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center space-x-2 text-slate-700"><i data-lucide="package" class="w-4 h-4"></i><span>Mis Pedidos</span></button>
+                <button onclick="irA('editar-perfil')" class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center space-x-2 text-slate-700"><i data-lucide="settings" class="w-4 h-4"></i><span>Editar Perfil</span></button>
                 <div class="border-t border-slate-100 mt-1 pt-1">
                     <button onclick="cerrarSesionCliente()" class="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 flex items-center space-x-2"><i data-lucide="log-out" class="w-4 h-4"></i><span>Cerrar sesión</span></button>
                 </div>
             </div>`;
-        contM.innerHTML = `<p class="font-semibold text-slate-800 text-sm">${clienteActual.nombreCompleto}</p>
+        contM.innerHTML = `<p class="font-bold text-slate-800 text-sm px-3 py-1">${clienteActual.nombreCompleto}</p>
             <button onclick="irA('mi-cuenta')" class="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100">Mi Cuenta</button>
             <button onclick="irA('editar-perfil')" class="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100">Editar Perfil</button>
-            <button onclick="cerrarSesionCliente()" class="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 text-red-600">Cerrar sesión</button>`;
+            <button onclick="cerrarSesionCliente()" class="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 text-red-600 font-semibold">Cerrar sesión</button>`;
     } else {
-        cont.innerHTML = `<button onclick="irA('acceso')" class="text-sm font-semibold text-red-600 hover:underline">Iniciar sesión</button>`;
+        cont.innerHTML = `<button onclick="irA('acceso')" class="text-sm font-bold text-red-600 hover:text-red-700 transition">Iniciar sesión</button>`;
         contM.innerHTML = `<button onclick="irA('acceso')" class="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 text-red-600 font-semibold">Iniciar sesión / Registrarme</button>`;
     }
     lucide.createIcons();
@@ -888,8 +1031,8 @@ function mostrarTabAuth(tab){
     const esLogin = tab==='login';
     document.getElementById('tab-login').classList.toggle('hidden', !esLogin);
     document.getElementById('tab-registro').classList.toggle('hidden', esLogin);
-    document.getElementById('tab-btn-login').className = `px-4 py-2 text-sm font-semibold border-b-2 ${esLogin?'border-red-600 text-red-600':'border-transparent text-slate-500'}`;
-    document.getElementById('tab-btn-registro').className = `px-4 py-2 text-sm font-semibold border-b-2 ${!esLogin?'border-red-600 text-red-600':'border-transparent text-slate-500'}`;
+    document.getElementById('tab-btn-login').className = `px-5 py-2.5 text-sm font-bold border-b-2 ${esLogin?'border-red-600 text-red-600':'border-transparent text-slate-500 hover:text-slate-700'}`;
+    document.getElementById('tab-btn-registro').className = `px-5 py-2.5 text-sm font-bold border-b-2 ${!esLogin?'border-red-600 text-red-600':'border-transparent text-slate-500 hover:text-slate-700'}`;
 }
 
 function loginCliente(){
@@ -991,7 +1134,7 @@ function guardarPerfil(){
 }
 
 // ==========================================
-// CHECKOUT
+// CHECKOUT Y MODAL CONFIRMACION
 // ==========================================
 function iniciarCheckout(){
     if(carrito.length===0){ irA('productos'); return; }
@@ -1079,9 +1222,9 @@ function renderPasoPago(){
     const totales = calcularTotalesCarrito();
     const resumen = document.getElementById('resumen-totales-pago');
     resumen.innerHTML = `
-        <div class="flex justify-between"><span class="text-slate-500">Subtotal</span><span>$ ${totales.subtotal.toLocaleString(undefined,{maximumFractionDigits:0})}</span></div>
-        ${totales.bonificacion>0?`<div class="flex justify-between text-emerald-600"><span>Bonificación</span><span>-$ ${totales.bonificacion.toLocaleString(undefined,{maximumFractionDigits:0})}</span></div>`:''}
-        <div class="flex justify-between font-bold text-base pt-1 border-t border-slate-200 mt-1"><span>Total del pedido</span><span>$ ${totales.total.toLocaleString(undefined,{maximumFractionDigits:0})}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Subtotal</span><span class="font-medium">$ ${totales.subtotal.toLocaleString(undefined,{maximumFractionDigits:0})}</span></div>
+        ${totales.bonificacion>0?`<div class="flex justify-between text-emerald-600 font-semibold"><span>Bonificación</span><span>-$ ${totales.bonificacion.toLocaleString(undefined,{maximumFractionDigits:0})}</span></div>`:''}
+        <div class="flex justify-between font-bold text-base pt-1.5 border-t border-slate-200 mt-1 text-slate-900"><span>Total del pedido</span><span>$ ${totales.total.toLocaleString(undefined,{maximumFractionDigits:0})}</span></div>
     `;
 
     const medios = ['Efectivo','Tarjeta de Débito','Transferencia Bancaria','Billetera Virtual'];
@@ -1092,7 +1235,7 @@ function renderPasoPago(){
     medios.forEach(m=>{
         const btn = document.createElement('button');
         btn.type='button';
-        btn.className = 'medio-pago-btn border rounded-lg p-3 text-xs font-semibold text-center transition border-slate-200 hover:border-red-400';
+        btn.className = 'medio-pago-btn border border-slate-200 rounded-xl p-3 text-xs font-semibold text-slate-700 text-center transition hover:border-red-300';
         btn.innerText = m;
         btn.onclick = ()=> seleccionarMedioPago(m, btn);
         grid.appendChild(btn);
@@ -1101,8 +1244,8 @@ function renderPasoPago(){
 
 function seleccionarMedioPago(medio, btnEl){
     medioPagoSeleccionado = medio;
-    document.querySelectorAll('.medio-pago-btn').forEach(b=> b.classList.remove('border-red-600','bg-red-50','text-red-700'));
-    btnEl.classList.add('border-red-600','bg-red-50','text-red-700');
+    document.querySelectorAll('.medio-pago-btn').forEach(b=> b.classList.remove('border-red-600','bg-red-50','text-red-700','font-bold'));
+    btnEl.classList.add('border-red-600','bg-red-50','text-red-700','font-bold');
 }
 
 function confirmarPedido(){
@@ -1110,6 +1253,47 @@ function confirmarPedido(){
     if(clienteActual.tiene_deuda_vencida){ toast('No se pueden generar nuevos pedidos con deuda vencida. Regularice en Mi Cuenta.','error'); return; }
     if(!medioPagoSeleccionado){ toast('Seleccioná un medio de pago.','error'); return; }
     if(!document.getElementById('check-terminos').checked){ toast('Debés confirmar los datos del pedido.','error'); return; }
+
+    abrirModalConfirmacion();
+}
+
+function abrirModalConfirmacion(){
+    const lista = document.getElementById('modal-lista-productos');
+    lista.innerHTML = '';
+    
+    carrito.forEach(i=>{
+        const pUnit = precioParaCliente(i.producto);
+        const sub = pUnit * i.cantidad;
+        lista.innerHTML += `
+            <div class="py-2 flex items-center justify-between">
+                <div>
+                    <p class="font-semibold text-slate-800">${i.producto.nombre}</p>
+                    <p class="text-[11px] text-slate-500">${i.cantidad} x $ ${pUnit.toLocaleString(undefined,{maximumFractionDigits:0})} / ${i.producto.unidad_medida}</p>
+                </div>
+                <p class="font-bold text-slate-900">$ ${sub.toLocaleString(undefined,{maximumFractionDigits:0})}</p>
+            </div>
+        `;
+    });
+
+    const totales = calcularTotalesCarrito();
+    const env = document.getElementById('modal-datos-envio');
+    env.innerHTML = `
+        <div class="flex justify-between"><span class="text-slate-500">Modalidad:</span><span class="font-semibold text-slate-800">${datosEntrega.modalidad}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Fecha:</span><span class="font-semibold text-slate-800">${datosEntrega.fecha}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Medio de Pago:</span><span class="font-semibold text-slate-800">${medioPagoSeleccionado}</span></div>
+        <div class="flex justify-between font-bold text-sm text-slate-900 pt-1 border-t border-slate-200 mt-1"><span>Total:</span><span>$ ${totales.total.toLocaleString(undefined,{maximumFractionDigits:0})}</span></div>
+    `;
+
+    document.getElementById('modal-confirmar-pedido').classList.remove('hidden');
+    lucide.createIcons();
+}
+
+function cerrarModalConfirmacion(){
+    document.getElementById('modal-confirmar-pedido').classList.add('hidden');
+}
+
+function finalizarOrdenPedido(){
+    cerrarModalConfirmacion();
 
     const totales = calcularTotalesCarrito();
     const idOrden = contadorPedido++;
@@ -1142,7 +1326,7 @@ function mostrarConfirmacion(doc){
     const tbody = document.getElementById('confirm-detalle');
     tbody.innerHTML = '';
     doc.detalle.forEach(d=>{
-        tbody.innerHTML += `<tr class="border-b border-slate-100"><td class="py-2">${d.producto.nombre}</td><td class="py-2 text-center">${d.cantidad}</td><td class="py-2 text-right">$ ${d.precio_unitario.toLocaleString(undefined,{maximumFractionDigits:0})}</td><td class="py-2 text-right">$ ${d.subtotal.toLocaleString(undefined,{maximumFractionDigits:0})}</td></tr>`;
+        tbody.innerHTML += `<tr class="border-b border-slate-100"><td class="py-2.5">${d.producto.nombre}</td><td class="py-2.5 text-center">${d.cantidad}</td><td class="py-2.5 text-right">$ ${d.precio_unitario.toLocaleString(undefined,{maximumFractionDigits:0})}</td><td class="py-2.5 text-right font-semibold">$ ${d.subtotal.toLocaleString(undefined,{maximumFractionDigits:0})}</td></tr>`;
     });
     document.getElementById('confirm-totales').innerHTML = `<p>Modalidad de entrega: <b>${doc.modalidad_entrega}</b></p><p>Dirección: <b>${doc.direccion_entrega}</b></p><p>Fecha: <b>${doc.fecha_entrega}</b></p><p>Medio de pago: <b>${doc.medio_pago}</b></p><p class="text-lg font-bold text-slate-900 pt-1">Total: $ ${doc.total.toLocaleString(undefined,{maximumFractionDigits:0})}</p>`;
     irA('confirmacion');
@@ -1165,16 +1349,16 @@ function renderMisPedidos(){
     if(propios.length===0){ cont.innerHTML = `<p class="text-sm text-slate-400 py-10 text-center">Todavía no realizaste pedidos.</p>`; return; }
     propios.forEach(p=>{
         const div = document.createElement('div');
-        div.className = 'bg-white border border-slate-200 rounded-xl p-4 flex items-center justify-between hover:shadow-sm transition cursor-pointer';
+        div.className = 'bg-white border border-slate-200/80 rounded-2xl p-4 flex items-center justify-between hover:shadow-md transition cursor-pointer';
         div.onclick = ()=> verDetallePedido(p.id_orden_pedido_cliente);
         div.innerHTML = `
             <div>
-                <p class="font-semibold text-slate-800">${formatearIdentificador("PED", p.id_orden_pedido_cliente)}</p>
+                <p class="font-bold text-slate-800">${formatearIdentificador("PED", p.id_orden_pedido_cliente)}</p>
                 <p class="text-xs text-slate-500 mt-0.5">Entrega: ${p.fecha_entrega} · ${p.modalidad_entrega}</p>
             </div>
             <div class="text-right">
                 <p class="font-bold text-slate-900">$ ${p.total.toLocaleString(undefined,{maximumFractionDigits:0})}</p>
-                <span class="text-xs font-semibold px-2.5 py-1 rounded-full ${COLOR_ESTADO[p.estado]}">${p.estado}</span>
+                <span class="text-xs font-bold px-3 py-1 rounded-full ${COLOR_ESTADO[p.estado]} inline-block mt-1">${p.estado}</span>
             </div>`;
         cont.appendChild(div);
     });
@@ -1189,14 +1373,13 @@ function verDetallePedido(id){
     let filasEdit = '';
     pedido.detalle.forEach((d)=>{
         filasEdit += `<tr class="border-b border-slate-100">
-            <td class="py-2">${d.producto.nombre}</td>
-            <td class="py-2 text-center">${d.cantidad}</td>
-            <td class="py-2 text-right">$ ${d.precio_unitario.toLocaleString(undefined,{maximumFractionDigits:0})}</td>
-            <td class="py-2 text-right">$ ${d.subtotal.toLocaleString(undefined,{maximumFractionDigits:0})}</td>
+            <td class="py-2.5">${d.producto.nombre}</td>
+            <td class="py-2.5 text-center font-medium">${d.cantidad}</td>
+            <td class="py-2.5 text-right">$ ${d.precio_unitario.toLocaleString(undefined,{maximumFractionDigits:0})}</td>
+            <td class="py-2.5 text-right font-bold text-slate-900">$ ${d.subtotal.toLocaleString(undefined,{maximumFractionDigits:0})}</td>
         </tr>`;
     });
 
-    // Validar si faltan 48hs o más para cancelar
     const fechaEntrega = new Date(pedido.fecha_entrega + 'T00:00:00');
     const ahora = new Date();
     const horasDiferencia = (fechaEntrega - ahora) / (1000 * 60 * 60);
@@ -1205,23 +1388,23 @@ function verDetallePedido(id){
     cont.innerHTML = `
         <div class="flex flex-wrap items-center justify-between gap-2">
             <h3 class="text-xl font-bold text-slate-900">Pedido ${formatearIdentificador("PED", pedido.id_orden_pedido_cliente)}</h3>
-            <span class="text-xs font-semibold px-3 py-1 rounded-full ${COLOR_ESTADO[pedido.estado]}">${pedido.estado}</span>
+            <span class="text-xs font-bold px-3 py-1 rounded-full ${COLOR_ESTADO[pedido.estado]}">${pedido.estado}</span>
         </div>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs text-slate-500 mt-3">
-            <div><p class="font-semibold text-slate-700">Entrega</p>${pedido.modalidad_entrega}</div>
-            <div><p class="font-semibold text-slate-700">Dirección</p>${pedido.direccion_entrega}</div>
-            <div><p class="font-semibold text-slate-700">Fecha</p>${pedido.fecha_entrega}</div>
-            <div><p class="font-semibold text-slate-700">Pago</p>${pedido.medio_pago}</div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs text-slate-500 mt-4 bg-slate-50 p-3.5 rounded-xl border border-slate-200/60">
+            <div><p class="font-bold text-slate-700">Entrega</p>${pedido.modalidad_entrega}</div>
+            <div><p class="font-bold text-slate-700">Dirección</p>${pedido.direccion_entrega}</div>
+            <div><p class="font-bold text-slate-700">Fecha</p>${pedido.fecha_entrega}</div>
+            <div><p class="font-bold text-slate-700">Pago</p>${pedido.medio_pago}</div>
         </div>
         <table class="w-full text-sm text-left mt-4">
-            <thead class="border-b border-slate-200 text-xs uppercase text-slate-500"><tr><th class="py-2">Producto</th><th class="py-2 text-center">Cant.</th><th class="py-2 text-right">P. Unit.</th><th class="py-2 text-right">Subtotal</th></tr></thead>
+            <thead class="border-b border-slate-200 text-xs uppercase text-slate-500 font-bold"><tr><th class="py-2">Producto</th><th class="py-2 text-center">Cant.</th><th class="py-2 text-right">P. Unit.</th><th class="py-2 text-right">Subtotal</th></tr></thead>
             <tbody>${filasEdit}</tbody>
         </table>
         <div class="text-right font-bold text-lg text-slate-900 pt-3 border-t border-slate-200">Total: $ ${pedido.total.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
         
         <div class="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
             <p class="text-xs text-slate-500">Los pedidos pueden cancelarse con al menos 48hs de anticipación a la fecha de entrega.</p>
-            ${puedeCancelar ? `<button onclick="cancelarPedido(${pedido.id_orden_pedido_cliente})" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-xs font-semibold">Cancelar pedido</button>` : ''}
+            ${puedeCancelar ? `<button onclick="cancelarPedido(${pedido.id_orden_pedido_cliente})" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition active:scale-95">Cancelar pedido</button>` : ''}
         </div>
     `;
     lucide.createIcons();
@@ -1241,59 +1424,73 @@ function cancelarPedido(idPedido){
 function renderMiCuenta(){
     const c = clienteActual;
     const cont = document.getElementById('contenido-mi-cuenta');
+
+    const mensajeBienvenida = `
+        <div class="bg-red-50 border border-red-200/80 rounded-2xl p-4.5 flex items-center space-x-3.5 shadow-xs">
+            <div class="p-2.5 bg-red-600 text-white rounded-xl shadow-xs">
+                <i data-lucide="user" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <h3 class="font-bold text-slate-900 text-base leading-tight">Hola ${c.nombreCompleto}! 👋</h3>
+                <p class="text-xs text-slate-600 mt-0.5">Bienvenido a tu panel de control de cliente.</p>
+            </div>
+        </div>
+    `;
+
     let bloqueCC = '';
     if(c.tiene_cuenta_corriente){
         const pct = Math.min(100, Math.round((c.saldo_actual / c.limite_credito)*100));
         bloqueCC = `
-        <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-3">
-            <h3 class="font-semibold text-slate-800 flex items-center space-x-2"><i data-lucide="wallet" class="w-5 h-5 text-red-500"></i><span>Cuenta Corriente</span></h3>
-            ${c.tiene_deuda_vencida ? `<div class="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-700 flex items-center space-x-2"><i data-lucide="alert-triangle" class="w-4 h-4"></i><span>Tenés facturas vencidas. Las entregas se encuentran suspendidas.</span></div>` : ''}
+        <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-3">
+            <h3 class="font-bold text-slate-800 flex items-center space-x-2"><i data-lucide="wallet" class="w-5 h-5 text-red-600"></i><span>Cuenta Corriente</span></h3>
+            ${c.tiene_deuda_vencida ? `<div class="bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-700 font-medium flex items-center space-x-2"><i data-lucide="alert-triangle" class="w-4 h-4"></i><span>Tenés facturas vencidas. Las entregas se encuentran suspendidas.</span></div>` : ''}
             <div class="flex justify-between text-sm"><span class="text-slate-500">Saldo adeudado</span><span class="font-bold text-slate-900">$ ${c.saldo_actual.toLocaleString()}</span></div>
-            <div class="flex justify-between text-sm"><span class="text-slate-500">Límite de crédito</span><span class="font-medium">$ ${c.limite_credito.toLocaleString()}</span></div>
-            <div class="w-full bg-slate-100 rounded-full h-2"><div class="h-2 rounded-full ${pct>=100?'bg-red-600':'bg-red-400'}" style="width:${pct}%"></div></div>
-            <button onclick="abrirRegistrarPago()" class="w-full bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-lg text-sm font-semibold mt-2">Registrar un pago</button>
+            <div class="flex justify-between text-sm"><span class="text-slate-500">Límite de crédito</span><span class="font-medium text-slate-800">$ ${c.limite_credito.toLocaleString()}</span></div>
+            <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden"><div class="h-2 rounded-full ${pct>=100?'bg-red-600':'bg-red-500'}" style="width:${pct}%"></div></div>
+            <button onclick="abrirRegistrarPago()" class="w-full bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-xl text-sm font-bold shadow-sm transition active:scale-[0.99] mt-2">Registrar un pago</button>
         </div>`;
     }
 
     const historial = misComprobantesPago.filter(p=>p.id_cliente===c.id_cliente).sort((a,b)=>b.id_comprobante_pago_cliente-a.id_comprobante_pago_cliente);
-    let filasHistorial = historial.map(p=>`<tr class="border-b border-slate-100"><td class="py-2">${formatearIdentificador("REC", String(p.id_comprobante_pago_cliente).padStart(4,'0'))}</td><td class="py-2">${new Date(p.fecha_pago).toLocaleDateString('es-AR')}</td><td class="py-2">${p.medio_pago}</td><td class="py-2 text-right font-semibold">$ ${p.importe.toLocaleString()}</td></tr>`).join('');
+    let filasHistorial = historial.map(p=>`<tr class="border-b border-slate-100"><td class="py-2.5 font-medium">${formatearIdentificador("REC", String(p.id_comprobante_pago_cliente).padStart(4,'0'))}</td><td class="py-2.5">${new Date(p.fecha_pago).toLocaleDateString('es-AR')}</td><td class="py-2.5">${p.medio_pago}</td><td class="py-2.5 text-right font-bold text-slate-900">$ ${p.importe.toLocaleString()}</td></tr>`).join('');
 
     cont.innerHTML = `
-        <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-            <div class="flex items-center justify-between mb-3">
-                <h3 class="font-semibold text-slate-800">Mis datos</h3>
-                <button onclick="irA('editar-perfil')" class="text-xs font-semibold text-red-600 hover:underline">Editar perfil</button>
+        ${mensajeBienvenida}
+        <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-slate-900">Mis datos personales</h3>
+                <button onclick="irA('editar-perfil')" class="text-xs font-bold text-red-600 hover:text-red-700 transition">Editar perfil</button>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                <div><p class="text-xs text-slate-400">Nombre y Apellido</p><p class="font-medium">${c.nombreCompleto}</p></div>
-                <div><p class="text-xs text-slate-400">Documento</p><p class="font-medium">${c.documentoCompleto}</p></div>
-                <div><p class="text-xs text-slate-400">Email</p><p class="font-medium">${c.email}</p></div>
-                <div><p class="text-xs text-slate-400">Teléfono</p><p class="font-medium">${c.telefono||'-'}</p></div>
-                <div><p class="text-xs text-slate-400">Domicilio</p><p class="font-medium">${c.direccionCompleta}</p></div>
-                <div><p class="text-xs text-slate-400">Condición IVA</p><p class="font-medium">${c.condicion_iva}</p></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                <div class="bg-slate-50/80 p-3.5 rounded-xl border border-slate-100"><p class="text-xs text-slate-400 font-medium">Nombre y Apellido</p><p class="font-bold text-slate-800 mt-0.5">${c.nombreCompleto}</p></div>
+                <div class="bg-slate-50/80 p-3.5 rounded-xl border border-slate-100"><p class="text-xs text-slate-400 font-medium">Documento</p><p class="font-bold text-slate-800 mt-0.5">${c.documentoCompleto}</p></div>
+                <div class="bg-slate-50/80 p-3.5 rounded-xl border border-slate-100"><p class="text-xs text-slate-400 font-medium">Email</p><p class="font-bold text-slate-800 mt-0.5">${c.email}</p></div>
+                <div class="bg-slate-50/80 p-3.5 rounded-xl border border-slate-100"><p class="text-xs text-slate-400 font-medium">Teléfono</p><p class="font-bold text-slate-800 mt-0.5">${c.telefono||'-'}</p></div>
+                <div class="bg-slate-50/80 p-3.5 rounded-xl border border-slate-100"><p class="text-xs text-slate-400 font-medium">Domicilio</p><p class="font-bold text-slate-800 mt-0.5">${c.direccionCompleta}</p></div>
+                <div class="bg-slate-50/80 p-3.5 rounded-xl border border-slate-100"><p class="text-xs text-slate-400 font-medium">Condición IVA</p><p class="font-bold text-slate-800 mt-0.5">${c.condicion_iva}</p></div>
             </div>
         </div>
         ${bloqueCC}
-        <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-            <h3 class="font-semibold text-slate-800 mb-3">Historial de pagos</h3>
-            ${historial.length===0 ? `<p class="text-sm text-slate-400">Todavía no registraste pagos.</p>` : `<table class="w-full text-sm text-left"><thead class="text-xs uppercase text-slate-500 border-b"><tr><th class="py-2">N° Recibo</th><th class="py-2">Fecha</th><th class="py-2">Medio</th><th class="py-2 text-right">Importe</th></tr></thead><tbody>${filasHistorial}</tbody></table>`}
+        <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm">
+            <h3 class="font-bold text-slate-900 mb-3">Historial de pagos</h3>
+            ${historial.length===0 ? `<p class="text-sm text-slate-400">Todavía no registraste pagos.</p>` : `<table class="w-full text-sm text-left"><thead class="text-xs uppercase text-slate-500 font-bold border-b border-slate-200"><tr><th class="py-2">N° Recibo</th><th class="py-2">Fecha</th><th class="py-2">Medio</th><th class="py-2 text-right">Importe</th></tr></thead><tbody>${filasHistorial}</tbody></table>`}
         </div>
-        <div id="modal-registrar-pago" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-            <div class="bg-white rounded-xl p-6 w-full max-w-sm space-y-4">
+        <div id="modal-registrar-pago" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl p-6 w-full max-w-sm space-y-4 shadow-2xl">
                 <h3 class="font-bold text-slate-900">Registrar pago</h3>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Monto a pagar ($)</label>
-                    <input id="pago-monto" type="number" value="${c.saldo_actual}" max="${c.saldo_actual}" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                    <input id="pago-monto" type="number" value="${c.saldo_actual}" max="${c.saldo_actual}" class="w-full border border-slate-300 rounded-xl p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500 transition">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Medio de pago</label>
-                    <select id="pago-medio" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                    <select id="pago-medio" class="w-full border border-slate-300 rounded-xl p-2.5 text-sm outline-none bg-white">
                         <option>Efectivo</option><option>Tarjeta de Débito</option><option>Transferencia Bancaria</option><option>Billetera Virtual</option>
                     </select>
                 </div>
                 <div class="flex justify-end gap-2 pt-2">
-                    <button onclick="document.getElementById('modal-registrar-pago').classList.add('hidden')" class="px-4 py-2 text-sm font-semibold text-slate-500">Cancelar</button>
-                    <button onclick="confirmarRegistrarPago()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">Confirmar pago</button>
+                    <button onclick="document.getElementById('modal-registrar-pago').classList.add('hidden')" class="px-4 py-2 text-sm font-semibold text-slate-500 hover:text-slate-800 transition">Cancelar</button>
+                    <button onclick="confirmarRegistrarPago()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition active:scale-95">Confirmar pago</button>
                 </div>
             </div>
         </div>
