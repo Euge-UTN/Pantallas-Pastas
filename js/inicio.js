@@ -92,6 +92,8 @@ function renderizarStatsInicio() {
     }
 
     document.getElementById('grid-stats-inicio').innerHTML = stats.join('') || `<p class="text-sm text-slate-400 col-span-full">No hay estadísticas disponibles para tu rol.</p>`;
+    // La tarjeta "Monto Cobrado" (con rango de fechas y medios de pago) solo para quienes ven Cobranzas.
+    document.getElementById('tarjeta-monto-inicio')?.classList.toggle('hidden', !(ROLES_POR_MODULO.cobranzas || []).includes(rol));
 }
 
 // ---------- Gráficos de Ventas (Chart.js) - solo visibles para roles con acceso al módulo de Ventas ----------

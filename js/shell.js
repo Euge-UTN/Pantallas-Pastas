@@ -51,13 +51,14 @@ const MODULOS = [
     { id: 'produccion', nombre: 'Producción', icono: 'chef-hat', grupo: 'Módulo', submenu: [
         { id: 'historial', nombre: 'Órdenes de Producción', icono: 'layout-dashboard' },
         { id: 'productos', nombre: 'Productos', icono: 'package' },
+        { id: 'recetas', nombre: 'Recetas', icono: 'book-open' },
         { id: 'materias-primas', nombre: 'Materias Primas', icono: 'wheat' },
         { id: 'maquinaria', nombre: 'Maquinarias', icono: 'cog' }
     ] },
     { id: 'mantenimiento', nombre: 'Mantenimiento', icono: 'wrench', grupo: 'Módulo', submenu: [
         { id: 'historial', nombre: 'Órdenes de Mantenimiento', icono: 'layout-dashboard' }
     ] },
-    { id: 'administracion', nombre: 'Administración', icono: 'building-2', grupo: 'Módulo', submenu: [
+    { id: 'administracion', nombre: 'Tablas del sistema', icono: 'building-2', grupo: 'Módulo', submenu: [
         { id: 'historial', nombre: 'Empleados', icono: 'id-card', pagina: 'empleados' }
     ] }
 ];

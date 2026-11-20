@@ -7,6 +7,7 @@
 const SUBVISTAS_PRODUCCION = [
     'historial', 'nueva-orden', 'detalle-orden',
     'productos', 'registrar-producto',
+    'recetas', 'registrar-receta',
     'materias-primas', 'registrar-materia-prima',
     'maquinaria', 'registrar-maquinaria', 'historial-maquina'
 ];
@@ -62,6 +63,12 @@ function irASubvistaDesdeHashProduccion() {
     } else if (hash === 'registrar-producto') {
         if (!productoEnEdicionId) resetFormularioProducto();
         mostrarSubvistaProduccion('registrar-producto');
+    } else if (hash === 'recetas') {
+        renderizarTablaRecetas();
+        mostrarSubvistaProduccion('recetas');
+    } else if (hash === 'registrar-receta') {
+        if (!recetaEnEdicionId) resetFormularioReceta();
+        mostrarSubvistaProduccion('registrar-receta');
     } else if (hash === 'materias-primas') {
         renderizarTablaMateriasPrimas();
         mostrarSubvistaProduccion('materias-primas');
@@ -94,19 +101,21 @@ function volverAlHistorialProduccion() {
 }
 
 // ==========================================
-// STOCK DE MATERIA PRIMA
+// STOCK DE MATERIA PRIMA (el mismo stock de la pantalla Materias Primas)
 // ==========================================
+const stockBajoMateriaPrima = mp => mp.stock_actual <= mp.stock_minimo;
+
 function renderizarStockUI() {
     const grid = document.getElementById('grid-stock-materia-prima');
     if (!grid) return;
     grid.innerHTML = '';
-    Object.values(stockMateriaPrima).forEach(mp => {
-        const bajo = mp.cantidad_actual <= 20;
+    listaMateriasPrimas.filter(mp => mp.estado_activa).forEach(mp => {
+        const bajo = stockBajoMateriaPrima(mp);
         const div = document.createElement('div');
         div.className = 'bg-white border border-slate-200 rounded-xl p-4';
         div.innerHTML = `
-            <p class="text-xs text-slate-400">${mp.nombre}</p>
-            <p class="text-xl font-bold ${bajo ? 'text-red-600' : 'text-slate-900'}">${formatearCantidad(mp.cantidad_actual)} <span class="text-xs font-normal text-slate-400">${mp.unidad_medida}</span></p>
+            <p class="text-xs text-slate-400">${mp.nombre_materia_prima}</p>
+            <p class="text-xl font-bold ${bajo ? 'text-red-600' : 'text-slate-900'}">${formatearCantidad(mp.stock_actual)} <span class="text-xs font-normal text-slate-400">${abreviaturaUnidadMedida(mp.id_unidad_medida)}</span></p>
             ${bajo ? '<span class="text-[10px] font-semibold text-red-500">Stock bajo</span>' : ''}
         `;
         grid.appendChild(div);
@@ -151,15 +160,16 @@ function filtrarProductosProduccion() {
 
     if (!termino) { cont.classList.add('hidden'); cont.innerHTML = ''; return; }
 
-    const filtrados = listaRecetas.filter(r => normalizarTexto(r.nombre_producto).includes(termino));
+    const filtrados = listaRecetas.filter(r => r.estado_activa && normalizarTexto(r.nombre_producto).includes(termino));
     if (!filtrados.length) {
-        cont.innerHTML = `<p class="px-3 py-2 text-xs text-slate-400">Sin resultados. No hay receta para ese producto.</p>`;
+        cont.innerHTML = `<p class="px-3 py-2 text-xs text-slate-400">Sin resultados. No hay receta activa para ese producto.</p>`;
         cont.classList.remove('hidden');
         return;
     }
     cont.innerHTML = filtrados.map(r => `
         <button type="button" onmousedown="event.preventDefault(); elegirProductoProduccion(${r.id_receta})" class="block w-full text-left px-3 py-2 text-sm hover:bg-slate-100">
             <span class="block truncate">${r.nombre_producto}</span>
+            <span class="block text-[11px] text-slate-400">${r.nombre_receta} · v${r.version}</span>
         </button>`).join('');
     cont.classList.remove('hidden');
 }
@@ -252,22 +262,24 @@ function calcularRequerimientoConsolidado(items) {
         if (!receta || !receta.detalle) return;
 
         receta.detalle.forEach(d => {
-            const prop = d.cantidad_por_kg || d.cantidad || 0;
-            const cantidad = prop * item.cantidad_planificada;
-            if (!mapa[d.clave_mp]) mapa[d.clave_mp] = 0;
-            mapa[d.clave_mp] += cantidad;
+            const mp = materiaPrimaDeItem(d);
+            if (!mp) return;
+            mapa[mp.id_materia_prima] = (mapa[mp.id_materia_prima] || 0) + (d.cantidad_por_kg || 0) * item.cantidad_planificada;
         });
     });
 
-    return Object.entries(mapa).map(([clave_mp, cantidad_planificada]) => {
-        const mpObj = stockMateriaPrima[clave_mp] || { nombre: clave_mp, unidad_medida: 'kg', cantidad_actual: 0 };
+    return Object.entries(mapa).map(([id, cantidad_planificada]) => {
+        const mp = listaMateriasPrimas.find(m => m.id_materia_prima === Number(id));
         return {
-            clave_mp,
-            nombre: mpObj.nombre,
+            id_materia_prima: mp.id_materia_prima,
+            nombre: mp.nombre_materia_prima,
             cantidad_planificada: +cantidad_planificada.toFixed(2)
         };
     });
 }
+
+const stockDisponibleMP = d => materiaPrimaDeItem(d)?.stock_actual || 0;
+const unidadMP = d => { const mp = materiaPrimaDeItem(d); return mp ? abreviaturaUnidadMedida(mp.id_unidad_medida) : 'kg'; };
 
 function recalcularRequerimientoMP() {
     ultimoRequerimientoMP = calcularRequerimientoConsolidado(itemsProductosProduccionActual);
@@ -284,9 +296,8 @@ function recalcularRequerimientoMP() {
 
     let hayFaltante = false;
     ultimoRequerimientoMP.forEach(d => {
-        const mpInfo = stockMateriaPrima[d.clave_mp] || { cantidad_actual: 0, unidad_medida: 'kg' };
-        const disponible = mpInfo.cantidad_actual;
-        const unidad = mpInfo.unidad_medida;
+        const disponible = stockDisponibleMP(d);
+        const unidad = unidadMP(d);
         const faltante = d.cantidad_planificada > disponible;
         if (faltante) hayFaltante = true;
 
@@ -303,14 +314,23 @@ function recalcularRequerimientoMP() {
     if (btnNota) btnNota.classList.toggle('hidden', !hayFaltante);
 }
 
+// El faltante (en la unidad de stock) se convierte a envases del catálogo de compra (ej. 30 kg de harina -> 1 Bolsa
+// 50kg) y se precarga en una nueva Orden de Compra.
 function generarNotaPedidoMP() {
     const faltantes = ultimoRequerimientoMP
-        .map(d => ({ clave: d.clave_mp, cantidad: +(d.cantidad_planificada - stockMateriaPrima[d.clave_mp].cantidad_actual).toFixed(2) }))
-        .filter(f => f.cantidad > 0);
+        .map(d => {
+            const mp = materiaPrimaDeItem(d);
+            const faltante = d.cantidad_planificada - mp.stock_actual;
+            if (faltante <= 0) return null;
+            const item = itemCatalogoComprasDeMateriaPrima(mp);
+            return { clave: item.clave, cantidad: Math.ceil(faltante / item.contenido) };
+        })
+        .filter(Boolean);
     if (!faltantes.length) return;
+    guardarDatos();
     sessionStorage.setItem('notaPedidoMPPendiente', JSON.stringify(faltantes));
-    alert('Se generó la Nota de Pedido de Materia Prima. Te llevamos a Compras para elegir el proveedor y confirmarla.');
-    window.location.href = 'compras.html#registrar-presupuesto';
+    alert('Se generó la Nota de Pedido de Materia Prima. Te llevamos a Compras para elegir el proveedor y confirmar la Orden de Compra.');
+    window.location.href = 'compras.html#registrar-orden-compra';
 }
 
 // ==========================================
@@ -362,7 +382,7 @@ function registrarOrdenProduccion() {
 
     const detalleMateriaPrima = calcularRequerimientoConsolidado(itemsProductosProduccionActual);
 
-    const faltante = detalleMateriaPrima.find(d => d.cantidad_planificada > (stockMateriaPrima[d.clave_mp]?.cantidad_actual || 0));
+    const faltante = detalleMateriaPrima.find(d => d.cantidad_planificada > stockDisponibleMP(d));
     if (faltante) return alert(`Stock insuficiente de ${faltante.nombre} para esta orden. Generá una Nota de Pedido de MP desde Compras antes de continuar.`);
 
     const detalleProductos = itemsProductosProduccionActual.map(it => ({
@@ -514,12 +534,13 @@ function marcarEnProcesoOrdenProduccion(id) {
     const orden = listaOrdenesProduccion.find(o => o.id_orden_produccion === id);
     if (!orden || orden.estado !== 'A iniciar') return;
 
-    const faltante = orden.detalleMateriaPrima.find(d => d.cantidad_planificada > (stockMateriaPrima[d.clave_mp]?.cantidad_actual || 0));
+    const faltante = orden.detalleMateriaPrima.find(d => d.cantidad_planificada > stockDisponibleMP(d));
     if (faltante) return alert(`Stock insuficiente de ${faltante.nombre} para iniciar la orden ${formatearIdentificador("OP", id)}. Generá una Nota de Pedido de MP desde Compras antes de continuar.`);
     if (!confirm(`¿Marcar la orden ${formatearIdentificador("OP", id)} como En Proceso? A partir de ahora no se podrá modificar ni cancelar.`)) return;
 
     orden.detalleMateriaPrima.forEach(d => {
-        if (stockMateriaPrima[d.clave_mp]) stockMateriaPrima[d.clave_mp].cantidad_actual -= d.cantidad_planificada;
+        const mp = materiaPrimaDeItem(d);
+        if (mp) mp.stock_actual = +(mp.stock_actual - d.cantidad_planificada).toFixed(3);
     });
     orden.estado = 'En Proceso';
     orden.stockDescontado = true;
@@ -550,7 +571,7 @@ function renderizarStatsProduccion() {
     document.getElementById('kpi-prod-en-proceso').textContent = listaOrdenesProduccion.filter(o => o.estado === 'En Proceso').length;
     document.getElementById('kpi-prod-finalizadas').textContent = listaOrdenesProduccion.filter(o => o.estado === 'Finalizada').length;
     document.getElementById('kpi-prod-canceladas').textContent = listaOrdenesProduccion.filter(o => o.estado === 'Cancelada').length;
-    document.getElementById('kpi-prod-stock-bajo').textContent = Object.values(stockMateriaPrima).filter(mp => mp.cantidad_actual <= 20).length;
+    document.getElementById('kpi-prod-stock-bajo').textContent = listaMateriasPrimas.filter(mp => mp.estado_activa && stockBajoMateriaPrima(mp)).length;
 }
 
 // ==========================================
@@ -591,7 +612,7 @@ function renderizarDetalleOrdenProduccion() {
     }).join('');
 
     const filasMateriaPrima = o.detalleMateriaPrima.map(d => {
-        const unidad = stockMateriaPrima[d.clave_mp] ? stockMateriaPrima[d.clave_mp].unidad_medida : 'kg';
+        const unidad = unidadMP(d);
         return `
         <tr class="border-b border-slate-100">
             <td class="py-2">${d.nombre}</td>
@@ -722,7 +743,7 @@ function abrirModalCierreOrden(id) {
                         <div class="flex items-center space-x-2">
                             <span class="text-slate-400">(Plan: ${mp.cantidad_planificada})</span>
                             <input type="number" id="cierre-mp-cant-${idx}" value="${mp.cantidad_planificada}" class="w-20 border border-slate-300 rounded p-1 text-center">
-                            <span class="text-slate-500">${stockMateriaPrima[mp.clave_mp] ? stockMateriaPrima[mp.clave_mp].unidad_medida : 'kg'}</span>
+                            <span class="text-slate-500">${unidadMP(mp)}</span>
                         </div>
                     </div>
                 `).join('')}
@@ -747,15 +768,17 @@ function confirmarCierreOrden() {
 
     orden.fecha_vencimiento = primeraFechaVenc;
 
-    orden.detalleMateriaPrima.forEach((mp, idx) => {
-        const cantReal = parseFloat(document.getElementById(`cierre-mp-cant-${idx}`)?.value) || mp.cantidad_planificada;
-        const diferencia = cantReal - mp.cantidad_planificada;
-        mp.cantidad_real = cantReal;
-
-        if (diferencia !== 0 && stockMateriaPrima[mp.clave_mp]) {
-            stockMateriaPrima[mp.clave_mp].cantidad_actual -= diferencia;
-        }
+    // Al iniciar ya se descontó lo planificado: acá solo se ajusta la diferencia con lo realmente utilizado.
+    orden.detalleMateriaPrima.forEach((d, idx) => {
+        const cantReal = parseFloat(document.getElementById(`cierre-mp-cant-${idx}`)?.value) || d.cantidad_planificada;
+        const diferencia = cantReal - d.cantidad_planificada;
+        d.cantidad_real = cantReal;
+        const mp = materiaPrimaDeItem(d);
+        if (diferencia !== 0 && mp) mp.stock_actual = +(mp.stock_actual - diferencia).toFixed(3);
     });
+
+    // Lo producido entra al stock de productos terminados.
+    moverStockProductos(orden.detalleProductos.map(p => ({ nombre: p.nombre_producto, cantidad: p.cantidad_real })), +1);
 
     orden.estado = 'Finalizada';
     guardarDatos();
@@ -1020,34 +1043,6 @@ function poblarPopoverSubtipoProducto() {
         dbSubtiposProducto.map(s => `<button type="button" onclick="elegirFiltroSubtipoProducto(${s.id_subtipo_producto})" class="block w-full text-left px-2 py-1 text-xs hover:bg-slate-100">${s.tipo} - ${s.subtipo}</button>`).join('');
 }
 
-// El usuario elige primero el Tipo (Pasta, Salsa...) y recién después el Subtipo, ya filtrado por ese tipo.
-function tiposProductoUnicos() {
-    return [...new Set(dbSubtiposProducto.map(s => s.tipo))];
-}
-
-function poblarSelectTipoProducto(selectId) {
-    const select = document.getElementById(selectId);
-    if (!select) return;
-    select.innerHTML = `<option value="" disabled selected>Elegí un tipo</option>` +
-        tiposProductoUnicos().map(t => `<option value="${t}">${t}</option>`).join('');
-}
-
-function poblarSelectSubtipoProductoCascada(tipoSelectId, subtipoSelectId) {
-    const tipo = document.getElementById(tipoSelectId).value;
-    const select = document.getElementById(subtipoSelectId);
-    if (!select) return;
-    const opciones = dbSubtiposProducto.filter(s => s.tipo === tipo);
-    select.innerHTML = opciones.length
-        ? opciones.map(s => `<option value="${s.id_subtipo_producto}">${s.subtipo}</option>`).join('')
-        : `<option value="" disabled selected>Elegí el tipo primero</option>`;
-}
-
-function poblarSelectUnidadMedida(selectId) {
-    const select = document.getElementById(selectId);
-    if (!select) return;
-    select.innerHTML = dbUnidadesMedida.map(u => `<option value="${u.id_unidad_medida}">${u.nombre}</option>`).join('');
-}
-
 function resetFormularioProducto() {
     productoEnEdicionId = null;
     document.getElementById('prodn-nombre').value = '';
@@ -1108,13 +1103,55 @@ function renderizarTablaProductos() {
                 <td class="px-6 py-3 text-right ${p.stock_actual <= p.stock_minimo ? 'text-red-600 font-semibold' : 'text-slate-700'}">${p.stock_actual}</td>
                 <td class="px-6 py-3 text-right text-slate-500">${p.stock_minimo}</td>
                 <td class="px-6 py-3 text-center"><span class="text-xs px-2.5 py-1 rounded-full font-semibold whitespace-nowrap ${p.estado_activo ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'}">${p.estado_activo ? 'Activo' : 'Inactivo'}</span></td>
-                <td class="px-6 py-3 text-center">
+                <td class="px-6 py-3 text-center whitespace-nowrap">
+                    <button type="button" onclick="verProducto(${idx})" title="Ver producto" class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition"><i data-lucide="eye" class="w-4 h-4"></i></button>
                     <button type="button" onclick="editarProducto(${idx})" title="Editar" class="p-2 rounded-lg text-amber-600 hover:bg-amber-50 transition"><i data-lucide="pencil" class="w-4 h-4"></i></button>
                 </td>
             </tr>`;
         }).join('');
     }
     if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+// Modal de solo lectura compartido por Productos y Materias Primas.
+const campoVerRegistro = (etiqueta, valor) => `<div><p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">${etiqueta}</p><p class="text-sm text-slate-800">${valor}</p></div>`;
+const stockConAviso = (actual, minimo) => actual <= minimo
+    ? `<span class="text-red-600 font-semibold">${actual}</span> <span class="text-xs text-red-500">(stock bajo)</span>`
+    : actual;
+
+function abrirModalVerRegistro(icono, titulo, nombre, activo, textoEstado, campos, pie = '') {
+    document.getElementById('modal-ver-registro-icono').innerHTML = `<i data-lucide="${icono}" class="w-5 h-5"></i>`;
+    document.getElementById('modal-ver-registro-titulo').innerText = titulo;
+    document.getElementById('modal-ver-registro-contenido').innerHTML = `
+        <div class="flex items-center justify-between">
+            <h4 class="text-lg font-bold text-slate-900">${nombre}</h4>
+            <span class="text-xs px-2.5 py-1 rounded-full font-semibold whitespace-nowrap ${activo ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'}">${textoEstado}</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">${campos.map(([etiqueta, valor]) => campoVerRegistro(etiqueta, valor)).join('')}</div>
+        ${pie}`;
+    document.getElementById('modal-ver-registro').classList.remove('hidden');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function cerrarModalVerRegistro() {
+    document.getElementById('modal-ver-registro').classList.add('hidden');
+}
+
+function verProducto(idx) {
+    const p = listaProductos[idx];
+    if (!p) return;
+    const st = subtipoProducto(p.id_subtipo_producto);
+    abrirModalVerRegistro('package', `Producto ${formatearIdentificador("PROD", String(p.id_producto).padStart(4, '0'))}`, p.nombre,
+        p.estado_activo, p.estado_activo ? 'Activo' : 'Inactivo',
+        [
+            ['Tipo', st ? st.tipo : '-'],
+            ['Subtipo', st ? st.subtipo : '-'],
+            ['Unidad de Medida', nombreUnidadMedida(p.id_unidad_medida)],
+            ['Precio Unitario', `$ ${p.precio_unitario.toLocaleString()}`],
+            ['Stock Actual', stockConAviso(p.stock_actual, p.stock_minimo)],
+            ['Stock Mínimo', p.stock_minimo]
+        ],
+        campoVerRegistro('Descripción', p.descripcion || '-'));
 }
 
 function editarProducto(idx) {
@@ -1169,8 +1206,308 @@ function guardarProducto() {
 }
 
 // ==========================================
-// MATERIAS PRIMAS (catálogo propio de Producción, independiente del CATALOGO_MATERIAS_PRIMAS/stockMateriaPrima
-// que ya usan Compras y la lógica de descuento de stock de las Órdenes de Producción)
+// RECETAS (Receta + detalle de ingredientes). Las Órdenes de Producción eligen sus productos entre las
+// recetas activas y calculan la MP necesaria con cantidad_por_kg de cada ingrediente.
+// ==========================================
+let ordenListadoRecetas = { campo: '', direccion: '' };
+let filtroEstadoRecetaListado = '';
+let recetaEnEdicionId = null;
+let ingredientesRecetaActual = []; // [{ id_materia_prima, cantidad }]
+
+function irARecetas() {
+    if (window.location.hash !== '#recetas') window.location.hash = 'recetas';
+    else irASubvistaDesdeHashProduccion();
+}
+function irARegistrarReceta() {
+    recetaEnEdicionId = null;
+    if (window.location.hash !== '#registrar-receta') window.location.hash = 'registrar-receta';
+    else irASubvistaDesdeHashProduccion();
+}
+function volverARecetas() {
+    recetaEnEdicionId = null;
+    irARecetas();
+}
+
+function ordenarListadoRecetas(campo) {
+    ordenListadoRecetas.direccion = ordenListadoRecetas.campo === campo && ordenListadoRecetas.direccion === 'asc' ? 'desc' : 'asc';
+    ordenListadoRecetas.campo = campo;
+    renderizarTablaRecetas();
+}
+
+function elegirFiltroEstadoReceta(valor) {
+    filtroEstadoRecetaListado = valor;
+    document.getElementById('pop-recetas-estado')?.classList.add('hidden');
+    renderizarTablaRecetas();
+}
+
+const unidadProductoDeReceta = r => {
+    const p = listaProductos.find(x => x.id_producto === r.id_producto);
+    return p ? abreviaturaUnidadMedida(p.id_unidad_medida) : 'kg';
+};
+
+function renderizarTablaRecetas() {
+    const tbody = document.getElementById('tabla-recetas');
+    if (!tbody) return;
+
+    const set = (id, valor) => { const el = document.getElementById(id); if (el) el.textContent = valor; };
+    set('kpi-recetas-total', listaRecetas.length);
+    set('kpi-recetas-activas', listaRecetas.filter(r => r.estado_activa).length);
+    set('kpi-recetas-inactivas', listaRecetas.filter(r => !r.estado_activa).length);
+    set('kpi-recetas-por-vencer', listaRecetas.filter(r => r.estado_activa && r.fecha_vencimiento && diasHasta(r.fecha_vencimiento) <= 15 && diasHasta(r.fecha_vencimiento) >= 0).length);
+
+    const terminoNumero = normalizarTexto(document.getElementById('buscar-recetas-numero')?.value || '').trim();
+    const terminoNombre = normalizarTexto(document.getElementById('buscar-recetas-nombre')?.value || '').trim();
+    const terminoProducto = normalizarTexto(document.getElementById('buscar-recetas-producto')?.value || '').trim();
+
+    const recetas = listaRecetas.filter(r =>
+        (!terminoNumero || String(r.id_receta).includes(terminoNumero)) &&
+        (!terminoNombre || normalizarTexto(r.nombre_receta).includes(terminoNombre)) &&
+        (!terminoProducto || normalizarTexto(r.nombre_producto).includes(terminoProducto)) &&
+        (!filtroEstadoRecetaListado || (filtroEstadoRecetaListado === 'activa' ? r.estado_activa : !r.estado_activa)));
+
+    if (ordenListadoRecetas.campo) {
+        const campo = ordenListadoRecetas.campo;
+        recetas.sort((a, b) => {
+            const va = a[campo], vb = b[campo];
+            const cmp = typeof va === 'number' ? va - vb : String(va || '').localeCompare(String(vb || ''), 'es');
+            return ordenListadoRecetas.direccion === 'asc' ? cmp : -cmp;
+        });
+    }
+
+    if (!recetas.length) {
+        tbody.innerHTML = `<tr><td colspan="10" class="p-6 text-center text-slate-400">No se encontraron recetas con ese criterio.</td></tr>`;
+    } else {
+        tbody.innerHTML = recetas.map(r => {
+            const idx = listaRecetas.indexOf(r);
+            const vencidaOPorVencer = r.fecha_vencimiento && diasHasta(r.fecha_vencimiento) <= 15;
+            return `
+            <tr class="hover:bg-slate-50 border-b border-slate-100">
+                <td class="px-6 py-3 font-semibold text-slate-500 whitespace-nowrap">${formatearIdentificador("REC", String(r.id_receta).padStart(4, '0'))}</td>
+                <td class="px-6 py-3 font-semibold text-slate-800">${r.nombre_receta}</td>
+                <td class="px-6 py-3 text-slate-600">${r.nombre_producto || '-'}</td>
+                <td class="px-6 py-3 text-center text-slate-600">v${r.version}</td>
+                <td class="px-6 py-3 text-right text-slate-600 whitespace-nowrap">${formatearCantidad(r.cantidad_producida)} ${unidadProductoDeReceta(r)}</td>
+                <td class="px-6 py-3 text-right text-slate-600 whitespace-nowrap">${formatearCantidad(r.rendimiento_kg)}</td>
+                <td class="px-6 py-3 text-center text-slate-600">${r.detalle.length}</td>
+                <td class="px-6 py-3 whitespace-nowrap ${vencidaOPorVencer && r.estado_activa ? 'text-amber-600 font-semibold' : 'text-slate-500'}">${formatearFechaLatina(r.fecha_vencimiento)}</td>
+                <td class="px-6 py-3 text-center"><span class="text-xs px-2.5 py-1 rounded-full font-semibold whitespace-nowrap ${r.estado_activa ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'}">${r.estado_activa ? 'Activa' : 'Inactiva'}</span></td>
+                <td class="px-6 py-3 text-center whitespace-nowrap">
+                    <button type="button" onclick="verReceta(${idx})" title="Ver receta" class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition"><i data-lucide="eye" class="w-4 h-4"></i></button>
+                    <button type="button" onclick="editarReceta(${idx})" title="Editar" class="p-2 rounded-lg text-amber-600 hover:bg-amber-50 transition"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+// ---------- Formulario Registrar / Editar Receta ----------
+function poblarSelectProductoReceta(idSeleccionado) {
+    const select = document.getElementById('rec-producto');
+    select.innerHTML = `<option value="" disabled ${idSeleccionado ? '' : 'selected'}>Elegí un producto</option>` +
+        listaProductos.filter(p => p.estado_activo || p.id_producto === idSeleccionado)
+            .map(p => `<option value="${p.id_producto}" ${p.id_producto === idSeleccionado ? 'selected' : ''}>${p.nombre}</option>`).join('');
+    actualizarUnidadProductoReceta();
+}
+
+function actualizarUnidadProductoReceta() {
+    const p = listaProductos.find(x => x.id_producto === parseInt(document.getElementById('rec-producto').value));
+    document.getElementById('rec-unidad-producto').textContent = p ? `(${abreviaturaUnidadMedida(p.id_unidad_medida)})` : '';
+}
+
+function poblarSelectMateriaPrimaReceta() {
+    const select = document.getElementById('rec-ing-mp');
+    select.innerHTML = `<option value="" disabled selected>Elegí una materia prima</option>` +
+        listaMateriasPrimas.filter(m => m.estado_activa)
+            .map(m => `<option value="${m.id_materia_prima}">${m.nombre_materia_prima} (${nombreTipoMateriaPrima(m.id_tipo_materia_prima)} · ${nombreMarca(m.id_marca)})</option>`).join('');
+    actualizarUnidadIngredienteReceta();
+}
+
+function actualizarUnidadIngredienteReceta() {
+    const mp = listaMateriasPrimas.find(m => m.id_materia_prima === parseInt(document.getElementById('rec-ing-mp').value));
+    document.getElementById('rec-ing-unidad').textContent = mp ? `(${abreviaturaUnidadMedida(mp.id_unidad_medida)})` : '';
+}
+
+function resetFormularioReceta() {
+    recetaEnEdicionId = null;
+    ingredientesRecetaActual = [];
+    document.getElementById('titulo-registrar-receta').innerText = 'Registrar Receta';
+    document.getElementById('rec-nombre').value = '';
+    document.getElementById('rec-version').value = 1;
+    poblarSelectProductoReceta(null);
+    document.getElementById('rec-estado').value = 'true';
+    document.getElementById('rec-cantidad-producida').value = '';
+    document.getElementById('rec-rendimiento').value = '';
+    document.getElementById('rec-vencimiento').value = '';
+    document.getElementById('rec-procedimiento').value = '';
+    poblarSelectMateriaPrimaReceta();
+    document.getElementById('rec-ing-cant').value = '';
+    renderizarTablaIngredientesReceta();
+}
+
+function agregarIngredienteReceta() {
+    const idMp = parseInt(document.getElementById('rec-ing-mp').value);
+    const cantidad = parseFloat(document.getElementById('rec-ing-cant').value);
+    if (!idMp) return alert('Elegí una materia prima.');
+    if (!cantidad || cantidad <= 0) return alert('Ingresá una cantidad válida.');
+
+    const existente = ingredientesRecetaActual.find(i => i.id_materia_prima === idMp);
+    if (existente) existente.cantidad = +(existente.cantidad + cantidad).toFixed(3);
+    else ingredientesRecetaActual.push({ id_materia_prima: idMp, cantidad });
+
+    document.getElementById('rec-ing-cant').value = '';
+    renderizarTablaIngredientesReceta();
+}
+
+function actualizarCantidadIngredienteReceta(idMp, valor) {
+    const item = ingredientesRecetaActual.find(i => i.id_materia_prima === idMp);
+    const cantidad = parseFloat(valor);
+    if (item && cantidad > 0) item.cantidad = cantidad;
+    renderizarTablaIngredientesReceta();
+}
+
+function eliminarIngredienteReceta(idMp) {
+    ingredientesRecetaActual = ingredientesRecetaActual.filter(i => i.id_materia_prima !== idMp);
+    renderizarTablaIngredientesReceta();
+}
+
+function renderizarTablaIngredientesReceta() {
+    const tbody = document.getElementById('tabla-ingredientes-receta');
+    if (!ingredientesRecetaActual.length) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400 text-xs">Todavía no agregó ingredientes a la receta.</td></tr>`;
+        return;
+    }
+    tbody.innerHTML = ingredientesRecetaActual.map(i => {
+        const mp = listaMateriasPrimas.find(m => m.id_materia_prima === i.id_materia_prima);
+        return `
+        <tr>
+            <td class="p-3 font-medium text-slate-800">${mp ? mp.nombre_materia_prima : '-'}</td>
+            <td class="p-3 text-center"><input type="number" min="0" step="any" value="${i.cantidad}" onchange="actualizarCantidadIngredienteReceta(${i.id_materia_prima}, this.value)" class="w-24 text-center border border-slate-300 rounded-md p-1 text-sm outline-none focus:ring-2 focus:ring-red-500"></td>
+            <td class="p-3 text-center text-slate-500">${mp ? abreviaturaUnidadMedida(mp.id_unidad_medida) : '-'}</td>
+            <td class="p-3 text-center"><button type="button" onclick="eliminarIngredienteReceta(${i.id_materia_prima})" class="text-red-500 hover:text-red-700"><i data-lucide="trash-2" class="w-4 h-4 inline"></i></button></td>
+        </tr>`;
+    }).join('');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function editarReceta(idx) {
+    const r = listaRecetas[idx];
+    if (!r) return;
+    resetFormularioReceta();
+    recetaEnEdicionId = r.id_receta;
+    document.getElementById('titulo-registrar-receta').innerText = `Editar ${formatearIdentificador("REC", String(r.id_receta).padStart(4, '0'))}`;
+    document.getElementById('rec-nombre').value = r.nombre_receta;
+    document.getElementById('rec-version').value = r.version;
+    poblarSelectProductoReceta(r.id_producto);
+    document.getElementById('rec-estado').value = String(r.estado_activa);
+    document.getElementById('rec-cantidad-producida').value = r.cantidad_producida;
+    document.getElementById('rec-rendimiento').value = r.rendimiento_kg;
+    document.getElementById('rec-vencimiento').value = r.fecha_vencimiento || '';
+    document.getElementById('rec-procedimiento').value = r.procedimiento;
+    ingredientesRecetaActual = r.detalle.map(d => ({ id_materia_prima: d.id_materia_prima, cantidad: d.cantidad }));
+    renderizarTablaIngredientesReceta();
+    if (window.location.hash !== '#registrar-receta') window.location.hash = 'registrar-receta';
+    else mostrarSubvistaProduccion('registrar-receta');
+}
+
+function guardarReceta() {
+    const nombre = document.getElementById('rec-nombre').value.trim();
+    const version = parseInt(document.getElementById('rec-version').value);
+    const idProducto = parseInt(document.getElementById('rec-producto').value);
+    const estadoActiva = document.getElementById('rec-estado').value === 'true';
+    const cantidadProducida = parseFloat(document.getElementById('rec-cantidad-producida').value);
+    const rendimiento = parseFloat(document.getElementById('rec-rendimiento').value);
+    const fechaVencimiento = document.getElementById('rec-vencimiento').value || null;
+    const procedimiento = document.getElementById('rec-procedimiento').value.trim();
+
+    if (!nombre) return alert('Ingrese el nombre de la receta.');
+    if (!version || version < 1) return alert('Ingrese una versión válida (1 o mayor).');
+    if (!idProducto) return alert('Seleccione el producto que elabora la receta.');
+    if (!cantidadProducida || cantidadProducida <= 0) return alert('Ingrese la cantidad producida.');
+    if (!rendimiento || rendimiento <= 0) return alert('Ingrese el rendimiento en kg.');
+    if (!procedimiento) return alert('Describa el procedimiento de la receta.');
+    if (!ingredientesRecetaActual.length) return alert('Agregue al menos un ingrediente.');
+    if (listaRecetas.some(r => r.id_receta !== recetaEnEdicionId && normalizarTexto(r.nombre_receta) === normalizarTexto(nombre) && r.version === version)) {
+        return alert(`Ya existe la versión ${version} de "${nombre}". Usá otro número de versión.`);
+    }
+
+    const producto = listaProductos.find(p => p.id_producto === idProducto);
+    const detalle = ingredientesRecetaActual.map(i => {
+        const mp = listaMateriasPrimas.find(m => m.id_materia_prima === i.id_materia_prima);
+        return {
+            id_materia_prima: mp.id_materia_prima, nombre: mp.nombre_materia_prima, cantidad: i.cantidad,
+            unidad: abreviaturaUnidadMedida(mp.id_unidad_medida),
+            cantidad_por_kg: +(i.cantidad / rendimiento).toFixed(4)
+        };
+    });
+
+    if (recetaEnEdicionId) {
+        const r = listaRecetas.find(x => x.id_receta === recetaEnEdicionId);
+        Object.assign(r, { id_producto: idProducto, nombre_receta: nombre, nombre_producto: producto.nombre, cantidad_producida: cantidadProducida, version, estado_activa: estadoActiva, procedimiento, rendimiento_kg: rendimiento, fecha_vencimiento: fechaVencimiento, detalle });
+        guardarDatos();
+        alert(`¡Receta "${nombre}" actualizada con éxito!`);
+    } else {
+        listaRecetas.push(new Receta(numRecetaContador++, idProducto, nombre, producto.nombre, cantidadProducida, version, estadoActiva, procedimiento, rendimiento, fechaVencimiento, detalle));
+        guardarDatos();
+        alert(`¡Receta "${nombre}" registrada con éxito!`);
+    }
+    volverARecetas();
+}
+
+// ---------- Ver receta: formato de "receta estándar de producción" (imprimible) ----------
+function verReceta(idx) {
+    const r = listaRecetas[idx];
+    if (!r) return;
+    const producto = listaProductos.find(p => p.id_producto === r.id_producto);
+    const st = producto ? subtipoProducto(producto.id_subtipo_producto) : null;
+    const celdaEtiqueta = 'border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600 w-1/4';
+    const celdaValor = 'border border-slate-300 px-3 py-2 w-1/4';
+    const filasIngredientes = r.detalle.map((d, i) => `
+        <tr>
+            <td class="border border-slate-300 px-3 py-2">${d.nombre}</td>
+            <td class="border border-slate-300 px-3 py-2 text-center">${formatearCantidad(d.cantidad)}</td>
+            <td class="border border-slate-300 px-3 py-2 text-center">${d.unidad}</td>
+            ${i === 0 ? `<td rowspan="${r.detalle.length}" class="border border-slate-300 px-3 py-2 align-top text-xs leading-relaxed whitespace-pre-line">${r.procedimiento || '-'}</td>` : ''}
+        </tr>`).join('');
+
+    document.getElementById('modal-ver-receta-titulo').innerText = `Receta ${formatearIdentificador("REC", String(r.id_receta).padStart(4, '0'))}`;
+    document.getElementById('area-receta').innerHTML = `
+        <div class="border border-slate-300 text-slate-800">
+            <div class="text-center py-4 border-b border-slate-300">
+                <p class="text-[11px] uppercase tracking-wider text-slate-500">${DATOS_EMPRESA.razonSocial}</p>
+                <h2 class="text-xl font-bold">Receta Estándar de Producción</h2>
+            </div>
+            <table class="w-full border-collapse">
+                <tr><td class="${celdaEtiqueta}">Nombre receta</td><td class="${celdaValor} font-semibold" colspan="3">${r.nombre_receta}</td></tr>
+                <tr><td class="${celdaEtiqueta}">Producto</td><td class="${celdaValor}">${r.nombre_producto || '-'}</td><td class="${celdaEtiqueta}">Tipo / Subtipo</td><td class="${celdaValor}">${st ? `${st.tipo} · ${st.subtipo}` : '-'}</td></tr>
+                <tr><td class="${celdaEtiqueta}">Cantidad producida</td><td class="${celdaValor}">${formatearCantidad(r.cantidad_producida)} ${unidadProductoDeReceta(r)}</td><td class="${celdaEtiqueta}">Rendimiento</td><td class="${celdaValor}">${formatearCantidad(r.rendimiento_kg)} kg</td></tr>
+                <tr><td class="${celdaEtiqueta}">Versión</td><td class="${celdaValor}">v${r.version}</td><td class="${celdaEtiqueta}">Estado</td><td class="${celdaValor}">${r.estado_activa ? 'Activa' : 'Inactiva'}</td></tr>
+                <tr><td class="${celdaEtiqueta}">Fecha de vencimiento</td><td class="${celdaValor}" colspan="3">${formatearFechaLatina(r.fecha_vencimiento)}</td></tr>
+            </table>
+            <div class="text-center font-semibold bg-slate-100 border-y border-slate-300 py-1.5">Preparación</div>
+            <table class="w-full border-collapse">
+                <thead>
+                    <tr class="text-xs text-slate-600">
+                        <th class="border border-slate-300 px-3 py-2 text-left w-[30%]">Ingredientes</th>
+                        <th class="border border-slate-300 px-3 py-2 w-[12%]">Cantidad</th>
+                        <th class="border border-slate-300 px-3 py-2 w-[14%]">Unidad de medida</th>
+                        <th class="border border-slate-300 px-3 py-2 text-left">Procedimiento</th>
+                    </tr>
+                </thead>
+                <tbody>${filasIngredientes}</tbody>
+            </table>
+        </div>`;
+    document.getElementById('modal-ver-receta').classList.remove('hidden');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function cerrarModalVerReceta() {
+    document.getElementById('modal-ver-receta').classList.add('hidden');
+}
+
+// ==========================================
+// MATERIAS PRIMAS: su stock_actual es el único stock de MP (lo suman los Remitos, lo descuentan las Órdenes de
+// Producción). Compras las compra por envase a través de CATALOGO_MATERIAS_PRIMAS.
 // ==========================================
 let ordenListadoMateriasPrimas = { campo: '', direccion: '' };
 let filtroTipoMateriaPrimaListado = '';
@@ -1213,18 +1550,6 @@ function poblarPopoverTipoMateriaPrima() {
     if (!cont || cont.children.length) return;
     cont.innerHTML = `<button type="button" onclick="elegirFiltroTipoMateriaPrima('')" class="block w-full text-left px-2 py-1 text-xs hover:bg-slate-100">Todos</button>` +
         dbTiposMateriaPrima.map(t => `<button type="button" onclick="elegirFiltroTipoMateriaPrima(${t.id_tipo_materia_prima})" class="block w-full text-left px-2 py-1 text-xs hover:bg-slate-100">${t.nombre}</button>`).join('');
-}
-
-function poblarSelectTipoMateriaPrima(selectId) {
-    const select = document.getElementById(selectId);
-    if (!select) return;
-    select.innerHTML = dbTiposMateriaPrima.map(t => `<option value="${t.id_tipo_materia_prima}">${t.nombre}</option>`).join('');
-}
-
-function poblarSelectMarcaMateriaPrima(selectId) {
-    const select = document.getElementById(selectId);
-    if (!select || typeof dbMarcas === 'undefined') return;
-    select.innerHTML = dbMarcas.map(m => `<option value="${m.id_marca}">${m.nombre}</option>`).join('');
 }
 
 function actualizarVisibilidadVencimientoMP() {
@@ -1307,13 +1632,32 @@ function renderizarTablaMateriasPrimas() {
                 <td class="px-6 py-3 text-slate-500 whitespace-nowrap">${m.tiene_vencimiento ? formatearFechaLatina(m.fecha_vencimiento) : 'No aplica'}</td>
                 <td class="px-6 py-3 text-right whitespace-nowrap">$ ${m.precio_unitario.toLocaleString()}</td>
                 <td class="px-6 py-3 text-center"><span class="text-xs px-2.5 py-1 rounded-full font-semibold whitespace-nowrap ${m.estado_activa ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'}">${m.estado_activa ? 'Activa' : 'Inactiva'}</span></td>
-                <td class="px-6 py-3 text-center">
+                <td class="px-6 py-3 text-center whitespace-nowrap">
+                    <button type="button" onclick="verMateriaPrima(${idx})" title="Ver materia prima" class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition"><i data-lucide="eye" class="w-4 h-4"></i></button>
                     <button type="button" onclick="editarMateriaPrima(${idx})" title="Editar" class="p-2 rounded-lg text-amber-600 hover:bg-amber-50 transition"><i data-lucide="pencil" class="w-4 h-4"></i></button>
                 </td>
             </tr>`;
         }).join('');
     }
     if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function verMateriaPrima(idx) {
+    const m = listaMateriasPrimas[idx];
+    if (!m) return;
+    abrirModalVerRegistro('wheat', `Materia Prima ${formatearIdentificador("MP", String(m.id_materia_prima).padStart(4, '0'))}`, m.nombre_materia_prima,
+        m.estado_activa, m.estado_activa ? 'Activa' : 'Inactiva',
+        [
+            ['Tipo de Materia Prima', nombreTipoMateriaPrima(m.id_tipo_materia_prima)],
+            ['Marca', nombreMarca(m.id_marca)],
+            ['Unidad de Medida', nombreUnidadMedida(m.id_unidad_medida)],
+            ['Factor de Conversión', m.factor_conversion],
+            ['Precio Unitario', `$ ${m.precio_unitario.toLocaleString()}`],
+            ['Stock Actual', stockConAviso(m.stock_actual, m.stock_minimo)],
+            ['Stock Mínimo', m.stock_minimo],
+            ['Stock Máximo', m.stock_maximo],
+            ['Fecha de Vencimiento', m.tiene_vencimiento ? formatearFechaLatina(m.fecha_vencimiento) : 'No aplica']
+        ]);
 }
 
 function editarMateriaPrima(idx) {
@@ -1369,7 +1713,9 @@ function guardarMateriaPrima() {
         alert(`¡Materia prima "${nombre}" actualizada con éxito!`);
     } else {
         const idNuevo = numMateriaPrimaContador++;
-        listaMateriasPrimas.push(new MateriaPrima(idNuevo, idUnidad, idTipo, idMarca, nombre, '', estadoActiva, factor, stockActual, stockMinimo, stockMaximo, tieneVencimiento, tieneVencimiento ? fechaVencimiento : null, precio));
+        const nueva = new MateriaPrima(idNuevo, idUnidad, idTipo, idMarca, nombre, '', estadoActiva, factor, stockActual, stockMinimo, stockMaximo, tieneVencimiento, tieneVencimiento ? fechaVencimiento : null, precio);
+        listaMateriasPrimas.push(nueva);
+        if (estadoActiva) agregarMateriaPrimaAlCatalogoCompras(nueva);
         guardarDatos();
         alert(`¡Materia prima "${nombre}" registrada con éxito!`);
     }

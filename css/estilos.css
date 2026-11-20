@@ -97,10 +97,13 @@
     #area-orden-mantenimiento, #area-orden-mantenimiento *,
     #area-detalle-orden-compra, #area-detalle-orden-compra *,
     #area-presupuesto-proveedor, #area-presupuesto-proveedor *,
-    #detalle-orden-contenido, #detalle-orden-contenido * { visibility: visible; }
+    #detalle-orden-contenido, #detalle-orden-contenido *,
+    #area-receta, #area-receta *,
+    #area-detalle-remito, #area-detalle-remito * { visibility: visible; }
     #area-impresion, #area-comprobante-pago, #area-comprobante-venta, #area-comprobante-venta-detalle,
     #area-resumen-deuda, #area-detalle-pedido, #area-orden-mantenimiento,
-    #area-detalle-orden-compra, #area-presupuesto-proveedor, #detalle-orden-contenido { position: absolute; left: 0; top: 0; width: 100%; }
+    #area-detalle-orden-compra, #area-presupuesto-proveedor, #detalle-orden-contenido, #area-receta,
+    #area-detalle-remito { position: absolute; left: 0; top: 0; width: 100%; }
     .no-print { display: none !important; }
 }
 .toast-login { animation: toastIn .2s ease-out; }

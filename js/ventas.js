@@ -155,7 +155,7 @@ function anularComprobanteVentaListado(idComprobante) {
     const cv = listaComprobantesVenta.find(c => c.id_comprobante_venta_cliente === idComprobante);
     if (!cv || cv.es_anulado) return;
     if (!confirm(`¿Anular el comprobante ${formatearIdentificador("CV", String(idComprobante).padStart(4, '0'))}? Esto también cancela el pedido ${formatearIdentificador("PED", cv.id_orden_pedido_cliente)} asociado.`)) return;
-    cv.es_anulado = true;
+    anularComprobanteVenta(cv);
     const pedido = listaPedidos.find(p => p.id === cv.id_orden_pedido_cliente);
     if (pedido && pedido.estado !== 'Cancelado' && pedido.estado !== 'Entregado' && pedido.estado !== 'Devuelto') pedido.estado = 'Cancelado';
     guardarDatos();
@@ -455,6 +455,17 @@ const PRODUCTOS_VENTA_FLAT = Object.entries(CATALOGO_PRODUCTOS_VENTA).flatMap(([
         productos.map(p => ({ nombre: p.nombre, precio: p.precio, tipo, subtipo }))
     )
 );
+
+// Suma al catálogo de venta un producto activo del catálogo de Producción que todavía no figure en él.
+// Devuelve su posición en PRODUCTOS_VENTA_FLAT.
+function agregarProductoAlCatalogoVenta(producto) {
+    const existente = PRODUCTOS_VENTA_FLAT.findIndex(p => normalizarTexto(p.nombre) === normalizarTexto(producto.nombre));
+    if (existente !== -1) return existente;
+    const st = subtipoProducto(producto.id_subtipo_producto);
+    PRODUCTOS_VENTA_FLAT.push({ nombre: producto.nombre, precio: producto.precio_unitario, tipo: st ? st.tipo : '-', subtipo: st ? st.subtipo : '-' });
+    return PRODUCTOS_VENTA_FLAT.length - 1;
+}
+listaProductos.filter(p => p.estado_activo).forEach(agregarProductoAlCatalogoVenta);
 
 function filtrarProductosAutocompletado() {
     const input = document.getElementById('prod-autocompletar');
@@ -783,7 +794,7 @@ function renderizarTablaPedidosRegistrados() {
                 <div class="flex items-center justify-start gap-1.5">
                     <button onclick="verDetallePedido(${p.id})" title="Ver detalle" class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition"><i data-lucide="eye" class="w-4 h-4"></i></button>
                     ${comprobanteVisible ? `<button onclick="verComprobanteVenta(${p.id})" title="Generar comprobante de venta" class="p-2 rounded-lg text-indigo-600 hover:bg-indigo-50 transition"><i data-lucide="file-check-2" class="w-4 h-4"></i></button>` : ''}
-                    ${p.estado === 'Pendiente' ? `<button onclick="editarPedido(${p.id})" title="Editar pedido" class="p-2 rounded-lg text-amber-600 hover:bg-amber-50 transition"><i data-lucide="pencil" class="w-4 h-4"></i></button>` : ''}
+                    ${pedidoEsEditable(p) ? `<button onclick="editarPedido(${p.id})" title="Editar pedido" class="p-2 rounded-lg text-amber-600 hover:bg-amber-50 transition"><i data-lucide="pencil" class="w-4 h-4"></i></button>` : ''}
                     ${siguiente ? `<button onclick="avanzarEstadoPedido(${p.id})" title="Marcar ${siguiente}" class="p-2 rounded-lg text-blue-600 hover:bg-blue-50 transition"><i data-lucide="arrow-right-circle" class="w-4 h-4"></i></button>` : ''}
                     ${(p.estado === 'Entregado' || p.estado === 'Devuelto') ? `<button onclick="abrirModalDevolucion(${p.id})" title="Devolver pedido" class="p-2 rounded-lg text-orange-600 hover:bg-orange-50 transition"><i data-lucide="undo-2" class="w-4 h-4"></i></button>` : ''}
                     ${activo ? `<button onclick="cancelarPedidoListado(${p.id})" title="Cancelar pedido" class="p-2 rounded-lg text-red-500 hover:bg-red-50 transition"><i data-lucide="x-circle" class="w-4 h-4"></i></button>` : ''}
@@ -929,7 +940,7 @@ function cancelarPedidoListado(id) {
 
 function editarPedido(id) {
     const pedido = listaPedidos.find(p => p.id === id);
-    if (!pedido || pedido.estado !== 'Pendiente') return;
+    if (!pedido || !pedidoEsEditable(pedido)) return;
 
     pedidoEnEdicionId = id;
     itemsPedidoActual = pedido.detalle.map(i => ({ ...i }));
@@ -1193,6 +1204,52 @@ function elegirProductoAutocompletadoPresupuesto(idx) {
     document.getElementById('presup-prod-select').value = `${p.nombre}|${p.precio}|${p.tipo}|${p.subtipo}`;
     document.getElementById('presup-prod-autocompletar-opciones').classList.add('hidden');
     document.getElementById('presup-prod-subtipo-detectado').textContent = `${p.tipo} ${p.subtipo}`;
+}
+
+// Alta rápida de un producto desde el presupuesto: queda en el catálogo de Productos (Producción) y, si está
+// activo, se suma al catálogo de venta y queda elegido en el buscador.
+function abrirModalNuevoProductoPresupuesto() {
+    document.getElementById('nprod-nombre').value = document.getElementById('presup-prod-autocompletar').value.trim();
+    poblarSelectTipoProducto('nprod-tipo');
+    poblarSelectSubtipoProductoCascada('nprod-tipo', 'nprod-subtipo');
+    poblarSelectUnidadMedida('nprod-unidad');
+    document.getElementById('nprod-precio').value = '';
+    document.getElementById('nprod-estado').value = 'true';
+    document.getElementById('nprod-stock-actual').value = 0;
+    document.getElementById('nprod-stock-minimo').value = 0;
+    document.getElementById('nprod-descripcion').value = '';
+    document.getElementById('modal-nuevo-producto-presupuesto').classList.remove('hidden');
+    lucide.createIcons();
+}
+
+function cerrarModalNuevoProductoPresupuesto() {
+    document.getElementById('modal-nuevo-producto-presupuesto').classList.add('hidden');
+}
+
+function guardarNuevoProductoPresupuesto() {
+    const nombre = document.getElementById('nprod-nombre').value.trim();
+    const idSubtipo = parseInt(document.getElementById('nprod-subtipo').value);
+    const idUnidad = parseInt(document.getElementById('nprod-unidad').value);
+    const precio = parseFloat(document.getElementById('nprod-precio').value);
+    const estadoActivo = document.getElementById('nprod-estado').value === 'true';
+    const stockActual = parseFloat(document.getElementById('nprod-stock-actual').value) || 0;
+    const stockMinimo = parseFloat(document.getElementById('nprod-stock-minimo').value) || 0;
+    const descripcion = document.getElementById('nprod-descripcion').value.trim();
+
+    if (!nombre) return alert('Ingrese el nombre del producto.');
+    if (!idSubtipo) return alert('Seleccione el tipo/subtipo.');
+    if (!idUnidad) return alert('Seleccione la unidad de medida.');
+    if (!precio || precio <= 0) return alert('Ingrese un precio unitario válido.');
+    if (listaProductos.some(p => normalizarTexto(p.nombre) === normalizarTexto(nombre))) return alert(`Ya existe un producto llamado "${nombre}".`);
+
+    const producto = new Producto(numProductoContador++, idSubtipo, idUnidad, nombre, descripcion, precio, stockActual, stockMinimo, estadoActivo);
+    listaProductos.push(producto);
+    guardarDatos();
+    cerrarModalNuevoProductoPresupuesto();
+
+    if (!estadoActivo) return alert(`Producto "${nombre}" registrado como Inactivo: no se puede presupuestar hasta activarlo.`);
+    elegirProductoAutocompletadoPresupuesto(agregarProductoAlCatalogoVenta(producto));
+    alert(`¡Producto "${nombre}" registrado! Ya quedó elegido: indicá la cantidad y agregalo al presupuesto.`);
 }
 
 document.addEventListener('click', (e) => {

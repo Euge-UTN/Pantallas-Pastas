@@ -235,6 +235,23 @@
                     </div>
                 </div>
 
+                <!-- MODAL VER REGISTRO (Producto / Materia Prima) -->
+                <div id="modal-ver-registro" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div class="bg-white rounded-xl p-6 w-full max-w-2xl space-y-5 max-h-[90vh] overflow-y-auto shadow-xl">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <h3 class="font-bold text-slate-900 flex items-center space-x-2">
+                                <span id="modal-ver-registro-icono" class="text-teal-600"></span>
+                                <span id="modal-ver-registro-titulo"></span>
+                            </h3>
+                            <button type="button" onclick="cerrarModalVerRegistro()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+                        </div>
+                        <div id="modal-ver-registro-contenido" class="space-y-4"></div>
+                        <div class="flex justify-end pt-3 border-t border-slate-100">
+                            <button type="button" onclick="cerrarModalVerRegistro()" class="bg-slate-100 text-slate-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-200">Cerrar</button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- PRODUCTOS: LISTADO GENERAL -->
                 <div id="vista-productos" class="hidden space-y-6">
                     <div class="flex justify-between items-center">
@@ -253,8 +270,8 @@
 
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
                         <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3"><div class="p-2.5 bg-teal-100 text-teal-600 rounded-lg"><i data-lucide="package" class="w-5 h-5"></i></div><div><p id="kpi-productos-total" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Total Productos</p></div></div>
-                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3"><div class="p-2.5 bg-emerald-100 text-emerald-600 rounded-lg"><i data-lucide="circle-check" class="w-5 h-5"></i></div><div><p id="kpi-productos-activos"class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Activos</p></div></div>
-                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3"><div class="p-2.5 bg-slate-100 text-slate-500 rounded-lg"><i data-lucide="circle-x" class="w-5 h-5"></i></div><div><p id="kpi-productos-inactivos"class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Inactivos</p></div></div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3"><div class="p-2.5 bg-emerald-100 text-emerald-600 rounded-lg"><i data-lucide="circle-check" class="w-5 h-5"></i></div><div><p id="kpi-productos-activos" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Activos</p></div></div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3"><div class="p-2.5 bg-slate-100 text-slate-500 rounded-lg"><i data-lucide="circle-x" class="w-5 h-5"></i></div><div><p id="kpi-productos-inactivos" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Inactivos</p></div></div>
                         <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3"><div class="p-2.5 bg-amber-100 text-amber-600 rounded-lg"><i data-lucide="triangle-alert" class="w-5 h-5"></i></div><div><p id="kpi-productos-stock-bajo" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Stock Bajo</p></div></div>
                     </div>
 
@@ -340,6 +357,162 @@
                             <button onclick="guardarProducto()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2">
                                 <i data-lucide="save" class="w-4 h-4"></i><span>Guardar producto</span>
                             </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RECETAS: LISTADO GENERAL -->
+                <div id="vista-recetas" class="hidden space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2.5 bg-violet-100 text-violet-600 rounded-xl"><i data-lucide="book-open" class="w-5 h-5"></i></div>
+                            <div>
+                                <h2 class="text-2xl font-bold text-slate-900">Recetas</h2>
+                                <p class="text-sm text-slate-500">Recetas estándar de producción y sus ingredientes.</p>
+                            </div>
+                        </div>
+                        <button onclick="irARegistrarReceta()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2 shadow-sm transition">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Registrar Receta</span>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3"><div class="p-2.5 bg-violet-100 text-violet-600 rounded-lg"><i data-lucide="book-open" class="w-5 h-5"></i></div><div><p id="kpi-recetas-total" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Total Recetas</p></div></div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3"><div class="p-2.5 bg-emerald-100 text-emerald-600 rounded-lg"><i data-lucide="circle-check" class="w-5 h-5"></i></div><div><p id="kpi-recetas-activas" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Activas</p></div></div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3"><div class="p-2.5 bg-slate-100 text-slate-500 rounded-lg"><i data-lucide="circle-x" class="w-5 h-5"></i></div><div><p id="kpi-recetas-inactivas" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Inactivas</p></div></div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3"><div class="p-2.5 bg-amber-100 text-amber-600 rounded-lg"><i data-lucide="calendar-clock" class="w-5 h-5"></i></div><div><p id="kpi-recetas-por-vencer" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Por Vencer (15 días)</p></div></div>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-slate-100"><h3 class="font-semibold text-slate-800">Listado de Recetas</h3></div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="bg-slate-50 text-xs text-slate-500 border-b border-slate-200 uppercase">
+                                    <tr>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>N° Receta</span><button type="button" onclick="togglePopoverColumna('pop-recetas-numero')" title="Buscar N°" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-recetas-numero" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-recetas-numero" oninput="renderizarTablaRecetas()" class="w-36 border rounded px-2 py-1 text-xs" placeholder="N° Receta"></div></div></th>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Nombre</span><button type="button" onclick="ordenarListadoRecetas('nombre_receta')" title="Ordenar" class="text-slate-400 hover:text-slate-700"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button><button type="button" onclick="togglePopoverColumna('pop-recetas-nombre')" title="Buscar nombre" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-recetas-nombre" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-recetas-nombre" oninput="renderizarTablaRecetas()" class="w-36 border rounded px-2 py-1 text-xs" placeholder="Nombre"></div></div></th>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Producto</span><button type="button" onclick="ordenarListadoRecetas('nombre_producto')" title="Ordenar" class="text-slate-400 hover:text-slate-700"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button><button type="button" onclick="togglePopoverColumna('pop-recetas-producto')" title="Buscar producto" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-recetas-producto" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-recetas-producto" oninput="renderizarTablaRecetas()" class="w-36 border rounded px-2 py-1 text-xs" placeholder="Producto"></div></div></th>
+                                        <th class="px-6 py-3 text-center"><div class="flex items-center justify-center gap-1.5 popover-trigger"><span>Versión</span><button type="button" onclick="ordenarListadoRecetas('version')" title="Ordenar" class="text-slate-400 hover:text-slate-700"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button></div></th>
+                                        <th class="px-6 py-3 text-right">Cant. Producida</th>
+                                        <th class="px-6 py-3 text-right">Rendimiento (kg)</th>
+                                        <th class="px-6 py-3 text-center">Ingredientes</th>
+                                        <th class="px-6 py-3">Vencimiento</th>
+                                        <th class="px-6 py-3 text-center"><div class="flex items-center justify-center gap-1.5 popover-trigger"><span>Estado</span><button type="button" onclick="togglePopoverColumna('pop-recetas-estado')" title="Filtrar por estado" class="text-slate-400 hover:text-slate-700"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button><div id="pop-recetas-estado" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 normal-case"><button type="button" onclick="elegirFiltroEstadoReceta('')" class="block w-full text-left px-2 py-1 text-xs">Todas</button><button type="button" onclick="elegirFiltroEstadoReceta('activa')" class="block w-full text-left px-2 py-1 text-xs">Activa</button><button type="button" onclick="elegirFiltroEstadoReceta('inactiva')" class="block w-full text-left px-2 py-1 text-xs">Inactiva</button></div></div></th>
+                                        <th class="px-6 py-3 text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-recetas" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- REGISTRAR RECETA -->
+                <div id="vista-registrar-receta" class="hidden space-y-6">
+                    <div class="flex items-center space-x-3">
+                        <button type="button" onclick="volverARecetas()" class="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition flex items-center justify-center">
+                            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                        </button>
+                        <div>
+                            <h2 id="titulo-registrar-receta" class="text-2xl font-bold text-slate-900">Registrar Receta</h2>
+                            <p class="text-sm text-slate-500">Alta de una receta estándar de producción con sus ingredientes.</p>
+                        </div>
+                    </div>
+
+                    <div class="max-w-4xl space-y-6">
+                        <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
+                            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="book-open" class="w-4 h-4"></i><span>Datos de la Receta</span></h4>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="md:col-span-2">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre de la Receta *</label>
+                                    <input id="rec-nombre" type="text" placeholder="Ej: Receta Ravioles de Ricotta" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Versión *</label>
+                                    <input id="rec-version" type="number" min="1" step="1" value="1" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Producto *</label>
+                                    <select id="rec-producto" onchange="actualizarUnidadProductoReceta()" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Estado</label>
+                                    <select id="rec-estado" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                        <option value="true">Activa</option>
+                                        <option value="false">Inactiva</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Cantidad Producida * <span id="rec-unidad-producto" class="font-normal text-slate-400"></span></label>
+                                    <input id="rec-cantidad-producida" type="number" min="0" step="any" placeholder="0" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Rendimiento (kg) *</label>
+                                    <input id="rec-rendimiento" type="number" min="0" step="any" placeholder="0" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha de Vencimiento</label>
+                                    <input id="rec-vencimiento" type="date" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                </div>
+                                <div class="md:col-span-3">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Procedimiento *</label>
+                                    <textarea id="rec-procedimiento" rows="4" placeholder="Describí paso a paso cómo se elabora el producto..." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
+                            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="wheat" class="w-4 h-4"></i><span>Ingredientes</span></h4>
+                            <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                                <div class="md:col-span-7">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Materia Prima *</label>
+                                    <select id="rec-ing-mp" onchange="actualizarUnidadIngredienteReceta()" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white outline-none"></select>
+                                </div>
+                                <div class="md:col-span-3">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Cantidad * <span id="rec-ing-unidad" class="font-normal text-slate-400"></span></label>
+                                    <input type="number" id="rec-ing-cant" min="0" step="any" placeholder="0" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">&nbsp;</label>
+                                    <button type="button" onclick="agregarIngredienteReceta()" title="Agregar ingrediente" class="w-full bg-slate-800 text-white rounded-lg p-2 text-sm font-semibold hover:bg-slate-900 transition flex items-center justify-center">
+                                        <i data-lucide="plus" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <table class="w-full text-sm text-left bg-white rounded-lg overflow-hidden border border-slate-200">
+                                <thead class="bg-slate-100 text-xs text-slate-600 uppercase border-b border-slate-200">
+                                    <tr>
+                                        <th class="p-3">Materia Prima</th>
+                                        <th class="p-3 text-center">Cantidad</th>
+                                        <th class="p-3 text-center">Unidad de Medida</th>
+                                        <th class="p-3 text-center">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-ingredientes-receta" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" onclick="volverARecetas()" class="bg-slate-100 text-slate-600 px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-200">Cancelar</button>
+                            <button type="button" onclick="guardarReceta()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2">
+                                <i data-lucide="save" class="w-4 h-4"></i><span>Guardar receta</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODAL VER RECETA (formato de receta estándar de producción) -->
+                <div id="modal-ver-receta" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div class="bg-white rounded-xl p-6 w-full max-w-3xl space-y-5 max-h-[90vh] overflow-y-auto shadow-xl">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3 no-print">
+                            <h3 class="font-bold text-slate-900 flex items-center space-x-2"><i data-lucide="book-open" class="w-5 h-5 text-violet-600"></i><span id="modal-ver-receta-titulo">Receta</span></h3>
+                            <button type="button" onclick="cerrarModalVerReceta()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+                        </div>
+                        <div id="area-receta" class="text-sm"></div>
+                        <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 no-print">
+                            <button type="button" onclick="window.print()" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-800 flex items-center space-x-2"><i data-lucide="printer" class="w-4 h-4"></i><span>Imprimir</span></button>
+                            <button type="button" onclick="cerrarModalVerReceta()" class="bg-slate-100 text-slate-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-200">Cerrar</button>
                         </div>
                     </div>
                 </div>

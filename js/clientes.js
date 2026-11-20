@@ -1,7 +1,7 @@
 // ==========================================
 // MÓDULO DE GESTIÓN DE CLIENTES
 // ==========================================
-const SUBVISTAS_CLIENTES = ['historial', 'registrar', 'detalle'];
+const SUBVISTAS_CLIENTES = ['historial', 'registrar'];
 let ordenClientesCampo = null;
 let ordenClientesDireccion = null; // null | 'asc' | 'desc'
 let filtroCliTipoDocSeleccionado = '';
@@ -52,35 +52,55 @@ function volverAlHistorialClientes() {
 // ==========================================
 // VER DETALLE / EDITAR
 // ==========================================
+// Ficha del cliente en tres bloques lado a lado (datos personales, contacto, datos comerciales).
 function construirFichaCliente(cli) {
-    const fila = (etiqueta, valor) => `<div><p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">${etiqueta}</p><p class="text-slate-800">${valor ?? '-'}</p></div>`;
+    const fila = (etiqueta, valor) => `<div><p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">${etiqueta}</p><p class="text-slate-800 break-words">${valor || '-'}</p></div>`;
+    const bloque = (icono, titulo, filas) => `
+        <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
+            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5"><i data-lucide="${icono}" class="w-3.5 h-3.5"></i>${titulo}</h4>
+            ${filas.join('')}
+        </div>`;
     return `
-        <div class="flex items-center justify-between border-b border-slate-100 pb-4">
-            <h3 class="text-xl font-bold text-slate-900">${cli.nombreMostrado}</h3>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h3 class="text-xl font-bold text-slate-900">${cli.nombreMostrado}</h3>
+                <p class="text-xs text-slate-500">${formatearIdentificador('CLI', listaClientes.indexOf(cli) + 1)} · Cliente desde ${cli.fecha_alta ? new Date(cli.fecha_alta + 'T00:00:00').toLocaleDateString('es-AR') : '-'}</p>
+            </div>
             <span class="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full text-xs font-semibold">${cli.tipo_cliente}</span>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            ${fila('Nombre', cli.nombre || '-')}
-            ${fila('Apellido', cli.apellido || '-')}
-            ${fila('Razón Social', cli.razon_social)}
-            ${fila('Documento', cli.documentoCompleto)}
-            ${fila('Dirección', cli.calleObj ? `${cli.calleObj.nombre} ${cli.altura}` : '-')}
-            ${fila('Teléfonos', cli.telefonosCompletos.join(', ') || '-')}
-            ${fila('Correo Electrónico', cli.email)}
-            ${fila('Condición IVA', cli.condicion_iva)}
-            ${fila('Fecha de Alta', cli.fecha_alta)}
-            ${fila('Cuenta Corriente', cli.tiene_cuenta_corriente ? 'Sí' : 'No')}
-            ${cli.tiene_cuenta_corriente ? fila('Límite de Crédito', `$ ${cli.limite_credito.toLocaleString()}`) : ''}
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            ${bloque('id-card', 'Datos personales', [
+                fila('Nombre', cli.nombre),
+                fila('Apellido', cli.apellido),
+                fila('Razón Social', cli.razon_social),
+                fila('Documento', cli.documentoCompleto)
+            ])}
+            ${bloque('phone', 'Contacto', [
+                fila('Dirección', cli.calleObj ? cli.direccionCompleta : ''),
+                fila('Teléfonos', cli.telefonosCompletos.join(', ')),
+                fila('Correo Electrónico', cli.email),
+                fila('Usuario Tienda Online', cli.usuario)
+            ])}
+            ${bloque('briefcase', 'Datos comerciales', [
+                fila('Condición frente al IVA', cli.condicion_iva),
+                fila('Cuenta Corriente', cli.tiene_cuenta_corriente ? 'Sí' : 'No'),
+                fila('Límite de Crédito', cli.tiene_cuenta_corriente ? `$ ${cli.limite_credito.toLocaleString()}` : 'No aplica')
+            ])}
         </div>`;
 }
 
 function verClienteDetalle(idx) {
     const cli = listaClientes[idx];
     if (!cli) return;
+    document.getElementById('modal-detalle-cliente-titulo').innerText = 'Detalle de Cliente';
     document.getElementById('area-detalle-cliente').innerHTML = construirFichaCliente(cli);
-    document.getElementById('btn-editar-desde-detalle-cliente').onclick = () => editarCliente(idx);
-    mostrarSubvistaClientes('detalle');
+    document.getElementById('btn-editar-desde-detalle-cliente').onclick = () => { cerrarModalDetalleCliente(); editarCliente(idx); };
+    document.getElementById('modal-detalle-cliente').classList.remove('hidden');
     lucide.createIcons();
+}
+
+function cerrarModalDetalleCliente() {
+    document.getElementById('modal-detalle-cliente').classList.add('hidden');
 }
 
 function editarCliente(idx) {
@@ -144,7 +164,7 @@ function renderizarTablaClientes(lista) {
             <td class="px-6 py-3">
                 <div class="flex items-center gap-1.5">
                     <button type="button" onclick="verClienteDetalle(${idx})" title="Ver detalle" class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition"><i data-lucide="eye" class="w-4 h-4"></i></button>
-                    <button type="button" onclick="editarCliente(${idx})" title="Editar cliente" class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                    <button type="button" onclick="editarCliente(${idx})" title="Editar cliente" class="p-2 rounded-lg text-amber-600 hover:bg-amber-50 transition"><i data-lucide="pencil" class="w-4 h-4"></i></button>
                 </div>
             </td>
         `;

@@ -231,6 +231,9 @@ function registrarCobroDesdeComprobanteVenta(idComprobanteVenta) {
     if (window.location.hash !== '#registrar-cobro') window.location.hash = 'registrar-cobro';
 }
 
+let cobroPendienteDeConfirmar = null;
+
+// Valida el formulario y pide una última confirmación (modal) antes de emitir el comprobante de pago.
 function procesarCobroYComprobante() {
     const idMedioPago = parseInt(document.getElementById('cobro-medio').value);
     const condicionPago = document.getElementById('cobro-condicion').value;
@@ -249,10 +252,28 @@ function procesarCobroYComprobante() {
     if (monto <= 0) return alert('Ingresá el monto a cobrar.');
     if (monto > saldoPendiente) return alert(`El monto no puede superar el saldo pendiente ($ ${saldoPendiente.toLocaleString()}).`);
 
-    const comprobantePago = registrarComprobantePago({
-        comprobanteVenta: comprobanteVentaSeleccionadoCobro, idMedioPago, condicionPago, importe: monto, observaciones, fechaPago, horaPago, empleado: usuarioInternoActual.nombre
-    });
+    cobroPendienteDeConfirmar = { comprobanteVenta: comprobanteVentaSeleccionadoCobro, idMedioPago, condicionPago, importe: monto, observaciones, fechaPago, horaPago, empleado: usuarioInternoActual.nombre };
+    const fila = (etiqueta, valor) => `<p class="flex justify-between gap-3"><span class="text-slate-500">${etiqueta}</span><span class="font-medium text-slate-800 text-right">${valor}</span></p>`;
+    document.getElementById('resumen-confirmar-cobro').innerHTML = [
+        fila('Cliente', clienteSeleccionadoCobro.nombreMostrado),
+        fila('Comprobante de venta', formatearIdentificador("CV", String(comprobanteVentaSeleccionadoCobro.id_comprobante_venta_cliente).padStart(4, '0'))),
+        fila('Medio de pago', nombreMedioPago(idMedioPago)),
+        fila('Fecha', `${new Date(fechaPago + 'T00:00:00').toLocaleDateString('es-AR')} ${horaPago}`),
+        `<div class="flex justify-between gap-3 pt-2 border-t border-slate-200"><span class="text-slate-500">Monto</span><span class="text-lg font-bold text-slate-900">$ ${monto.toLocaleString()}</span></div>`
+    ].join('');
+    document.getElementById('modal-confirmar-cobro').classList.remove('hidden');
+    lucide.createIcons();
+}
 
+function cerrarModalConfirmarCobro() {
+    cobroPendienteDeConfirmar = null;
+    document.getElementById('modal-confirmar-cobro').classList.add('hidden');
+}
+
+function confirmarRegistroCobro() {
+    if (!cobroPendienteDeConfirmar) return;
+    const comprobantePago = registrarComprobantePago(cobroPendienteDeConfirmar);
+    cerrarModalConfirmarCobro();
     guardarDatos();
     origenComprobantePago = 'registrar-cobro';
     mostrarComprobantePago(comprobantePago.id_comprobante_pago_cliente);
@@ -277,7 +298,7 @@ function renderizarTablaPagos() {
     document.getElementById('kpi-pagos-total').innerText = listaComprobantesPago.length;
     document.getElementById('kpi-pagos-vigentes').innerText = listaComprobantesPago.filter(cp => !cp.es_anulado).length;
     document.getElementById('kpi-pagos-anulados').innerText = listaComprobantesPago.filter(cp => cp.es_anulado).length;
-    document.getElementById('kpi-pagos-total-monto').innerText = `$ ${listaComprobantesPago.filter(cp => !cp.es_anulado).reduce((a, cp) => a + cp.importe, 0).toLocaleString()}`;
+    actualizarTarjetasMonto();
 
     const terminoNum = normalizarTexto(document.getElementById('buscar-num-pago')?.value || '').trim();
     const terminoVenta = normalizarTexto(document.getElementById('buscar-venta-pago')?.value || '').trim();

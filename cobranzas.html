@@ -116,6 +116,24 @@
                     </div>
                 </div>
 
+                <!-- MODAL: CONFIRMACIÓN FINAL ANTES DE REGISTRAR EL COMPROBANTE DE PAGO -->
+                <div id="modal-confirmar-cobro" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 no-print">
+                    <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6 space-y-5">
+                        <div class="flex items-start gap-3">
+                            <div class="p-2.5 bg-amber-100 text-amber-600 rounded-full shrink-0"><i data-lucide="alert-triangle" class="w-5 h-5"></i></div>
+                            <div>
+                                <h3 class="font-bold text-slate-900">Confirmar comprobante de pago</h3>
+                                <p class="text-sm text-slate-500 mt-1">¿Está seguro de que desea confirmar este comprobante de pago? Una vez emitido solo podrá anularse.</p>
+                            </div>
+                        </div>
+                        <div id="resumen-confirmar-cobro" class="bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm space-y-1.5"></div>
+                        <div class="flex justify-end gap-2">
+                            <button type="button" onclick="cerrarModalConfirmarCobro()" class="bg-slate-100 text-slate-600 px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-200">Cancelar</button>
+                            <button type="button" onclick="confirmarRegistroCobro()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center space-x-2"><i data-lucide="check-circle" class="w-4 h-4"></i><span>Sí, confirmar</span></button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- MODAL: ELEGIR COMPROBANTE DE VENTA A COBRAR (previsualización antes de seleccionar, para no confundir comprobantes con montos idénticos) -->
                 <div id="modal-elegir-comprobante-cobro" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 no-print">
                     <div class="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[80vh] flex flex-col">
@@ -149,7 +167,7 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
                         <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
                             <div class="p-2.5 bg-slate-100 text-slate-600 rounded-lg"><i data-lucide="wallet" class="w-5 h-5"></i></div>
                             <div><p id="kpi-pagos-total" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Pagos</p></div>
@@ -162,11 +180,9 @@
                             <div class="p-2.5 bg-slate-100 text-slate-500 rounded-lg"><i data-lucide="x-circle" class="w-5 h-5"></i></div>
                             <div><p id="kpi-pagos-anulados" class="text-xl font-bold text-slate-900">0</p><p class="text-xs text-slate-500">Anulados</p></div>
                         </div>
-                        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center space-x-3">
-                            <div class="p-2.5 bg-red-100 text-red-600 rounded-lg"><i data-lucide="banknote" class="w-5 h-5"></i></div>
-                            <div><p id="kpi-pagos-total-monto" class="text-xl font-bold text-slate-900">$ 0</p><p class="text-xs text-slate-500">Cobrado</p></div>
-                        </div>
                     </div>
+
+                    <div id="tarjeta-monto-pagos" data-tarjeta-monto="cobrado"></div>
 
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                         <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center gap-3">

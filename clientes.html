@@ -286,20 +286,21 @@
                     </div>
                 </div>
 
-                <!-- VISTA: DETALLE DE CLIENTE (solo lectura, abierta desde el listado) -->
-                <div id="vista-detalle" class="space-y-6 hidden">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center space-x-3">
-                            <button type="button" onclick="volverAlHistorialClientes()" class="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition flex items-center justify-center">
-                                <i data-lucide="arrow-left" class="w-5 h-5"></i>
-                            </button>
-                            <h2 class="text-2xl font-bold text-slate-900">Detalle de Cliente</h2>
+                <!-- MODAL: DETALLE DE CLIENTE (solo lectura, abierto desde el listado) -->
+                <div id="modal-detalle-cliente" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div class="bg-white rounded-xl p-6 w-full max-w-4xl space-y-5 max-h-[90vh] overflow-y-auto shadow-xl">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <h3 class="font-bold text-slate-900 flex items-center space-x-2"><i data-lucide="user-round" class="w-5 h-5 text-blue-600"></i><span id="modal-detalle-cliente-titulo">Cliente</span></h3>
+                            <button type="button" onclick="cerrarModalDetalleCliente()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
                         </div>
-                        <button type="button" id="btn-editar-desde-detalle-cliente" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center space-x-2">
-                            <i data-lucide="pencil" class="w-4 h-4"></i><span>Editar</span>
-                        </button>
+                        <div id="area-detalle-cliente" class="space-y-5 text-sm"></div>
+                        <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                            <button type="button" onclick="cerrarModalDetalleCliente()" class="bg-slate-100 text-slate-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-200">Cerrar</button>
+                            <button type="button" id="btn-editar-desde-detalle-cliente" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center space-x-2">
+                                <i data-lucide="pencil" class="w-4 h-4"></i><span>Editar</span>
+                            </button>
+                        </div>
                     </div>
-                    <div id="area-detalle-cliente" class="max-w-2xl bg-white border border-slate-200 p-8 rounded-xl shadow-lg space-y-4 text-sm"></div>
                 </div>
             </section>
         </main>
