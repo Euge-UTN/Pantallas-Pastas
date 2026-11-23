@@ -793,7 +793,7 @@ function renderizarTablaPedidosRegistrados() {
             <td class="px-6 py-4">
                 <div class="flex items-center justify-start gap-1.5">
                     <button onclick="verDetallePedido(${p.id})" title="Ver detalle" class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition"><i data-lucide="eye" class="w-4 h-4"></i></button>
-                    ${comprobanteVisible ? `<button onclick="verComprobanteVenta(${p.id})" title="Generar comprobante de venta" class="p-2 rounded-lg text-indigo-600 hover:bg-indigo-50 transition"><i data-lucide="file-check-2" class="w-4 h-4"></i></button>` : ''}
+                    ${(comprobanteVisible && !p.esDonacion) ? `<button onclick="verComprobanteVenta(${p.id})" title="Generar comprobante de venta" class="p-2 rounded-lg text-indigo-600 hover:bg-indigo-50 transition"><i data-lucide="file-check-2" class="w-4 h-4"></i></button>` : ''}
                     ${pedidoEsEditable(p) ? `<button onclick="editarPedido(${p.id})" title="Editar pedido" class="p-2 rounded-lg text-amber-600 hover:bg-amber-50 transition"><i data-lucide="pencil" class="w-4 h-4"></i></button>` : ''}
                     ${siguiente ? `<button onclick="avanzarEstadoPedido(${p.id})" title="Marcar ${siguiente}" class="p-2 rounded-lg text-blue-600 hover:bg-blue-50 transition"><i data-lucide="arrow-right-circle" class="w-4 h-4"></i></button>` : ''}
                     ${(p.estado === 'Entregado' || p.estado === 'Devuelto') ? `<button onclick="abrirModalDevolucion(${p.id})" title="Devolver pedido" class="p-2 rounded-lg text-orange-600 hover:bg-orange-50 transition"><i data-lucide="undo-2" class="w-4 h-4"></i></button>` : ''}
@@ -995,7 +995,7 @@ function verDetallePedido(id) {
     const descuentoMonto = p.esDonacion ? subtotalPedido : subtotalPedido * ((p.bonificacion || 0) / 100);
     // El comprobante de venta solo puede verse cuando la orden de pedido llegó a "Listo" o "Entregado".
     const comprobanteVenta = obtenerComprobanteVentaPorPedido(p.id);
-    const comprobanteVisible = comprobanteVenta && !comprobanteVenta.es_anulado && (p.estado === 'Listo' || p.estado === 'Entregado');
+    const comprobanteVisible = comprobanteVenta && !comprobanteVenta.es_anulado && !p.esDonacion && (p.estado === 'Listo' || p.estado === 'Entregado');
 
     // Seña (solo para pedidos de Evento): 50% mínimo del total antes de poder entregar.
     let bloqueSena = '';
@@ -1097,6 +1097,9 @@ function verDetallePedido(id) {
 }
 
 function verComprobanteVenta(idPedido) {
+    const pedido = listaPedidos.find(x => x.id === idPedido);
+    if (pedido?.esDonacion) return alert('Los pedidos marcados como donación no generan comprobante de venta.');
+
     const cv = obtenerComprobanteVentaPorPedido(idPedido);
     if (!cv) return alert('Este pedido todavía no tiene un comprobante de venta asociado.');
 
