@@ -72,6 +72,7 @@
                                         <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>N° Producción</span><button type="button" onclick="togglePopoverColumna('pop-prod-numero')" title="Buscar N° Producción" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-prod-numero" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-prod-numero" oninput="renderizarHistorialProduccion()" class="w-36 border border-slate-300 rounded px-2 py-1 text-xs" placeholder="N° Producción"></div></div></th>
                                         <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Empleado</span><button type="button" onclick="ordenarListadoProduccion('empleado')" title="Ordenar" class="text-slate-400 hover:text-slate-700"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button><button type="button" onclick="togglePopoverColumna('pop-prod-empleado')" title="Buscar empleado" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-prod-empleado" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-prod-empleado" oninput="renderizarHistorialProduccion()" class="w-36 border border-slate-300 rounded px-2 py-1 text-xs" placeholder="Empleado"></div></div></th>
                                         <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Producto</span><button type="button" onclick="ordenarListadoProduccion('producto')" title="Ordenar" class="text-slate-400 hover:text-slate-700"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button><button type="button" onclick="togglePopoverColumna('pop-prod-producto')" title="Buscar producto" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-prod-producto" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-prod-producto" oninput="renderizarHistorialProduccion()" class="w-36 border border-slate-300 rounded px-2 py-1 text-xs" placeholder="Producto"></div></div></th>
+                                        <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Receta</span><button type="button" onclick="togglePopoverColumna('pop-prod-receta')" title="Buscar receta" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-prod-receta" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-prod-receta" oninput="renderizarHistorialProduccion()" class="w-36 border border-slate-300 rounded px-2 py-1 text-xs" placeholder="Receta"></div></div></th>
                                         <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Fecha de Vencimiento</span><button type="button" onclick="togglePopoverColumna('pop-prod-vencimiento')" title="Filtrar por fecha" class="text-slate-400 hover:text-slate-700"><i data-lucide="calendar-search" class="w-3.5 h-3.5"></i></button><div id="pop-prod-vencimiento" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><label class="block text-[11px]">Desde<input id="buscar-prod-vencimiento-desde" type="date" oninput="renderizarHistorialProduccion()" class="block border rounded px-2 py-1 text-xs"></label><label class="block text-[11px]">Hasta<input id="buscar-prod-vencimiento-hasta" type="date" oninput="renderizarHistorialProduccion()" class="block border rounded px-2 py-1 text-xs"></label></div></div></th>
                                         <th class="px-6 py-3 text-center"><div class="flex items-center justify-center gap-1.5 popover-trigger"><span>Estado</span><button type="button" onclick="togglePopoverColumna('pop-prod-estado')" title="Filtrar por estado" class="text-slate-400 hover:text-slate-700"><i data-lucide="list-filter" class="w-3.5 h-3.5"></i></button><div id="pop-prod-estado" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-1 normal-case"><button type="button" onclick="elegirFiltroEstadoProduccion('')" class="block w-full text-left px-2 py-1 text-xs">Todos</button><button type="button" onclick="elegirFiltroEstadoProduccion('A iniciar')" class="block w-full text-left px-2 py-1 text-xs">A iniciar</button><button type="button" onclick="elegirFiltroEstadoProduccion('En Proceso')" class="block w-full text-left px-2 py-1 text-xs">En Proceso</button><button type="button" onclick="elegirFiltroEstadoProduccion('Finalizada')" class="block w-full text-left px-2 py-1 text-xs">Finalizada</button><button type="button" onclick="elegirFiltroEstadoProduccion('Cancelada')" class="block w-full text-left px-2 py-1 text-xs">Cancelada</button></div></div></th>
                                         <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Observaciones</span><button type="button" onclick="togglePopoverColumna('pop-prod-observaciones')" title="Buscar observaciones" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-prod-observaciones" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-prod-observaciones" oninput="renderizarHistorialProduccion()" class="w-36 border border-slate-300 rounded px-2 py-1 text-xs" placeholder="Observaciones"></div></div></th>
@@ -129,34 +130,34 @@
                             <input id="prod-observaciones" type="text" placeholder="Ej: Lote programado para entrega semanal..." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
                         </div>
 
-                        <!-- SECCIÓN 1: PRODUCTOS A FABRICAR -->
+                        <!-- SECCIÓN 1: RECETA A EJECUTAR (Orden_Producción.id_receta: una receta por orden) -->
                         <div class="border border-slate-200 bg-slate-50/50 rounded-xl p-4 space-y-3">
-                            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Sección 1 · Productos a fabricar</h4>
+                            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Sección 1 · Receta a ejecutar</h4>
                             <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
-                                <div class="md:col-span-7 relative">
-                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Producto final *</label>
-                                    <input type="text" id="prod-item-autocompletar" autocomplete="off" oninput="filtrarProductosProduccion()" onfocus="filtrarProductosProduccion()" placeholder="Empezá a escribir para buscar..." class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white outline-none focus:ring-2 focus:ring-red-500">
-                                    <input type="hidden" id="prod-item-select" value="">
-                                    <div id="prod-item-autocompletar-opciones" class="hidden absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-56 overflow-y-auto"></div>
+                                <div class="md:col-span-8">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Receta *</label>
+                                    <div class="flex gap-2">
+                                        <select id="prod-receta" onchange="elegirRecetaOrdenProduccion()" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white outline-none focus:ring-2 focus:ring-red-500"></select>
+                                        <a href="#registrar-receta" title="Registrar una receta nueva" class="shrink-0 w-10 border border-slate-300 bg-white rounded-lg text-red-600 hover:bg-red-50 flex items-center justify-center"><i data-lucide="plus" class="w-4 h-4"></i></a>
+                                    </div>
+                                    <p class="text-[11px] text-slate-400 mt-1">Solo se listan las recetas activas. Cada orden ejecuta una única receta.</p>
                                 </div>
-                                <div class="md:col-span-3">
-                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Cantidad a fabricar (Kg) *</label>
-                                    <input type="number" id="prod-item-cant" value="20" min="1" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
-                                </div>
-                                <div class="md:col-span-2 flex items-end">
-                                    <button type="button" onclick="agregarProductoProduccion()" title="Agregar producto" class="w-full bg-slate-800 text-white rounded-lg p-2 text-sm font-semibold hover:bg-slate-900 transition flex items-center justify-center">
-                                        <i data-lucide="plus" class="w-4 h-4"></i>
-                                    </button>
+                                <div class="md:col-span-4">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Cantidad a fabricar *</label>
+                                    <div class="flex items-center gap-2">
+                                        <input type="number" id="prod-item-cant" min="0.1" step="0.1" oninput="actualizarCantidadOrdenProduccion()" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white outline-none focus:ring-2 focus:ring-red-500">
+                                        <span id="prod-item-unidad" class="text-xs text-slate-500 whitespace-nowrap"></span>
+                                    </div>
                                 </div>
                             </div>
                             <table class="w-full text-sm text-left bg-white rounded-lg overflow-hidden border border-slate-200">
                                 <thead class="bg-slate-100 text-xs text-slate-600 uppercase border-b border-slate-200">
                                     <tr>
                                         <th class="p-3">Producto</th>
+                                        <th class="p-3">Receta</th>
                                         <th class="p-3 text-center">Cant. Planificada</th>
                                         <th class="p-3 text-center">Unidad</th>
                                         <th class="p-3 text-center">Lote proyectado</th>
-                                        <th class="p-3 text-center">Acción</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tabla-productos-produccion" class="divide-y divide-slate-100"></tbody>
@@ -318,11 +319,17 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo *</label>
-                                <select id="prodn-tipo" onchange="poblarSelectSubtipoProductoCascada('prodn-tipo', 'prodn-subtipo')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></select>
+                                <div class="flex gap-2">
+                                    <select id="prodn-tipo" onchange="poblarSelectSubtipoProductoCascada('prodn-tipo', 'prodn-subtipo')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></select>
+                                    <button type="button" onclick="altaRapidaTipoProducto()" title="Agregar tipo de producto" class="shrink-0 w-10 border border-slate-300 rounded-lg text-red-600 hover:bg-red-50 flex items-center justify-center"><i data-lucide="plus" class="w-4 h-4"></i></button>
+                                </div>
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Subtipo *</label>
-                                <select id="prodn-subtipo" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></select>
+                                <div class="flex gap-2">
+                                    <select id="prodn-subtipo" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none"></select>
+                                    <button type="button" onclick="altaRapidaSubtipoProducto()" title="Agregar subtipo de producto" class="shrink-0 w-10 border border-slate-300 rounded-lg text-red-600 hover:bg-red-50 flex items-center justify-center"><i data-lucide="plus" class="w-4 h-4"></i></button>
+                                </div>
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Unidad de Medida *</label>
@@ -394,7 +401,7 @@
                                         <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Nombre</span><button type="button" onclick="ordenarListadoRecetas('nombre_receta')" title="Ordenar" class="text-slate-400 hover:text-slate-700"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button><button type="button" onclick="togglePopoverColumna('pop-recetas-nombre')" title="Buscar nombre" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-recetas-nombre" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-recetas-nombre" oninput="renderizarTablaRecetas()" class="w-36 border rounded px-2 py-1 text-xs" placeholder="Nombre"></div></div></th>
                                         <th class="px-6 py-3"><div class="flex items-center gap-1.5 popover-trigger"><span>Producto</span><button type="button" onclick="ordenarListadoRecetas('nombre_producto')" title="Ordenar" class="text-slate-400 hover:text-slate-700"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button><button type="button" onclick="togglePopoverColumna('pop-recetas-producto')" title="Buscar producto" class="text-slate-400 hover:text-slate-700"><i data-lucide="search" class="w-3.5 h-3.5"></i></button><div id="pop-recetas-producto" class="popover-columna hidden z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-2 normal-case"><input id="buscar-recetas-producto" oninput="renderizarTablaRecetas()" class="w-36 border rounded px-2 py-1 text-xs" placeholder="Producto"></div></div></th>
                                         <th class="px-6 py-3 text-center"><div class="flex items-center justify-center gap-1.5 popover-trigger"><span>Versión</span><button type="button" onclick="ordenarListadoRecetas('version')" title="Ordenar" class="text-slate-400 hover:text-slate-700"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i></button></div></th>
-                                        <th class="px-6 py-3 text-right">Cant. Producida</th>
+                                        <th class="px-6 py-3 text-right">Cant. a Producir</th>
                                         <th class="px-6 py-3 text-right">Rendimiento (kg)</th>
                                         <th class="px-6 py-3 text-center">Ingredientes</th>
                                         <th class="px-6 py-3">Vencimiento</th>
@@ -444,8 +451,8 @@
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Cantidad Producida * <span id="rec-unidad-producto" class="font-normal text-slate-400"></span></label>
-                                    <input id="rec-cantidad-producida" type="number" min="0" step="any" placeholder="0" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Cantidad a Producir * <span id="rec-unidad-producto" class="font-normal text-slate-400"></span></label>
+                                    <input id="rec-cantidad-a-producir" type="number" min="0" step="any" placeholder="0" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
                                 </div>
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-600 mb-1">Rendimiento (kg) *</label>
@@ -463,15 +470,19 @@
                         </div>
 
                         <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
-                            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="wheat" class="w-4 h-4"></i><span>Ingredientes</span></h4>
+                            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="wheat" class="w-4 h-4"></i><span>Ingredientes (Detalle de Receta)</span></h4>
                             <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
-                                <div class="md:col-span-7">
+                                <div class="md:col-span-5">
                                     <label class="block text-xs font-semibold text-slate-600 mb-1">Materia Prima *</label>
                                     <select id="rec-ing-mp" onchange="actualizarUnidadIngredienteReceta()" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white outline-none"></select>
                                 </div>
-                                <div class="md:col-span-3">
-                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Cantidad * <span id="rec-ing-unidad" class="font-normal text-slate-400"></span></label>
+                                <div class="md:col-span-2">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Cantidad *</label>
                                     <input type="number" id="rec-ing-cant" min="0" step="any" placeholder="0" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
+                                </div>
+                                <div class="md:col-span-3">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Unidad de Medida *</label>
+                                    <select id="rec-ing-unidad-medida" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white outline-none"></select>
                                 </div>
                                 <div class="md:col-span-2">
                                     <label class="block text-xs font-semibold text-slate-600 mb-1">&nbsp;</label>
@@ -722,7 +733,7 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Unidad de Tiempo *</label>
-                                <select id="maq-unidad-tiempo" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                <select id="maq-unidad-tiempo" data-tabla-parametrica="unidadesTiempo" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
                                     <option value="Horas">Horas</option>
                                     <option value="Turnos">Turnos</option>
                                 </select>
@@ -785,6 +796,7 @@
 
     <script src="js/data.js"></script>
     <script src="js/shell.js"></script>
+    <script src="js/tablas.js"></script>
     <script src="js/produccion.js"></script>
     <script>
         initShell('produccion', initPaginaProduccion);

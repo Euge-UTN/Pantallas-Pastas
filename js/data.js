@@ -56,7 +56,7 @@ const TABLAS_PAGINADAS = [
     'tabla-presupuestos', 'tabla-pedidos-registrados', 'tabla-comprobantes-venta', 'tabla-lista-clientes',
     'tabla-pagos', 'tabla-presupuestos-proveedor', 'tabla-ordenes-compra', 'tabla-remitos', 'tabla-lista-proveedores',
     'tabla-ordenes-produccion', 'tabla-productos', 'tabla-recetas', 'tabla-materias-primas', 'tabla-maquinaria',
-    'tabla-ordenes-mantenimiento', 'tabla-lista-empleados'
+    'tabla-ordenes-mantenimiento', 'tabla-lista-empleados', 'tabla-sistema'
 ];
 const estadoPaginacion = {};
 
@@ -310,10 +310,29 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// ---------- Modelo geográfico (datos de referencia, no se persisten) ----------
+// ---------- Modelo geográfico (Tablas del sistema: Provincia -> Localidad -> Calle -> Código Postal) ----------
 class Provincia { constructor(id_provincia, nombre) { this.id_provincia = id_provincia; this.nombre = nombre; } }
 class Localidad { constructor(id_localidad, nombre, id_provincia) { this.id_localidad = id_localidad; this.nombre = nombre; this.id_provincia = id_provincia; } }
-class Calle { constructor(id_calle, nombre, id_localidad, codigo_postal) { this.id_calle = id_calle; this.nombre = nombre; this.id_localidad = id_localidad; this.codigo_postal = codigo_postal || ''; } }
+// El código postal ya no es un atributo de la Calle: vive en la tabla Código_Postal (por calle y rango de alturas).
+// `codigo_postal` queda como propiedad calculada para que los formularios y domicilios sigan leyéndolo igual.
+class Calle {
+    constructor(id_calle, nombre, id_localidad) { this.id_calle = id_calle; this.nombre = nombre; this.id_localidad = id_localidad; }
+    get codigo_postal() { return codigoPostalDeCalle(this.id_calle); }
+}
+class CodigoPostal {
+    constructor(id_codigo_postal, id_calle, codigo, altura_desde, altura_hasta) {
+        this.id_codigo_postal = id_codigo_postal; this.id_calle = id_calle; this.codigo = codigo;
+        this.altura_desde = altura_desde; this.altura_hasta = altura_hasta;
+    }
+}
+
+// Código postal de una calle: el del tramo que contiene la altura (si se indica) o, si no, el primero cargado.
+function codigoPostalDeCalle(id_calle, altura) {
+    const tramos = dbCodigosPostales.filter(cp => cp.id_calle === id_calle);
+    const h = parseInt(altura);
+    const tramo = (!isNaN(h) && tramos.find(cp => h >= cp.altura_desde && h <= cp.altura_hasta)) || tramos[0];
+    return tramo ? tramo.codigo : '';
+}
 
 // Arma un domicilio legible (calle, altura, localidad, provincia y CP) a partir de una calleObj + altura sueltas.
 // Compartida entre Persona.direccionCompleta y cualquier domicilio "suelto" que no pertenezca a una Persona
@@ -324,7 +343,8 @@ function direccionDesdeCalle(calleObj, altura) {
     const prov = loc ? dbProvincias.find(p => p.id_provincia === loc.id_provincia) : null;
     const nomLoc = loc ? loc.nombre : '';
     const nomProv = prov ? prov.nombre : '';
-    const cp = calleObj.codigo_postal ? ` - CP ${calleObj.codigo_postal}` : '';
+    const codigo = codigoPostalDeCalle(calleObj.id_calle, altura) || calleObj.codigo_postal;
+    const cp = codigo ? ` - CP ${codigo}` : '';
     return `${calleObj.nombre} ${altura || ''}, ${nomLoc} (${nomProv})${cp}`.trim();
 }
 
@@ -340,12 +360,68 @@ const dbLocalidades = [
     new Localidad(104, 'Córdoba Capital', 3)
 ];
 const dbCalles = [
-    new Calle(1001, 'Av. Villegas', 101, '6400'),
-    new Calle(1002, 'Calle 9 de Julio', 101, '6400'),
-    new Calle(1003, 'Calle 7', 102, '1900'),
-    new Calle(1004, 'Av. Pellegrini', 103, '2000'),
-    new Calle(1005, 'Av. Colón', 104, '5000')
+    new Calle(1001, 'Av. Villegas', 101),
+    new Calle(1002, 'Calle 9 de Julio', 101),
+    new Calle(1003, 'Calle 7', 102),
+    new Calle(1004, 'Av. Pellegrini', 103),
+    new Calle(1005, 'Av. Colón', 104)
 ];
+const dbCodigosPostales = [
+    new CodigoPostal(1, 1001, '6400', 1, 9999),
+    new CodigoPostal(2, 1002, '6400', 1, 9999),
+    new CodigoPostal(3, 1003, '1900', 1, 9999),
+    new CodigoPostal(4, 1004, '2000', 1, 9999),
+    new CodigoPostal(5, 1005, '5000', 1, 9999)
+];
+
+// ---------- Tablas paramétricas del diagrama de clases (se administran en "Tablas del sistema") ----------
+// Los registros que las usan guardan el nombre (ej. condicion_iva: 'Exento'); por eso al renombrar una fila
+// se actualizan también los registros que la usaban (ver js/tablas.js).
+const dbTiposIva = [
+    { id_tipo_iva: 1, nombre_tipo_iva: 'Responsable Inscripto' }, { id_tipo_iva: 2, nombre_tipo_iva: 'Monotributo' },
+    { id_tipo_iva: 3, nombre_tipo_iva: 'Exento' }, { id_tipo_iva: 4, nombre_tipo_iva: 'Consumidor Final' }
+];
+const dbTiposDocumento = [
+    { id_tipo_documento: 1, tipo: 'DNI' }, { id_tipo_documento: 2, tipo: 'CUIT' }, { id_tipo_documento: 3, tipo: 'CUIL' }
+];
+const dbTiposCliente = [
+    { id_tipo_cliente: 1, tipo_cliente: 'Mostrador' }, { id_tipo_cliente: 2, tipo_cliente: 'Mayorista' }
+];
+const dbTiposPedido = [
+    { id_tipo_pedido: 1, tipo: 'Normal' }, { id_tipo_pedido: 2, tipo: 'Evento' },
+    { id_tipo_pedido: 3, tipo: 'Donación' }, { id_tipo_pedido: 4, tipo: 'Web' }
+];
+const dbTiposPresupuesto = [
+    { id_tipo_presupuesto: 1, tipo: 'Normal' }, { id_tipo_presupuesto: 2, tipo: 'Evento' }, { id_tipo_presupuesto: 3, tipo: 'Donación' }
+];
+const dbTiposMantenimiento = [
+    { id_tipo_mantenimiento: 1, nombre_tipo: 'Preventivo' }, { id_tipo_mantenimiento: 2, nombre_tipo: 'Correctivo' }
+];
+const dbUnidadesTiempo = [
+    { id_unidad_tiempo: 1, nombre_unidad_tiempo: 'Horas' }, { id_unidad_tiempo: 2, nombre_unidad_tiempo: 'Turnos' },
+    { id_unidad_tiempo: 3, nombre_unidad_tiempo: 'Días' }
+];
+
+// Llena un <select> con los nombres de una tabla paramétrica (value = nombre, que es lo que guardan los registros).
+// Conserva la primera opción si es un "Elegí..." deshabilitado y el valor elegido si sigue existiendo.
+const NOMBRES_TABLA_PARAMETRICA = {
+    tiposIva: () => dbTiposIva.map(t => t.nombre_tipo_iva),
+    tiposDocumento: () => dbTiposDocumento.map(t => t.tipo),
+    tiposCliente: () => dbTiposCliente.map(t => t.tipo_cliente),
+    tiposMantenimiento: () => dbTiposMantenimiento.map(t => t.nombre_tipo),
+    unidadesTiempo: () => dbUnidadesTiempo.map(t => t.nombre_unidad_tiempo)
+};
+function poblarSelectParametrico(select) {
+    const nombres = NOMBRES_TABLA_PARAMETRICA[select.dataset.tablaParametrica];
+    if (!nombres) return;
+    const valorPrevio = select.value;
+    const placeholder = select.options[0] && select.options[0].disabled ? select.options[0].outerHTML : '';
+    select.innerHTML = placeholder + nombres().map(n => `<option value="${n}">${n}</option>`).join('');
+    if (nombres().includes(valorPrevio)) select.value = valorPrevio;
+}
+function poblarSelectsParametricos() {
+    document.querySelectorAll('select[data-tabla-parametrica]').forEach(poblarSelectParametrico);
+}
 
 // ---------- Modelo de personas (Cliente / Proveedor / Empleado) ----------
 class Persona {
@@ -430,15 +506,39 @@ class Empleado extends Persona {
 // para la tanda completa; además lleva `cantidad_por_kg` (= cantidad / rendimiento_kg), que es lo que usan las
 // Órdenes de Producción para calcular la MP necesaria.
 class Receta {
-    constructor(id_receta, id_producto, nombre_receta, nombre_producto, cantidad_producida, version, estado_activa, procedimiento, rendimiento_kg, fecha_vencimiento, detalle) {
+    constructor(id_receta, id_producto, nombre_receta, nombre_producto, cantidad_a_producir, version, estado_activa, procedimiento, rendimiento_kg, fecha_vencimiento) {
         this.id_receta = id_receta; this.id_producto = id_producto;
         this.nombre_receta = nombre_receta; this.nombre_producto = nombre_producto;
-        this.cantidad_producida = cantidad_producida; this.version = version || 1;
+        this.cantidad_a_producir = cantidad_a_producir; this.version = version || 1;
         this.estado_activa = estado_activa === undefined ? true : !!estado_activa;
         this.procedimiento = procedimiento || ''; this.rendimiento_kg = rendimiento_kg;
         this.fecha_vencimiento = fecha_vencimiento || null;
-        this.detalle = detalle; // [{ id_materia_prima, nombre, cantidad, unidad, cantidad_por_kg }]
     }
+    // Insumos de la receta (tabla Detalle_Receta), con los datos que muestran las pantallas ya resueltos.
+    get detalle() { return detallesDeReceta(this); }
+}
+
+// Detalle_Receta: clave compuesta (id_receta, id_materia_prima), es decir, una materia prima aparece una sola
+// vez por receta. `cantidad` es para la tanda completa, expresada en id_unidad_medida.
+class DetalleReceta {
+    constructor(id_receta, id_materia_prima, id_unidad_medida, cantidad) {
+        this.id_receta = id_receta; this.id_materia_prima = id_materia_prima;
+        this.id_unidad_medida = id_unidad_medida; this.cantidad = cantidad;
+    }
+}
+
+// cantidad_por_kg (cantidad / rendimiento_kg) no se guarda: se calcula, y es lo que usa la Orden de Producción
+// para escalar la materia prima a la cantidad a fabricar.
+function detallesDeReceta(receta) {
+    return listaDetallesReceta.filter(d => d.id_receta === receta.id_receta).map(d => {
+        const mp = listaMateriasPrimas.find(m => m.id_materia_prima === d.id_materia_prima);
+        return {
+            id_receta: d.id_receta, id_materia_prima: d.id_materia_prima, id_unidad_medida: d.id_unidad_medida, cantidad: d.cantidad,
+            nombre: mp ? mp.nombre_materia_prima : '-',
+            unidad: abreviaturaUnidadMedida(d.id_unidad_medida),
+            cantidad_por_kg: receta.rendimiento_kg ? +(d.cantidad / receta.rendimiento_kg).toFixed(4) : 0
+        };
+    });
 }
 
 // "Kilogramo (Kg)" -> "kg"
@@ -503,10 +603,21 @@ function nombreUnidadMedida(id_unidad_medida) {
     return u ? u.nombre : '-';
 }
 
-// Subtipo de Producto: mismo vocabulario Tipo/Subtipo que ya usan Pedidos, Presupuestos y Comprobantes de Venta.
+// Tipo_Producto (Pasta, Salsa...) y Subtipo_Producto (Fresca, Seca...), con id_tipo_producto como clave foránea.
+// `tipo` y `subtipo` quedan como propiedades calculadas: es el mismo vocabulario que ya usan Pedidos,
+// Presupuestos y Comprobantes de Venta.
+class TipoProducto { constructor(id_tipo_producto, nombre_tipo_producto) { this.id_tipo_producto = id_tipo_producto; this.nombre_tipo_producto = nombre_tipo_producto; } }
+class SubtipoProducto {
+    constructor(id_subtipo_producto, id_tipo_producto, nombre_subtipo_producto) {
+        this.id_subtipo_producto = id_subtipo_producto; this.id_tipo_producto = id_tipo_producto; this.nombre_subtipo_producto = nombre_subtipo_producto;
+    }
+    get tipo() { const t = dbTiposProducto.find(x => x.id_tipo_producto === this.id_tipo_producto); return t ? t.nombre_tipo_producto : '-'; }
+    get subtipo() { return this.nombre_subtipo_producto; }
+}
+const dbTiposProducto = [new TipoProducto(1, 'Pasta'), new TipoProducto(2, 'Salsa')];
 const dbSubtiposProducto = [
-    { id_subtipo_producto: 1, tipo: 'Pasta', subtipo: 'Fresca' }, { id_subtipo_producto: 2, tipo: 'Pasta', subtipo: 'Seca' },
-    { id_subtipo_producto: 3, tipo: 'Pasta', subtipo: 'Rellena' }, { id_subtipo_producto: 4, tipo: 'Salsa', subtipo: 'Clásica' }
+    new SubtipoProducto(1, 1, 'Fresca'), new SubtipoProducto(2, 1, 'Seca'),
+    new SubtipoProducto(3, 1, 'Rellena'), new SubtipoProducto(4, 2, 'Clásica')
 ];
 function subtipoProducto(id_subtipo_producto) {
     return dbSubtiposProducto.find(x => x.id_subtipo_producto === id_subtipo_producto) || null;
@@ -558,9 +669,6 @@ const COLOR_ESTADO_ORDEN_MANTENIMIENTO = {
 // Badge de categoría de cliente: el pill principal lleva solo la categoría (Mostrador/Mayorista);
 // Evento y Donación se muestran aparte como íconos chicos con tooltip, para que nunca desborden la columna.
 // Se usa en las tablas de Pedidos, Presupuestos y Comprobantes de Venta.
-// Tipo de Comprobante de Venta según condición de IVA del cliente al momento de emitirlo (ver generarComprobanteVenta).
-const TIPO_COMPROBANTE_VENTA = { 1: 'Factura A', 2: 'Factura B' };
-
 const COLOR_TIPO_CLIENTE = { 'Mayorista': 'bg-indigo-100 text-indigo-800', 'Mostrador': 'bg-teal-100 text-teal-800' };
 function badgeTipoCliente(tipo) {
     return `<span class="text-xs ${COLOR_TIPO_CLIENTE[tipo] || 'bg-slate-100 text-slate-700'} px-2 py-1 rounded whitespace-nowrap">${tipo}</span>`;
@@ -583,10 +691,12 @@ function badgeTipoPedido(obj) {
 
 // ---------- Compras: catálogo de materias primas y estados de Orden de Compra ----------
 // Tipo de Materia Prima: entidad propia (Tipo_Materia_Prima del diagrama), referenciada por id desde el catálogo.
-class TipoMateriaPrima { constructor(id_tipo_materia_prima, nombre) { this.id_tipo_materia_prima = id_tipo_materia_prima; this.nombre = nombre; } }
+// modalidad_compra: cómo se le compra al proveedor (por bulto, por unidad, a granel...).
+class TipoMateriaPrima { constructor(id_tipo_materia_prima, nombre, modalidad_compra) { this.id_tipo_materia_prima = id_tipo_materia_prima; this.nombre = nombre; this.modalidad_compra = modalidad_compra; } }
+const MODALIDADES_COMPRA = ['Por bulto', 'Por unidad', 'Por peso', 'A granel'];
 const dbTiposMateriaPrima = [
-    { id_tipo_materia_prima: 1, nombre: 'Harina' }, { id_tipo_materia_prima: 2, nombre: 'Huevos' },
-    { id_tipo_materia_prima: 3, nombre: 'Lácteos' }, { id_tipo_materia_prima: 4, nombre: 'Envases' }
+    { id_tipo_materia_prima: 1, nombre: 'Harina', modalidad_compra: 'Por bulto' }, { id_tipo_materia_prima: 2, nombre: 'Huevos', modalidad_compra: 'Por bulto' },
+    { id_tipo_materia_prima: 3, nombre: 'Lácteos', modalidad_compra: 'Por peso' }, { id_tipo_materia_prima: 4, nombre: 'Envases', modalidad_compra: 'Por unidad' }
 ];
 function nombreTipoMateriaPrima(id_tipo_materia_prima) {
     const t = dbTiposMateriaPrima.find(x => x.id_tipo_materia_prima === id_tipo_materia_prima);
@@ -633,7 +743,7 @@ function ingresarStockMateriaPrima(itemsRecibidos) {
 // ---------- Selects compartidos de los formularios de Producto y Materia Prima ----------
 // (Producción los usa en sus altas; Ventas y Compras en los modales de alta rápida de los presupuestos.)
 function tiposProductoUnicos() {
-    return [...new Set(dbSubtiposProducto.map(s => s.tipo))];
+    return dbTiposProducto.map(t => t.nombre_tipo_producto);
 }
 
 function poblarSelectTipoProducto(selectId) {
@@ -682,11 +792,12 @@ const COLOR_ESTADO_ORDEN_COMPRA = {
 };
 
 // ---------- Comprobantes de venta y de pago (surgen de la Orden de Pedido) ----------
+// Medio_Pago: los inactivos dejan de ofrecerse al registrar un cobro, pero siguen apareciendo en los ya registrados.
 const MEDIOS_PAGO = [
-    { id: 1, nombre: 'Efectivo' },
-    { id: 2, nombre: 'Tarjeta de Débito' },
-    { id: 3, nombre: 'Transferencia Bancaria' },
-    { id: 4, nombre: 'QR' }
+    { id: 1, nombre: 'Efectivo', estado_activo: true },
+    { id: 2, nombre: 'Tarjeta de Débito', estado_activo: true },
+    { id: 3, nombre: 'Transferencia Bancaria', estado_activo: true },
+    { id: 4, nombre: 'QR', estado_activo: true }
 ];
 const TIPOS_COMPROBANTE_VENTA = [
     { id: 1, nombre: 'Factura A', letra: 'A', codigoAfip: '01' },
@@ -1001,22 +1112,26 @@ function crearDatosIniciales() {
         new MateriaPrima(5, 2, 4, 7, 'Cajas para Ravioles', 'Packaging de cartón para pastas rellenas.', true, 100, 340, 100, 1000, false, null, 85),
         new MateriaPrima(6, 1, 1, 5, 'Sémola de Trigo', 'Sémola para pastas secas de mayor cuerpo.', false, 1, 0, 20, 150, false, null, 550)
     ];
-    // Ingrediente de receta: cantidad para la tanda completa; cantidad_por_kg = cantidad / rendimiento_kg.
-    const ingrediente = (id_materia_prima, nombre, cantidad, unidad, rendimiento_kg) =>
-        ({ id_materia_prima, nombre, cantidad, unidad, cantidad_por_kg: +(cantidad / rendimiento_kg).toFixed(4) });
     const recetas = [
         new Receta(1, 5, 'Receta Ravioles de Ricotta', 'Ravioles de Ricotta y Verdura', 10, 2, true,
             'Mezclar la harina con agua y sal hasta lograr una masa lisa; dejar reposar 30 minutos. Estirar en láminas finas con la sobadora. Distribuir el relleno de ricotta y verdura, cubrir con otra lámina y cortar con la cortadora de ravioles. Enharinar y dejar orear antes de envasar.',
-            10, '2027-03-31', [ingrediente(1, 'Harina 0000', 4, 'kg', 10), ingrediente(3, 'Ricotta Fresca', 3, 'kg', 10)]),
+            10, '2027-03-31'),
         new Receta(2, 3, 'Receta Tallarines al Huevo', 'Tallarines al Huevo', 10, 1, true,
             'Formar una corona con la harina, incorporar los huevos batidos y amasar hasta integrar. Dejar reposar la masa tapada 20 minutos. Laminar y cortar en tiras de 5 mm. Secar en bandejas antes de envasar.',
-            10, '2026-11-15', [ingrediente(1, 'Harina 0000', 6, 'kg', 10), ingrediente(2, 'Huevos Frescos', 1, 'dz', 10)]),
+            10, '2026-11-15'),
         new Receta(3, 4, 'Receta Ñoquis de Papa', 'Ñoquis de Papa', 10, 1, true,
             'Hervir las papas con cáscara, pelarlas y hacer un puré. Incorporar la harina de a poco hasta obtener una masa que no se pegue. Formar cilindros, cortar en trozos de 2 cm y marcar con tenedor.',
-            10, '2027-06-30', [ingrediente(1, 'Harina 0000', 3, 'kg', 10)]),
+            10, '2027-06-30'),
         new Receta(4, 5, 'Receta Ravioles de Ricotta', 'Ravioles de Ricotta y Verdura', 10, 1, false,
             'Versión anterior: masa con más harina y relleno solo de ricotta.',
-            9.5, '2026-06-30', [ingrediente(1, 'Harina 0000', 4.5, 'kg', 9.5), ingrediente(3, 'Ricotta Fresca', 3.5, 'kg', 9.5)])
+            9.5, '2026-06-30')
+    ];
+    // Detalle_Receta (id_receta, id_materia_prima, id_unidad_medida, cantidad para la tanda completa).
+    const detallesReceta = [
+        new DetalleReceta(1, 1, 1, 4), new DetalleReceta(1, 3, 1, 3),
+        new DetalleReceta(2, 1, 1, 6), new DetalleReceta(2, 2, 3, 1),
+        new DetalleReceta(3, 1, 1, 3),
+        new DetalleReceta(4, 1, 1, 4.5), new DetalleReceta(4, 3, 1, 3.5)
     ];
     const pedidos = [
         { id: 1052, clienteObj: clientes[1], cliente: 'Restaurante Don Mosa', tipo: 'Mayorista', esEvento: true, esDonacion: false, esWeb: true, bonificacion: 20,
@@ -1310,49 +1425,47 @@ function crearDatosIniciales() {
     // Órdenes de Producción: datos de prueba. Toda OP nace "A iniciar" (todavía sin descontar stock); al marcarla
     // "En Proceso" descuenta la MP planificada, y las Finalizadas ya pasaron por el Cierre.
     const ordenesProduccion = [
-        { id_orden_produccion: 7, id_empleado: 'Carlos Gómez',
+        { id_orden_produccion: 7, id_empleado: 'Carlos Gómez', id_receta: 2,
           fecha_emision: '2026-10-12', hora_emision: '09:30', fecha_inicio: '2026-10-13', hora_inicio: '08:00', fecha_fin: '2026-10-13', hora_fin: '16:00',
           fecha_vencimiento: '2026-11-12', estado: 'Finalizada', observaciones: 'Producción semanal de pastas secas.', stockDescontado: true,
           detalleProductos: [
-              { id_receta: 2, nombre_producto: 'Tallarines al Huevo', nombre_receta: 'Receta Tallarines al Huevo', cantidad_planificada: 10, cantidad_real: 9.8, numero_lote_proyectado: 'LOT-8', numero_lote_definitivo: null, fecha_vencimiento: '2026-11-12' },
-              { id_receta: 3, nombre_producto: 'Ñoquis de Papa', nombre_receta: 'Receta Ñoquis de Papa', cantidad_planificada: 8, cantidad_real: 8, numero_lote_proyectado: 'LOT-9', numero_lote_definitivo: null, fecha_vencimiento: '2026-11-12' }
+              { id_receta: 2, nombre_producto: 'Tallarines al Huevo', nombre_receta: 'Receta Tallarines al Huevo', cantidad_planificada: 10, cantidad_real: 9.8, numero_lote_proyectado: 'LOT-8', numero_lote_definitivo: null, fecha_vencimiento: '2026-11-12' }
           ],
-          detalleMateriaPrima: [{ id_materia_prima: 1, nombre: 'Harina 0000', cantidad_planificada: 8.4, cantidad_real: 8.6 }, { id_materia_prima: 2, nombre: 'Huevos Frescos', cantidad_planificada: 1, cantidad_real: 1 }] },
+          detalleMateriaPrima: [{ id_materia_prima: 1, nombre: 'Harina 0000', cantidad_planificada: 6, cantidad_real: 6.2 }, { id_materia_prima: 2, nombre: 'Huevos Frescos', cantidad_planificada: 1, cantidad_real: 1 }] },
 
-        { id_orden_produccion: 6, id_empleado: 'Laura Rodríguez',
+        { id_orden_produccion: 6, id_empleado: 'Laura Rodríguez', id_receta: 1,
           fecha_emision: '2026-10-10', hora_emision: '11:00', fecha_inicio: '2026-10-11', hora_inicio: '07:30', fecha_fin: '2026-10-11', hora_fin: '13:00',
           fecha_vencimiento: '2026-10-26', estado: 'Finalizada', observaciones: '', stockDescontado: true,
           detalleProductos: [
-              { id_receta: 1, nombre_producto: 'Ravioles de Ricotta y Verdura', nombre_receta: 'Receta Ravioles de Ricotta', cantidad_planificada: 6, cantidad_real: 6, numero_lote_proyectado: 'LOT-6', numero_lote_definitivo: null, fecha_vencimiento: '2026-10-26' },
-              { id_receta: 3, nombre_producto: 'Ñoquis de Papa', nombre_receta: 'Receta Ñoquis de Papa', cantidad_planificada: 5, cantidad_real: 4.5, numero_lote_proyectado: 'LOT-7', numero_lote_definitivo: null, fecha_vencimiento: '2026-11-10' }
+              { id_receta: 1, nombre_producto: 'Ravioles de Ricotta y Verdura', nombre_receta: 'Receta Ravioles de Ricotta', cantidad_planificada: 6, cantidad_real: 6, numero_lote_proyectado: 'LOT-6', numero_lote_definitivo: null, fecha_vencimiento: '2026-10-26' }
           ],
-          detalleMateriaPrima: [{ id_materia_prima: 1, nombre: 'Harina 0000', cantidad_planificada: 3.9, cantidad_real: 3.9 }, { id_materia_prima: 3, nombre: 'Ricotta Fresca', cantidad_planificada: 1.8, cantidad_real: 1.9 }] },
+          detalleMateriaPrima: [{ id_materia_prima: 1, nombre: 'Harina 0000', cantidad_planificada: 2.4, cantidad_real: 2.5 }, { id_materia_prima: 3, nombre: 'Ricotta Fresca', cantidad_planificada: 1.8, cantidad_real: 1.9 }] },
 
-        { id_orden_produccion: 5, id_empleado: 'Carlos Gómez',
+        { id_orden_produccion: 5, id_empleado: 'Carlos Gómez', id_receta: 2,
           fecha_emision: '2026-10-08', hora_emision: '08:15', fecha_inicio: '2026-10-08', hora_inicio: '09:00', fecha_fin: '2026-10-08', hora_fin: '12:00',
           fecha_vencimiento: '2026-11-07', estado: 'Finalizada', observaciones: 'Reposición de stock de pastas secas.', stockDescontado: true,
           detalleProductos: [{ id_receta: 2, nombre_producto: 'Tallarines al Huevo', nombre_receta: 'Receta Tallarines al Huevo', cantidad_planificada: 5, cantidad_real: 5, numero_lote_proyectado: 'LOT-5', numero_lote_definitivo: null, fecha_vencimiento: '2026-11-07' }],
           detalleMateriaPrima: [{ id_materia_prima: 1, nombre: 'Harina 0000', cantidad_planificada: 3, cantidad_real: 3.1 }, { id_materia_prima: 2, nombre: 'Huevos Frescos', cantidad_planificada: 0.5, cantidad_real: 0.5 }] },
 
-        { id_orden_produccion: 4, id_empleado: 'Laura Rodríguez',
+        { id_orden_produccion: 4, id_empleado: 'Laura Rodríguez', id_receta: 2,
           fecha_emision: '2026-10-07', hora_emision: '09:00', fecha_inicio: '2026-11-03', hora_inicio: '08:00', fecha_fin: '2026-11-03', hora_fin: '12:00',
           estado: 'A iniciar', observaciones: '', stockDescontado: false,
           detalleProductos: [{ id_receta: 2, nombre_producto: 'Tallarines al Huevo', nombre_receta: 'Receta Tallarines al Huevo', cantidad_planificada: 2, cantidad_real: null, numero_lote_proyectado: 'LOT-4', numero_lote_definitivo: null, fecha_vencimiento: null }],
           detalleMateriaPrima: [{ id_materia_prima: 1, nombre: 'Harina 0000', cantidad_planificada: 1.2 }, { id_materia_prima: 2, nombre: 'Huevos Frescos', cantidad_planificada: 0.2 }] },
 
-        { id_orden_produccion: 3, id_empleado: 'Carlos Gómez',
+        { id_orden_produccion: 3, id_empleado: 'Carlos Gómez', id_receta: 3,
           fecha_emision: '2026-10-06', hora_emision: '10:30', fecha_inicio: '2026-11-04', hora_inicio: '07:00', fecha_fin: '2026-11-04', hora_fin: '10:00',
           estado: 'A iniciar', observaciones: '', stockDescontado: false,
           detalleProductos: [{ id_receta: 3, nombre_producto: 'Ñoquis de Papa', nombre_receta: 'Receta Ñoquis de Papa', cantidad_planificada: 3, cantidad_real: null, numero_lote_proyectado: 'LOT-3', numero_lote_definitivo: null, fecha_vencimiento: null }],
           detalleMateriaPrima: [{ id_materia_prima: 1, nombre: 'Harina 0000', cantidad_planificada: 0.9 }] },
 
-        { id_orden_produccion: 2, id_empleado: 'Carlos Gómez',
+        { id_orden_produccion: 2, id_empleado: 'Carlos Gómez', id_receta: 1,
           fecha_emision: '2026-10-05', hora_emision: '08:00', fecha_inicio: '2026-10-06', hora_inicio: '07:00', fecha_fin: '2026-10-06', hora_fin: '11:00',
           estado: 'En Proceso', observaciones: 'Producción para reponer stock de góndola.', stockDescontado: true,
           detalleProductos: [{ id_receta: 1, nombre_producto: 'Ravioles de Ricotta y Verdura', nombre_receta: 'Receta Ravioles de Ricotta', cantidad_planificada: 10, cantidad_real: null, numero_lote_proyectado: 'LOT-2', numero_lote_definitivo: null, fecha_vencimiento: null }],
           detalleMateriaPrima: [{ id_materia_prima: 1, nombre: 'Harina 0000', cantidad_planificada: 4 }, { id_materia_prima: 3, nombre: 'Ricotta Fresca', cantidad_planificada: 3 }] },
 
-        { id_orden_produccion: 1, id_empleado: 'Laura Rodríguez',
+        { id_orden_produccion: 1, id_empleado: 'Laura Rodríguez', id_receta: 3,
           fecha_emision: '2026-10-04', hora_emision: '14:00', fecha_inicio: '2026-10-09', hora_inicio: '08:00', fecha_fin: '2026-10-09', hora_fin: '11:00',
           estado: 'En Proceso', observaciones: '', stockDescontado: true,
           detalleProductos: [{ id_receta: 3, nombre_producto: 'Ñoquis de Papa', nombre_receta: 'Receta Ñoquis de Papa', cantidad_planificada: 15, cantidad_real: null, numero_lote_proyectado: 'LOT-1', numero_lote_definitivo: null, fecha_vencimiento: null }],
@@ -1383,7 +1496,7 @@ function crearDatosIniciales() {
     ];
 
     return {
-        clientes, proveedores, empleados, maquinaria, productos, materiasPrimas, recetas, pedidos, comprobantesVenta, comprobantesPago,
+        clientes, proveedores, empleados, maquinaria, productos, materiasPrimas, recetas, detallesReceta, pedidos, comprobantesVenta, comprobantesPago,
         presupuestos, presupuestosProveedor, remitos,
         ordenesProduccion, ordenesMantenimiento, ordenesCompra,
         cajaDiaria: 0,
@@ -1399,18 +1512,51 @@ function revivirPersona(obj, Clase) {
     return Object.setPrototypeOf(obj, Clase.prototype);
 }
 
+// Tablas del sistema que se guardan en la sesión. Las constantes se reemplazan "en el lugar" (mismo arreglo)
+// para que todas las funciones que ya las referencian sigan viendo los datos cargados.
+const TABLAS_SISTEMA_PERSISTIDAS = {
+    provincias: [dbProvincias, Provincia], localidades: [dbLocalidades, Localidad], calles: [dbCalles, Calle],
+    codigosPostales: [dbCodigosPostales, CodigoPostal], tiposIva: [dbTiposIva], tiposDocumento: [dbTiposDocumento],
+    tiposCliente: [dbTiposCliente], tiposPedido: [dbTiposPedido], tiposPresupuesto: [dbTiposPresupuesto],
+    tiposProducto: [dbTiposProducto, TipoProducto], subtiposProducto: [dbSubtiposProducto, SubtipoProducto],
+    unidadesMedida: [dbUnidadesMedida], tiposMateriaPrima: [dbTiposMateriaPrima], marcas: [dbMarcas],
+    mediosPago: [MEDIOS_PAGO], tiposComprobanteVenta: [TIPOS_COMPROBANTE_VENTA],
+    tiposMantenimiento: [dbTiposMantenimiento], unidadesTiempo: [dbUnidadesTiempo]
+};
+
+function restaurarTablasSistema(guardadas) {
+    Object.entries(TABLAS_SISTEMA_PERSISTIDAS).forEach(([clave, [arreglo, Clase]]) => {
+        const filas = guardadas && guardadas[clave];
+        if (!Array.isArray(filas) || !filas.length) return;
+        arreglo.splice(0, arreglo.length, ...filas.map(f => Clase ? Object.setPrototypeOf(f, Clase.prototype) : f));
+    });
+}
+
+function serializarTablasSistema() {
+    return Object.fromEntries(Object.entries(TABLAS_SISTEMA_PERSISTIDAS).map(([clave, [arreglo]]) => [clave, arreglo]));
+}
+
+// Los domicilios guardan una copia de la calle: se reemplaza por la Calle vigente (mismo id) para que un cambio
+// de nombre o de código postal hecho en "Tablas del sistema" se vea en todos los registros.
+function calleVigente(calleObj) {
+    return calleObj ? (dbCalles.find(c => c.id_calle === calleObj.id_calle) || calleObj) : calleObj;
+}
+
 function cargarDatos() {
     const crudo = sessionStorage.getItem(CLAVE_ALMACENAMIENTO);
     if (!crudo) return crearDatosIniciales();
     try {
         const datos = JSON.parse(crudo);
+        restaurarTablasSistema(datos.tablasSistema);
         datos.clientes = datos.clientes.map(c => revivirPersona(c, Cliente));
         datos.proveedores = datos.proveedores.map(p => revivirPersona(p, Proveedor));
         datos.empleados = datos.empleados.map(e => revivirPersona(e, Empleado));
+        [...datos.clientes, ...datos.proveedores, ...datos.empleados].forEach(per => { per.calleObj = calleVigente(per.calleObj); });
         // Los pedidos y comprobantes guardan el documento del cliente para volver a enlazar la MISMA instancia tras recargar.
         datos.pedidos = (datos.pedidos || []).map(p => {
             const { clienteDocumento, ...resto } = p;
             resto.clienteObj = datos.clientes.find(c => c.numero_documento === clienteDocumento) || null;
+            resto.calleEntregaObj = calleVigente(resto.calleEntregaObj);
             return resto;
         });
         datos.comprobantesVenta = (datos.comprobantesVenta || []).map(cv => {
@@ -1454,10 +1600,29 @@ function cargarDatos() {
         datos.productos = datos.productos && datos.productos.length ? datos.productos : crearDatosIniciales().productos;
         datos.materiasPrimas = datos.materiasPrimas && datos.materiasPrimas.length ? datos.materiasPrimas : crearDatosIniciales().materiasPrimas;
         // Las recetas guardadas con el formato anterior (sin versión ni ingredientes con cantidad) se reemplazan por las de ejemplo.
-        const recetasEjemplo = crearDatosIniciales().recetas;
+        const ejemplo = crearDatosIniciales();
+        const recetasEjemplo = ejemplo.recetas;
+        const detallesMigrados = [];
         datos.recetas = (datos.recetas && datos.recetas.length ? datos.recetas : recetasEjemplo)
-            .map(r => r.version ? Object.setPrototypeOf(r, Receta.prototype) : (recetasEjemplo.find(e => e.id_receta === r.id_receta) || Object.setPrototypeOf(r, Receta.prototype)));
+            .map(r => r.version ? r : (recetasEjemplo.find(e => e.id_receta === r.id_receta) || r))
+            .map(r => {
+                // Formato anterior: cantidad_producida y los ingredientes dentro de la receta -> Detalle_Receta aparte.
+                if (r.cantidad_a_producir === undefined) r.cantidad_a_producir = r.cantidad_producida;
+                delete r.cantidad_producida;
+                if (Object.prototype.hasOwnProperty.call(r, 'detalle')) {
+                    (r.detalle || []).forEach(d => {
+                        const mp = datos.materiasPrimas && datos.materiasPrimas.find(m => m.id_materia_prima === d.id_materia_prima);
+                        detallesMigrados.push(new DetalleReceta(r.id_receta, d.id_materia_prima, d.id_unidad_medida || (mp ? mp.id_unidad_medida : 1), d.cantidad));
+                    });
+                    delete r.detalle;
+                }
+                return Object.setPrototypeOf(r, Receta.prototype);
+            });
+        datos.detallesReceta = (datos.detallesReceta || (detallesMigrados.length ? detallesMigrados : ejemplo.detallesReceta))
+            .map(d => Object.setPrototypeOf(d, DetalleReceta.prototype));
         datos.ordenesProduccion = datos.ordenesProduccion || [];
+        // Orden_Producción.id_receta: las órdenes guardadas antes lo toman de su (primera) línea de producto.
+        datos.ordenesProduccion.forEach(o => { if (o.id_receta === undefined) o.id_receta = o.detalleProductos?.[0]?.id_receta ?? null; });
         datos.ordenesMantenimiento = datos.ordenesMantenimiento || [];
         datos.cajaDiaria = datos.cajaDiaria || 0;
         datos.contadores = datos.contadores || crearDatosIniciales().contadores;
@@ -1486,6 +1651,7 @@ let listaProductos = DATOS.productos;
 let listaMateriasPrimas = DATOS.materiasPrimas;
 listaMateriasPrimas.filter(mp => mp.clave_catalogo && mp.estado_activa).forEach(agregarMateriaPrimaAlCatalogoCompras);
 let listaRecetas = DATOS.recetas;
+let listaDetallesReceta = DATOS.detallesReceta;
 let listaPedidos = DATOS.pedidos;
 let listaPresupuestos = DATOS.presupuestos;
 let listaComprobantesVenta = DATOS.comprobantesVenta;
@@ -1516,6 +1682,7 @@ let numRemitoContador = DATOS.contadores.remito;
 
 function guardarDatos() {
     const serializado = {
+        tablasSistema: serializarTablasSistema(),
         clientes: listaClientes,
         proveedores: listaProveedores,
         empleados: listaEmpleados,
@@ -1523,6 +1690,7 @@ function guardarDatos() {
         productos: listaProductos,
         materiasPrimas: listaMateriasPrimas,
         recetas: listaRecetas,
+        detallesReceta: listaDetallesReceta,
         ordenesProduccion: listaOrdenesProduccion,
         ordenesMantenimiento: listaOrdenesMantenimiento,
         cajaDiaria: totalCajaAcumulado,
@@ -1729,3 +1897,11 @@ function renderizarEmpleadosUI() {
         });
     });
 }
+
+// Los selects que leen de una tabla del sistema (data-tabla-parametrica="...") se arman al cargar cada página.
+// data.js se incluye al final del <body>, así que el HTML ya está disponible acá.
+poblarSelectsParametricos();
+document.querySelectorAll('select[data-medios-pago]').forEach(select => {
+    select.innerHTML = '<option value="" disabled selected>Elegí un medio de pago</option>' +
+        MEDIOS_PAGO.filter(m => m.estado_activo !== false).map(m => `<option value="${m.id}">${m.nombre}</option>`).join('');
+});

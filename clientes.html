@@ -186,7 +186,7 @@
                             <div class="grid grid-cols-2 gap-2">
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo Doc. *</label>
-                                    <select id="cli-tipo-documento" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                    <select id="cli-tipo-documento" data-tabla-parametrica="tiposDocumento" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
                                         <option value="DNI">DNI</option>
                                         <option value="CUIT">CUIT</option>
                                         <option value="CUIL">CUIL</option>
@@ -240,7 +240,7 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Condición Frente al IVA *</label>
-                                <select id="cli-iva" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                <select id="cli-iva" data-tabla-parametrica="tiposIva" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
                                     <option>Responsable Inscripto</option>
                                     <option>Monotributo</option>
                                     <option>Consumidor Final</option>
@@ -249,7 +249,7 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo de Cliente *</label>
-                                <select id="cli-tipo" onchange="actualizarVisibilidadRazonSocialCliente()" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                <select id="cli-tipo" data-tabla-parametrica="tiposCliente" onchange="actualizarVisibilidadRazonSocialCliente()" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
                                     <option value="Mayorista">Mayorista (Restaurante / Hotel)</option>
                                     <option value="Mostrador">Consumidor Final (Mostrador)</option>
                                 </select>

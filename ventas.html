@@ -1062,7 +1062,7 @@
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo de Cliente *</label>
-                                <select id="mcli-tipo-cliente" onchange="actualizarVisibilidadRazonSocialCliente('mcli')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                                <select id="mcli-tipo-cliente" data-tabla-parametrica="tiposCliente" onchange="actualizarVisibilidadRazonSocialCliente('mcli')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500">
                                     <option value="" disabled selected>Elegí un tipo</option>
                                     <option value="Mostrador">Mostrador</option>
                                     <option value="Mayorista">Mayorista</option>
@@ -1082,7 +1082,7 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo Doc. *</label>
-                                <select id="mcli-tipo-documento" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                <select id="mcli-tipo-documento" data-tabla-parametrica="tiposDocumento" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
                                     <option value="DNI">DNI</option>
                                     <option value="CUIT">CUIT</option>
                                     <option value="CUIL">CUIL</option>
@@ -1094,7 +1094,7 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Condición Frente al IVA *</label>
-                                <select id="mcli-iva" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                                <select id="mcli-iva" data-tabla-parametrica="tiposIva" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
                                     <option>Consumidor Final</option>
                                     <option>Responsable Inscripto</option>
                                     <option>Monotributo</option>

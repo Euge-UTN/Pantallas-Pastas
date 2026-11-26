@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fábrica de Pastas - Tablas del sistema</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body class="bg-slate-50 font-sans text-slate-800">
+
+    <div id="app-interno" class="hidden flex h-screen overflow-hidden">
+        <aside id="sidebar-placeholder"></aside>
+
+        <main id="contenido-modulo" class="flex-1 overflow-y-auto bg-slate-50 p-8">
+            <section id="sec-tablas" class="space-y-6">
+                <div class="flex items-center space-x-3">
+                    <div class="p-2.5 bg-slate-200 text-slate-700 rounded-xl"><i data-lucide="table-2" class="w-5 h-5"></i></div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900">Tablas Paramétricas</h2>
+                        <p class="text-sm text-slate-500">Valores de referencia del diagrama de clases que usan los formularios del sistema.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-[16rem_1fr] gap-6 items-start">
+                    <aside class="bg-white border border-slate-200 rounded-xl shadow-sm p-2 lg:sticky lg:top-0">
+                        <div id="menu-tablas-sistema" class="space-y-1"></div>
+                    </aside>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                                <h3 id="titulo-tabla-sistema" class="font-semibold text-slate-800"></h3>
+                                <p id="entidad-tabla-sistema" class="text-xs text-slate-400 font-mono"></p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="relative">
+                                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2"></i>
+                                    <input id="buscar-tabla-sistema" oninput="renderizarTablaSistema()" placeholder="Buscar..." class="w-48 border border-slate-300 rounded-lg pl-8 pr-2 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                                </div>
+                                <button type="button" onclick="abrirFormularioParametrico(tablaSistemaActual, null)" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 shadow-sm transition whitespace-nowrap">
+                                    <i data-lucide="plus" class="w-4 h-4"></i><span id="texto-boton-agregar-tabla">Agregar</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="bg-slate-50 text-xs text-slate-500 border-b border-slate-200 uppercase">
+                                    <tr id="encabezado-tabla-sistema"></tr>
+                                </thead>
+                                <tbody id="tabla-sistema" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/shell.js"></script>
+    <script src="js/tablas.js"></script>
+    <script>
+        initShell('tablas', initPaginaTablas);
+    </script>
+</body>
+</html>

@@ -132,7 +132,7 @@ function renderizarTablaComprobantesVenta() {
             <td class="px-6 py-4 text-slate-500">${cv.clienteObj ? cv.clienteObj.numero_documento : '-'}</td>
             <td class="px-6 py-4">${badgeTipoCliente(cv.clienteObj ? cv.clienteObj.tipo_cliente : '-')}</td>
             <td class="px-6 py-4">${badgeTipoPedido(cv)}</td>
-            <td class="px-6 py-4 text-slate-500 whitespace-nowrap">${TIPO_COMPROBANTE_VENTA[cv.id_tipo_comprobante_venta] || '-'}</td>
+            <td class="px-6 py-4 text-slate-500 whitespace-nowrap">${nombreTipoComprobanteVenta(cv.id_tipo_comprobante_venta)}</td>
             <td class="px-6 py-4 text-slate-500">${fechaFormateada}</td>
             <td class="px-6 py-4 text-right font-medium whitespace-nowrap">$ ${cv.total.toLocaleString()}</td>
             <td class="px-6 py-4 text-center"><span class="px-2.5 py-1 ${coloresEstadoCV[estado]} text-xs font-semibold rounded-full whitespace-nowrap">${estado}</span></td>

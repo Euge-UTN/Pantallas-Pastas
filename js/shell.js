@@ -23,6 +23,7 @@ const ROLES_POR_MODULO = {
     produccion: ['Administrador', 'Encargado de Producción'],
     mantenimiento: ['Administrador', 'Encargado de Producción'],
     administracion: ['Administrador'],
+    tablas: ['Administrador'],
     clientes: ['Administrador', 'Vendedor'],
     proveedores: ['Administrador'],
     empleados: ['Administrador']
@@ -59,7 +60,8 @@ const MODULOS = [
         { id: 'historial', nombre: 'Órdenes de Mantenimiento', icono: 'layout-dashboard' }
     ] },
     { id: 'administracion', nombre: 'Tablas del sistema', icono: 'building-2', grupo: 'Módulo', submenu: [
-        { id: 'historial', nombre: 'Empleados', icono: 'id-card', pagina: 'empleados' }
+        { id: 'historial', nombre: 'Empleados', icono: 'id-card', pagina: 'empleados' },
+        { id: 'parametricas', nombre: 'Tablas paramétricas', icono: 'table-2', pagina: 'tablas' }
     ] }
 ];
 

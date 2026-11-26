@@ -1,5 +1,5 @@
 // ==========================================
-// MÓDULO DE PRODUCCIÓN: Orden_Producción (multi-producto) + detalle de productos y de materia prima
+// MÓDULO DE PRODUCCIÓN: Orden_Producción (ejecuta una Receta: id_receta) + detalle de producto y de materia prima
 // Ciclo: A iniciar (nace así; se puede editar o cancelar) -> En Proceso (descuenta la MP planificada; ya no se
 // edita ni se cancela) -> Finalizada (Cierre: cantidad real y vencimiento por producto, ajusta stock por la MP real)
 // Pantallas: Historial (listado + KPIs) / Registrar-Editar Orden / Detalle de Orden (consulta + cierre)
@@ -139,7 +139,7 @@ function inicializarEmpleadoLogueado() {
 }
 
 // ==========================================
-// SECCIÓN 1: PRODUCTOS A FABRICAR
+// SECCIÓN 1: RECETA A EJECUTAR
 // ==========================================
 function productoProduccionPorNombre(nombre) {
     return listaProductos.find(p => normalizarTexto(p.nombre) === normalizarTexto(nombre));
@@ -150,80 +150,38 @@ function unidadProductoProduccion(nombre) {
     return producto ? nombreUnidadMedida(producto.id_unidad_medida) : 'Kilogramo (Kg)';
 }
 
-function filtrarProductosProduccion() {
-    const input = document.getElementById('prod-item-autocompletar');
-    const cont = document.getElementById('prod-item-autocompletar-opciones');
-    if (!input || !cont || typeof listaRecetas === 'undefined') return;
-
-    const termino = normalizarTexto(input.value).trim();
-    document.getElementById('prod-item-select').value = '';
-
-    if (!termino) { cont.classList.add('hidden'); cont.innerHTML = ''; return; }
-
-    const filtrados = listaRecetas.filter(r => r.estado_activa && normalizarTexto(r.nombre_producto).includes(termino));
-    if (!filtrados.length) {
-        cont.innerHTML = `<p class="px-3 py-2 text-xs text-slate-400">Sin resultados. No hay receta activa para ese producto.</p>`;
-        cont.classList.remove('hidden');
-        return;
-    }
-    cont.innerHTML = filtrados.map(r => `
-        <button type="button" onmousedown="event.preventDefault(); elegirProductoProduccion(${r.id_receta})" class="block w-full text-left px-3 py-2 text-sm hover:bg-slate-100">
-            <span class="block truncate">${r.nombre_producto}</span>
-            <span class="block text-[11px] text-slate-400">${r.nombre_receta} · v${r.version}</span>
-        </button>`).join('');
-    cont.classList.remove('hidden');
+// Orden_Producción.id_receta: cada orden ejecuta UNA receta (como en el diagrama de clases). El producto a
+// fabricar es el de la receta; el detalle de productos de la orden queda con esa única línea.
+function poblarSelectRecetaOrden(idSeleccionada) {
+    const select = document.getElementById('prod-receta');
+    if (!select) return;
+    // Al editar, la receta ya elegida se mantiene en la lista aunque después se haya desactivado.
+    const recetas = listaRecetas.filter(r => r.estado_activa || r.id_receta === idSeleccionada);
+    select.innerHTML = '<option value="" disabled selected>Elegí la receta a ejecutar</option>' +
+        recetas.map(r => `<option value="${r.id_receta}">${r.nombre_receta} (v${r.version}) · ${r.nombre_producto}</option>`).join('');
+    if (idSeleccionada) select.value = idSeleccionada;
 }
 
-function elegirProductoProduccion(idReceta) {
-    if (typeof listaRecetas === 'undefined') return;
-    const receta = listaRecetas.find(r => r.id_receta === idReceta);
+function elegirRecetaOrdenProduccion() {
+    const receta = listaRecetas.find(r => r.id_receta === parseInt(document.getElementById('prod-receta').value));
     if (!receta) return;
-    document.getElementById('prod-item-autocompletar').value = receta.nombre_producto;
-    document.getElementById('prod-item-select').value = receta.id_receta;
-    document.getElementById('prod-item-autocompletar-opciones').classList.add('hidden');
+    // Propone la cantidad estándar de la receta; se puede cambiar.
+    document.getElementById('prod-item-cant').value = receta.cantidad_a_producir;
+    actualizarCantidadOrdenProduccion();
 }
 
-function agregarProductoProduccion() {
-    if (typeof listaRecetas === 'undefined') return;
-    const idReceta = parseInt(document.getElementById('prod-item-select').value);
+function actualizarCantidadOrdenProduccion() {
+    const receta = listaRecetas.find(r => r.id_receta === parseInt(document.getElementById('prod-receta').value));
     const cantidad = parseFloat(document.getElementById('prod-item-cant').value);
-    const receta = listaRecetas.find(r => r.id_receta === idReceta);
-
-    if (!receta) return alert('Elegí un producto de la lista de sugerencias.');
-    if (!cantidad || cantidad <= 0) return alert('Ingrese una cantidad a fabricar válida.');
-
-    const existente = itemsProductosProduccionActual.find(p => p.id_receta === idReceta);
-    if (existente) {
-        existente.cantidad_planificada += cantidad;
-    } else {
-        itemsProductosProduccionActual.push({
-            id: Date.now() + Math.random(),
-            id_receta: receta.id_receta,
-            nombre_producto: receta.nombre_producto,
-            nombre_receta: receta.nombre_receta,
-            cantidad_planificada: cantidad
-        });
-    }
-
-    document.getElementById('prod-item-autocompletar').value = '';
-    document.getElementById('prod-item-select').value = '';
-    document.getElementById('prod-item-cant').value = 20;
-
-    renderizarTablaProductosProduccion();
-    recalcularRequerimientoMP();
-}
-
-function actualizarCantidadProductoProduccion(id, valor) {
-    const item = itemsProductosProduccionActual.find(p => p.id === id);
-    if (!item) return;
-    const cantidad = parseFloat(valor);
-    if (!cantidad || cantidad <= 0) { renderizarTablaProductosProduccion(); return; }
-    item.cantidad_planificada = cantidad;
-    recalcularRequerimientoMP();
-}
-
-function eliminarProductoProduccion(id) {
-    itemsProductosProduccionActual = itemsProductosProduccionActual.filter(p => p.id !== id);
+    const loteAnterior = itemsProductosProduccionActual[0]?.numero_lote_proyectado;
+    itemsProductosProduccionActual = receta && cantidad > 0 ? [{
+        id_receta: receta.id_receta,
+        nombre_producto: receta.nombre_producto,
+        nombre_receta: receta.nombre_receta,
+        cantidad_planificada: cantidad,
+        numero_lote_proyectado: loteAnterior
+    }] : [];
+    document.getElementById('prod-item-unidad').textContent = receta ? abreviaturaUnidadMedida(productoProduccionPorNombre(receta.nombre_producto)?.id_unidad_medida) : '';
     renderizarTablaProductosProduccion();
     recalcularRequerimientoMP();
 }
@@ -231,23 +189,18 @@ function eliminarProductoProduccion(id) {
 function renderizarTablaProductosProduccion() {
     const tbody = document.getElementById('tabla-productos-produccion');
     if (!tbody) return;
-    tbody.innerHTML = '';
     if (itemsProductosProduccionActual.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400 text-xs">Todavía no agregó productos a fabricar.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400 text-xs">Elegí la receta a ejecutar y la cantidad a fabricar.</td></tr>`;
         return;
     }
-    itemsProductosProduccionActual.forEach(item => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
+    tbody.innerHTML = itemsProductosProduccionActual.map(item => `
+        <tr>
             <td class="p-3 font-medium text-slate-800">${item.nombre_producto}</td>
-            <td class="p-3 text-center"><input type="number" min="1" value="${item.cantidad_planificada}" onchange="actualizarCantidadProductoProduccion(${item.id}, this.value)" class="w-20 text-center border border-slate-300 rounded-md p-1 text-sm outline-none focus:ring-2 focus:ring-red-500"></td>
+            <td class="p-3 text-slate-500">${item.nombre_receta}</td>
+            <td class="p-3 text-center">${formatearCantidad(item.cantidad_planificada)}</td>
             <td class="p-3 text-center text-slate-500 whitespace-nowrap">${unidadProductoProduccion(item.nombre_producto)}</td>
             <td class="p-3 text-center ${item.numero_lote_proyectado ? 'text-slate-600' : 'text-slate-400'}">${item.numero_lote_proyectado || 'Se asigna al registrar'}</td>
-            <td class="p-3 text-center"><button type="button" onclick="eliminarProductoProduccion(${item.id})" class="text-red-500 hover:text-red-700"><i data-lucide="trash-2" class="w-4 h-4 inline"></i></button></td>
-        `;
-        tbody.appendChild(tr);
-    });
-    if (typeof lucide !== 'undefined') lucide.createIcons();
+        </tr>`).join('');
 }
 
 // ==========================================
@@ -353,16 +306,11 @@ function editarOrdenProduccion(id) {
     document.getElementById('prod-hora-fin').value = o.hora_fin;
     document.getElementById('prod-observaciones').value = o.observaciones || '';
 
-    itemsProductosProduccionActual = o.detalleProductos.map(d => ({
-        id: Date.now() + Math.random(),
-        id_receta: d.id_receta,
-        nombre_producto: d.nombre_producto,
-        nombre_receta: d.nombre_receta,
-        cantidad_planificada: d.cantidad_planificada,
-        numero_lote_proyectado: d.numero_lote_proyectado
-    }));
-    renderizarTablaProductosProduccion();
-    recalcularRequerimientoMP();
+    const linea = o.detalleProductos[0];
+    poblarSelectRecetaOrden(o.id_receta);
+    document.getElementById('prod-item-cant').value = linea ? linea.cantidad_planificada : '';
+    itemsProductosProduccionActual = linea ? [{ numero_lote_proyectado: linea.numero_lote_proyectado }] : [];
+    actualizarCantidadOrdenProduccion();
 
     if (window.location.hash !== '#nueva-orden') window.location.hash = 'nueva-orden';
     else mostrarSubvistaProduccion('nueva-orden');
@@ -377,7 +325,7 @@ function registrarOrdenProduccion() {
     const horaFin = document.getElementById('prod-hora-fin')?.value;
     const observaciones = document.getElementById('prod-observaciones')?.value.trim() || '';
 
-    if (itemsProductosProduccionActual.length === 0) return alert('Agregue al menos un producto a fabricar.');
+    if (itemsProductosProduccionActual.length === 0) return alert('Elegí la receta a ejecutar y una cantidad a fabricar válida.');
     if (!fechaInicio || !horaInicio || !fechaFin || !horaFin) return alert('Complete la fecha y hora de inicio y fin programadas.');
 
     const detalleMateriaPrima = calcularRequerimientoConsolidado(itemsProductosProduccionActual);
@@ -401,7 +349,7 @@ function registrarOrdenProduccion() {
         if (!ordenEditada || ordenEditada.estado !== 'A iniciar') return alert('Solo se pueden modificar órdenes en estado "A iniciar".');
         Object.assign(ordenEditada, {
             fecha_inicio: fechaInicio, hora_inicio: horaInicio, fecha_fin: fechaFin, hora_fin: horaFin,
-            observaciones, detalleProductos, detalleMateriaPrima
+            observaciones, id_receta: detalleProductos[0].id_receta, detalleProductos, detalleMateriaPrima
         });
         ordenProduccionEnEdicionId = null;
         guardarDatos();
@@ -414,6 +362,7 @@ function registrarOrdenProduccion() {
     const orden = {
         id_orden_produccion: numOrdenProduccionContador++,
         id_empleado: empleado,
+        id_receta: detalleProductos[0].id_receta,
         fecha_emision: ahora.toISOString().slice(0, 10),
         hora_emision: ahora.toTimeString().slice(0, 5),
         fecha_inicio: fechaInicio,
@@ -431,8 +380,7 @@ function registrarOrdenProduccion() {
     listaOrdenesProduccion.unshift(orden);
     guardarDatos();
 
-    const lotes = detalleProductos.map(d => d.numero_lote_proyectado).join(', ');
-    alert(`¡Orden de producción ${formatearIdentificador("OP", orden.id_orden_produccion)} registrada! Lote(s) proyectado(s): ${lotes}.`);
+    alert(`¡Orden de producción ${formatearIdentificador("OP", orden.id_orden_produccion)} registrada! Lote proyectado: ${detalleProductos[0].numero_lote_proyectado}.`);
     volverAlHistorialProduccion();
 }
 
@@ -446,9 +394,9 @@ function resetFormularioNuevaOrden() {
     document.getElementById('texto-boton-nueva-orden').innerText = 'Registrar Orden de Producción';
 
     if (document.getElementById('prod-observaciones')) document.getElementById('prod-observaciones').value = '';
-    if (document.getElementById('prod-item-autocompletar')) document.getElementById('prod-item-autocompletar').value = '';
-    if (document.getElementById('prod-item-select')) document.getElementById('prod-item-select').value = '';
-    if (document.getElementById('prod-item-cant')) document.getElementById('prod-item-cant').value = 20;
+    poblarSelectRecetaOrden(null);
+    if (document.getElementById('prod-item-cant')) document.getElementById('prod-item-cant').value = '';
+    if (document.getElementById('prod-item-unidad')) document.getElementById('prod-item-unidad').textContent = '';
 
     const hoyStr = new Date().toISOString().slice(0, 10);
     if (document.getElementById('prod-fecha-inicio')) document.getElementById('prod-fecha-inicio').value = hoyStr;
@@ -463,6 +411,13 @@ function resetFormularioNuevaOrden() {
 // ==========================================
 // PANTALLA A: HISTORIAL / LISTADO DE OP
 // ==========================================
+// Orden_Producción.id_receta -> "Receta Tallarines al Huevo (v1)".
+function textoRecetaOrden(o) {
+    const receta = listaRecetas.find(r => r.id_receta === o.id_receta);
+    if (receta) return `${receta.nombre_receta} (v${receta.version})`;
+    return o.detalleProductos?.[0]?.nombre_receta || '-';
+}
+
 function renderizarHistorialProduccion() {
     const tbody = document.getElementById('tabla-ordenes-produccion');
     if (!tbody) return;
@@ -471,6 +426,7 @@ function renderizarHistorialProduccion() {
     const terminoNumero = normalizarTexto(document.getElementById('buscar-prod-numero')?.value || '').trim();
     const terminoEmpleado = normalizarTexto(document.getElementById('buscar-prod-empleado')?.value || '').trim();
     const terminoProducto = normalizarTexto(document.getElementById('buscar-prod-producto')?.value || '').trim();
+    const terminoReceta = normalizarTexto(document.getElementById('buscar-prod-receta')?.value || '').trim();
     const terminoObservaciones = normalizarTexto(document.getElementById('buscar-prod-observaciones')?.value || '').trim();
     const vencimientoDesde = document.getElementById('buscar-prod-vencimiento-desde')?.value || '';
     const vencimientoHasta = document.getElementById('buscar-prod-vencimiento-hasta')?.value || '';
@@ -482,6 +438,7 @@ function renderizarHistorialProduccion() {
         return (!terminoNumero || normalizarTexto(numero).includes(terminoNumero)) &&
             (!terminoEmpleado || normalizarTexto(o.id_empleado).includes(terminoEmpleado)) &&
             (!terminoProducto || normalizarTexto(producto).includes(terminoProducto)) &&
+            (!terminoReceta || normalizarTexto(textoRecetaOrden(o)).includes(terminoReceta)) &&
             (!terminoObservaciones || normalizarTexto(o.observaciones || '').includes(terminoObservaciones)) &&
             coincideRangoFecha(vencimientoDesde, vencimientoHasta, o.fecha_vencimiento);
     });
@@ -498,7 +455,7 @@ function renderizarHistorialProduccion() {
 
     tbody.innerHTML = '';
     if (ordenes.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-sm text-slate-400">No se encontraron órdenes de producción con esos filtros.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-sm text-slate-400">No se encontraron órdenes de producción con esos filtros.</td></tr>`;
         return;
     }
 
@@ -513,6 +470,7 @@ function renderizarHistorialProduccion() {
             <td class="px-6 py-3 font-semibold text-slate-800 whitespace-nowrap">${formatearIdentificador("OP", o.id_orden_produccion)}</td>
             <td class="px-6 py-3 text-slate-600 whitespace-nowrap">${o.id_empleado}</td>
             <td class="px-6 py-3 text-slate-600">${prodTexto}</td>
+            <td class="px-6 py-3 text-slate-500">${textoRecetaOrden(o)}</td>
             <td class="px-6 py-3 text-slate-500 whitespace-nowrap">${formatearFechaLatina(o.fecha_vencimiento)}</td>
             <td class="px-6 py-3 text-center"><span class="text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${COLOR_ESTADO_ORDEN_PRODUCCION[o.estado]}">${o.estado}</span></td>
             <td class="px-6 py-3 text-slate-500 max-w-[180px] truncate" title="${o.observaciones || ''}">${o.observaciones || '-'}</td>
@@ -659,6 +617,7 @@ function renderizarDetalleOrdenProduccion() {
         <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 text-xs">
             <h3 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5"><i data-lucide="factory" class="w-3.5 h-3.5"></i>Producción <span class="text-xs px-2.5 py-0.5 rounded-full font-semibold normal-case tracking-normal ${COLOR_ESTADO_ORDEN_PRODUCCION[o.estado]}">${o.estado}</span></h3>
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                <div class="col-span-2 sm:col-span-3 md:col-span-5">${campoProduccion('Receta', textoRecetaOrden(o))}</div>
                 ${campoProduccion('Fecha de Inicio', formatearFechaLatina(o.fecha_inicio))}
                 ${campoProduccion('Hora de Inicio', o.hora_inicio || '-')}
                 ${campoProduccion('Fecha de Fin', formatearFechaLatina(o.fecha_fin))}
@@ -1154,6 +1113,27 @@ function verProducto(idx) {
         campoVerRegistro('Descripción', p.descripcion || '-'));
 }
 
+// "+" al lado de Tipo y Subtipo: abre el alta de la tabla del sistema y deja elegida la fila nueva.
+function altaRapidaTipoProducto() {
+    abrirAltaParametrica('tiposProducto', tipo => {
+        poblarSelectTipoProducto('prodn-tipo');
+        document.getElementById('prodn-tipo').value = tipo.nombre_tipo_producto;
+        poblarSelectSubtipoProductoCascada('prodn-tipo', 'prodn-subtipo');
+    });
+}
+
+function altaRapidaSubtipoProducto() {
+    abrirAltaParametrica('subtiposProducto', subtipo => {
+        poblarSelectTipoProducto('prodn-tipo');
+        document.getElementById('prodn-tipo').value = subtipo.tipo;
+        poblarSelectSubtipoProductoCascada('prodn-tipo', 'prodn-subtipo');
+        document.getElementById('prodn-subtipo').value = subtipo.id_subtipo_producto;
+    });
+    // Propone el tipo que ya estaba elegido en el formulario del producto.
+    const tipo = dbTiposProducto.find(t => t.nombre_tipo_producto === document.getElementById('prodn-tipo').value);
+    if (tipo) document.getElementById('param-id_tipo_producto').value = tipo.id_tipo_producto;
+}
+
 function editarProducto(idx) {
     const p = listaProductos[idx];
     if (!p) return;
@@ -1212,7 +1192,7 @@ function guardarProducto() {
 let ordenListadoRecetas = { campo: '', direccion: '' };
 let filtroEstadoRecetaListado = '';
 let recetaEnEdicionId = null;
-let ingredientesRecetaActual = []; // [{ id_materia_prima, cantidad }]
+let ingredientesRecetaActual = []; // Detalle_Receta en edición: [{ id_materia_prima, id_unidad_medida, cantidad }]
 
 function irARecetas() {
     if (window.location.hash !== '#recetas') window.location.hash = 'recetas';
@@ -1286,9 +1266,9 @@ function renderizarTablaRecetas() {
                 <td class="px-6 py-3 font-semibold text-slate-800">${r.nombre_receta}</td>
                 <td class="px-6 py-3 text-slate-600">${r.nombre_producto || '-'}</td>
                 <td class="px-6 py-3 text-center text-slate-600">v${r.version}</td>
-                <td class="px-6 py-3 text-right text-slate-600 whitespace-nowrap">${formatearCantidad(r.cantidad_producida)} ${unidadProductoDeReceta(r)}</td>
+                <td class="px-6 py-3 text-right text-slate-600 whitespace-nowrap">${formatearCantidad(r.cantidad_a_producir)} ${unidadProductoDeReceta(r)}</td>
                 <td class="px-6 py-3 text-right text-slate-600 whitespace-nowrap">${formatearCantidad(r.rendimiento_kg)}</td>
-                <td class="px-6 py-3 text-center text-slate-600">${r.detalle.length}</td>
+                <td class="px-6 py-3 text-center"><button type="button" onclick="verReceta(${idx})" title="Ver detalle de materias primas" class="text-slate-600 hover:text-red-600 underline decoration-dotted underline-offset-2">${r.detalle.length}</button></td>
                 <td class="px-6 py-3 whitespace-nowrap ${vencidaOPorVencer && r.estado_activa ? 'text-amber-600 font-semibold' : 'text-slate-500'}">${formatearFechaLatina(r.fecha_vencimiento)}</td>
                 <td class="px-6 py-3 text-center"><span class="text-xs px-2.5 py-1 rounded-full font-semibold whitespace-nowrap ${r.estado_activa ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'}">${r.estado_activa ? 'Activa' : 'Inactiva'}</span></td>
                 <td class="px-6 py-3 text-center whitespace-nowrap">
@@ -1323,9 +1303,11 @@ function poblarSelectMateriaPrimaReceta() {
     actualizarUnidadIngredienteReceta();
 }
 
+// Detalle_Receta.id_unidad_medida: por defecto, la unidad en la que se lleva el stock de esa materia prima.
 function actualizarUnidadIngredienteReceta() {
     const mp = listaMateriasPrimas.find(m => m.id_materia_prima === parseInt(document.getElementById('rec-ing-mp').value));
-    document.getElementById('rec-ing-unidad').textContent = mp ? `(${abreviaturaUnidadMedida(mp.id_unidad_medida)})` : '';
+    poblarSelectUnidadMedida('rec-ing-unidad-medida');
+    if (mp) document.getElementById('rec-ing-unidad-medida').value = mp.id_unidad_medida;
 }
 
 function resetFormularioReceta() {
@@ -1336,7 +1318,7 @@ function resetFormularioReceta() {
     document.getElementById('rec-version').value = 1;
     poblarSelectProductoReceta(null);
     document.getElementById('rec-estado').value = 'true';
-    document.getElementById('rec-cantidad-producida').value = '';
+    document.getElementById('rec-cantidad-a-producir').value = '';
     document.getElementById('rec-rendimiento').value = '';
     document.getElementById('rec-vencimiento').value = '';
     document.getElementById('rec-procedimiento').value = '';
@@ -1348,12 +1330,18 @@ function resetFormularioReceta() {
 function agregarIngredienteReceta() {
     const idMp = parseInt(document.getElementById('rec-ing-mp').value);
     const cantidad = parseFloat(document.getElementById('rec-ing-cant').value);
+    const idUnidad = parseInt(document.getElementById('rec-ing-unidad-medida').value);
     if (!idMp) return alert('Elegí una materia prima.');
     if (!cantidad || cantidad <= 0) return alert('Ingresá una cantidad válida.');
+    if (!idUnidad) return alert('Elegí la unidad de medida.');
 
+    // Clave (id_receta, id_materia_prima): si la materia prima ya está en la receta se suma a esa misma línea.
     const existente = ingredientesRecetaActual.find(i => i.id_materia_prima === idMp);
+    if (existente && existente.id_unidad_medida !== idUnidad) {
+        return alert(`Esa materia prima ya está en la receta en ${nombreUnidadMedida(existente.id_unidad_medida)}. Modificá la cantidad en la tabla.`);
+    }
     if (existente) existente.cantidad = +(existente.cantidad + cantidad).toFixed(3);
-    else ingredientesRecetaActual.push({ id_materia_prima: idMp, cantidad });
+    else ingredientesRecetaActual.push({ id_materia_prima: idMp, id_unidad_medida: idUnidad, cantidad });
 
     document.getElementById('rec-ing-cant').value = '';
     renderizarTablaIngredientesReceta();
@@ -1383,7 +1371,7 @@ function renderizarTablaIngredientesReceta() {
         <tr>
             <td class="p-3 font-medium text-slate-800">${mp ? mp.nombre_materia_prima : '-'}</td>
             <td class="p-3 text-center"><input type="number" min="0" step="any" value="${i.cantidad}" onchange="actualizarCantidadIngredienteReceta(${i.id_materia_prima}, this.value)" class="w-24 text-center border border-slate-300 rounded-md p-1 text-sm outline-none focus:ring-2 focus:ring-red-500"></td>
-            <td class="p-3 text-center text-slate-500">${mp ? abreviaturaUnidadMedida(mp.id_unidad_medida) : '-'}</td>
+            <td class="p-3 text-center text-slate-500">${nombreUnidadMedida(i.id_unidad_medida)}</td>
             <td class="p-3 text-center"><button type="button" onclick="eliminarIngredienteReceta(${i.id_materia_prima})" class="text-red-500 hover:text-red-700"><i data-lucide="trash-2" class="w-4 h-4 inline"></i></button></td>
         </tr>`;
     }).join('');
@@ -1400,11 +1388,11 @@ function editarReceta(idx) {
     document.getElementById('rec-version').value = r.version;
     poblarSelectProductoReceta(r.id_producto);
     document.getElementById('rec-estado').value = String(r.estado_activa);
-    document.getElementById('rec-cantidad-producida').value = r.cantidad_producida;
+    document.getElementById('rec-cantidad-a-producir').value = r.cantidad_a_producir;
     document.getElementById('rec-rendimiento').value = r.rendimiento_kg;
     document.getElementById('rec-vencimiento').value = r.fecha_vencimiento || '';
     document.getElementById('rec-procedimiento').value = r.procedimiento;
-    ingredientesRecetaActual = r.detalle.map(d => ({ id_materia_prima: d.id_materia_prima, cantidad: d.cantidad }));
+    ingredientesRecetaActual = r.detalle.map(d => ({ id_materia_prima: d.id_materia_prima, id_unidad_medida: d.id_unidad_medida, cantidad: d.cantidad }));
     renderizarTablaIngredientesReceta();
     if (window.location.hash !== '#registrar-receta') window.location.hash = 'registrar-receta';
     else mostrarSubvistaProduccion('registrar-receta');
@@ -1415,7 +1403,7 @@ function guardarReceta() {
     const version = parseInt(document.getElementById('rec-version').value);
     const idProducto = parseInt(document.getElementById('rec-producto').value);
     const estadoActiva = document.getElementById('rec-estado').value === 'true';
-    const cantidadProducida = parseFloat(document.getElementById('rec-cantidad-producida').value);
+    const cantidadAProducir = parseFloat(document.getElementById('rec-cantidad-a-producir').value);
     const rendimiento = parseFloat(document.getElementById('rec-rendimiento').value);
     const fechaVencimiento = document.getElementById('rec-vencimiento').value || null;
     const procedimiento = document.getElementById('rec-procedimiento').value.trim();
@@ -1423,7 +1411,7 @@ function guardarReceta() {
     if (!nombre) return alert('Ingrese el nombre de la receta.');
     if (!version || version < 1) return alert('Ingrese una versión válida (1 o mayor).');
     if (!idProducto) return alert('Seleccione el producto que elabora la receta.');
-    if (!cantidadProducida || cantidadProducida <= 0) return alert('Ingrese la cantidad producida.');
+    if (!cantidadAProducir || cantidadAProducir <= 0) return alert('Ingrese la cantidad a producir.');
     if (!rendimiento || rendimiento <= 0) return alert('Ingrese el rendimiento en kg.');
     if (!procedimiento) return alert('Describa el procedimiento de la receta.');
     if (!ingredientesRecetaActual.length) return alert('Agregue al menos un ingrediente.');
@@ -1432,25 +1420,21 @@ function guardarReceta() {
     }
 
     const producto = listaProductos.find(p => p.id_producto === idProducto);
-    const detalle = ingredientesRecetaActual.map(i => {
-        const mp = listaMateriasPrimas.find(m => m.id_materia_prima === i.id_materia_prima);
-        return {
-            id_materia_prima: mp.id_materia_prima, nombre: mp.nombre_materia_prima, cantidad: i.cantidad,
-            unidad: abreviaturaUnidadMedida(mp.id_unidad_medida),
-            cantidad_por_kg: +(i.cantidad / rendimiento).toFixed(4)
-        };
-    });
-
+    let receta;
     if (recetaEnEdicionId) {
-        const r = listaRecetas.find(x => x.id_receta === recetaEnEdicionId);
-        Object.assign(r, { id_producto: idProducto, nombre_receta: nombre, nombre_producto: producto.nombre, cantidad_producida: cantidadProducida, version, estado_activa: estadoActiva, procedimiento, rendimiento_kg: rendimiento, fecha_vencimiento: fechaVencimiento, detalle });
-        guardarDatos();
-        alert(`¡Receta "${nombre}" actualizada con éxito!`);
+        receta = listaRecetas.find(x => x.id_receta === recetaEnEdicionId);
+        Object.assign(receta, { id_producto: idProducto, nombre_receta: nombre, nombre_producto: producto.nombre, cantidad_a_producir: cantidadAProducir, version, estado_activa: estadoActiva, procedimiento, rendimiento_kg: rendimiento, fecha_vencimiento: fechaVencimiento });
     } else {
-        listaRecetas.push(new Receta(numRecetaContador++, idProducto, nombre, producto.nombre, cantidadProducida, version, estadoActiva, procedimiento, rendimiento, fechaVencimiento, detalle));
-        guardarDatos();
-        alert(`¡Receta "${nombre}" registrada con éxito!`);
+        receta = new Receta(numRecetaContador++, idProducto, nombre, producto.nombre, cantidadAProducir, version, estadoActiva, procedimiento, rendimiento, fechaVencimiento);
+        listaRecetas.push(receta);
     }
+    // Detalle_Receta: se reemplazan las líneas de esta receta por las del formulario.
+    for (let i = listaDetallesReceta.length - 1; i >= 0; i--) {
+        if (listaDetallesReceta[i].id_receta === receta.id_receta) listaDetallesReceta.splice(i, 1);
+    }
+    ingredientesRecetaActual.forEach(i => listaDetallesReceta.push(new DetalleReceta(receta.id_receta, i.id_materia_prima, i.id_unidad_medida, i.cantidad)));
+    guardarDatos();
+    alert(`¡Receta "${nombre}" ${recetaEnEdicionId ? 'actualizada' : 'registrada'} con éxito!`);
     volverARecetas();
 }
 
@@ -1480,7 +1464,7 @@ function verReceta(idx) {
             <table class="w-full border-collapse">
                 <tr><td class="${celdaEtiqueta}">Nombre receta</td><td class="${celdaValor} font-semibold" colspan="3">${r.nombre_receta}</td></tr>
                 <tr><td class="${celdaEtiqueta}">Producto</td><td class="${celdaValor}">${r.nombre_producto || '-'}</td><td class="${celdaEtiqueta}">Tipo / Subtipo</td><td class="${celdaValor}">${st ? `${st.tipo} · ${st.subtipo}` : '-'}</td></tr>
-                <tr><td class="${celdaEtiqueta}">Cantidad producida</td><td class="${celdaValor}">${formatearCantidad(r.cantidad_producida)} ${unidadProductoDeReceta(r)}</td><td class="${celdaEtiqueta}">Rendimiento</td><td class="${celdaValor}">${formatearCantidad(r.rendimiento_kg)} kg</td></tr>
+                <tr><td class="${celdaEtiqueta}">Cantidad a producir</td><td class="${celdaValor}">${formatearCantidad(r.cantidad_a_producir)} ${unidadProductoDeReceta(r)}</td><td class="${celdaEtiqueta}">Rendimiento</td><td class="${celdaValor}">${formatearCantidad(r.rendimiento_kg)} kg</td></tr>
                 <tr><td class="${celdaEtiqueta}">Versión</td><td class="${celdaValor}">v${r.version}</td><td class="${celdaEtiqueta}">Estado</td><td class="${celdaValor}">${r.estado_activa ? 'Activa' : 'Inactiva'}</td></tr>
                 <tr><td class="${celdaEtiqueta}">Fecha de vencimiento</td><td class="${celdaValor}" colspan="3">${formatearFechaLatina(r.fecha_vencimiento)}</td></tr>
             </table>
